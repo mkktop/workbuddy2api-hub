@@ -80,6 +80,7 @@ wb_pool_media.py
 wb_pool_scope.py
 wb_pool_text.py
 wb_modelsdev.py
+wb_panel_events.py
 wb_pricing.py
 wb_probes.py
 wb_prompt.py

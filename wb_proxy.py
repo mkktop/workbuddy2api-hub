@@ -100,6 +100,15 @@ import wb_updates
 import wb_update_request
 import wb_time
 import wb_external_api
+try:
+    import wb_panel_events
+except Exception:
+    # 面板实时流是可选能力：打包漏了这个模块时网关照常服务，只是首页没有实时
+    # 调用动画。钩子遍布请求路径，所以给一个空实现，免得每一处都判空。
+    class _NoPanelEvents(object):
+        def __getattr__(self, name):
+            return lambda *args, **kwargs: None
+    wb_panel_events = _NoPanelEvents()
 IS_WINDOWS = os.name == "nt"
 
 
@@ -1837,6 +1846,8 @@ def _persist_usage(row, fail_label):
     loads that file (every aggregate re-reads usage.jsonl), so the work was
     pure overhead on the request path. One append per request now.
     """
+    # 实时视图不等落盘：磁盘写失败时这一次调用照样有始有终（见 wb_panel_events）。
+    wb_panel_events.finish(row)
     try:
         if not wb_usage_io.append_line(
                 USAGE_LOG, json.dumps(row, ensure_ascii=False),
@@ -13292,6 +13303,32 @@ def _redact_account_names(obj):
         return _mask_text(obj)
     return obj
 
+# 面板实时流的帧与 /usage/recent 是同一批数据，走同一套手机号掩码。
+wb_panel_events.configure(redact=_redact_account_names)
+
+
+def _panel_trace(handler, path):
+    """Open the live-view trace for the request ``handler`` is serving.
+
+    A module function on purpose, not a Handler method: suites drive do_POST
+    and the route methods with stand-in objects, and a method called on the
+    handler raises at the call site, before its own try block can help. With
+    everything inside the one try, a hook that is missing a method or an
+    attribute is simply no hook.
+    """
+    try:
+        # Gemini 原生入口经回环调用自身的 chat 接口：内部那一次并入外层同一条
+        # 记录，免得一次调用在面板上显示成两次。只信回环对端带来的 id。
+        adopt = None
+        peer = getattr(handler, "client_address", None) or ("",)
+        if peer[0] in ("127.0.0.1", "::1"):
+            adopt = handler.headers.get("X-WB-Trace") or None
+        wb_panel_events.begin(
+            path, key=handler._key_id(), adopt=adopt,
+            content_length=handler.headers.get("Content-Length"))
+    except Exception:
+        pass
+
 # 日志级别与模块的自动归类。调用点显式传了 level/tag 就用传的，没传才按内容猜。
 #
 # 级别：早先只认英文关键字，而本仓大量日志是中文——定价侧的「抓取失败，继续用
@@ -18923,6 +18960,7 @@ def open_upstream(payload, session_key=None, target_realm=None, prebuilt_body=No
         tried.add(account.uid)
         last_uid = account.uid
         slot_held = account
+        wb_panel_events.bind(account.uid)
         cfg = wb_accounts.get_realm_config(account.realm)
         chat_url = account.chat_base_url() + CHAT_PATH
         # The cache key is account scoped, so it is rebuilt per candidate rather
@@ -22861,7 +22899,12 @@ class Handler(BaseHTTPRequestHandler):
         if not hasattr(self, mname):
             self.send_error(501, "Unsupported method (%r)" % self.command)
             return
-        getattr(self, mname)()
+        try:
+            getattr(self, mname)()
+        finally:
+            # 没写用量行的调用（被限流 / 被拒 / 不记账的伪模型）在这里收尾，
+            # 面板实时视图里的每一次调用因此有始有终（见 wb_panel_events）。
+            wb_panel_events.finish_open()
         self.wfile.flush()
     def handle(self):
         try:
@@ -22891,6 +22934,7 @@ class Handler(BaseHTTPRequestHandler):
             pass
         log(fmt % args)
     def _json(self, code, obj):
+        wb_panel_events.status(code)
         body = json.dumps(obj, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -23542,6 +23586,62 @@ class Handler(BaseHTTPRequestHandler):
 
     def _external_panel_required(self):
         return self._panel_ok()
+    # ---- live call events (dashboard home) ----
+    def _get_usage_events(self):
+        """SSE：把每一次调用的开始 / 分配账号 / 结束实时推给面板首页。
+
+        面板令牌只认 X-Panel-Token 请求头，原生 EventSource 发不了自定义头，
+        所以面板用 fetch 流式读取；这里按标准 SSE 帧输出。帧的 id 是事件序号，
+        断线后浏览器带 Last-Event-ID 回来可以从环里续传，缺口太大就改发快照。
+        每条流占一个连接线程，订阅数有上限，超了回 503 让面板退回轮询。
+        """
+        if not self._authorized():
+            return
+        last_id = None
+        try:
+            raw = (self.headers.get("Last-Event-ID") or "").strip()
+            last_id = int(raw) if raw else None
+        except ValueError:
+            last_id = None
+        sub = wb_panel_events.subscribe(last_id)
+        if sub is None:
+            return self._error(503, "too many live event streams", "server_error")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+        self.send_header("Cache-Control", "no-cache")
+        # 反向代理（Nginx / Cloudflare Tunnel）默认会攒满缓冲区再转发，
+        # 这一行告诉它们别攒：实时流攒一下就不是实时的了。
+        self.send_header("X-Accel-Buffering", "no")
+        self.send_header("Connection", "close")
+        self.close_connection = True
+        self.end_headers()
+        idle = 0.0
+        try:
+            while True:
+                frame = wb_panel_events.next_frame(sub, wb_panel_events.LIVE_INTERVAL)
+                if frame is not None and frame.get("type") == "reset":
+                    # 这条流落后太多：告诉面板重置后由它重连，服务端就此收流。
+                    self.wfile.write(wb_panel_events.render(frame).encode("utf-8"))
+                    self.wfile.flush()
+                    break
+                if frame is None:
+                    # 进度帧由任意一条在线的流代发，不另起线程。
+                    wb_panel_events.live_due()
+                    idle += wb_panel_events.LIVE_INTERVAL
+                    if idle >= SSE_HEARTBEAT_SECONDS:
+                        idle = 0.0
+                        self.wfile.write(b": keepalive\n\n")
+                        self.wfile.flush()
+                    continue
+                idle = 0.0
+                self.wfile.write(wb_panel_events.render(frame).encode("utf-8"))
+                self.wfile.flush()
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError,
+                OSError):
+            pass
+        finally:
+            wb_panel_events.unsubscribe(sub)
+
     # ---- web panel access ----
     def _panel_token(self):
         """Session token from the X-Panel-Token header.
@@ -23660,7 +23760,8 @@ class Handler(BaseHTTPRequestHandler):
         )
         is_text_route = path in (
             "/v1/models", "/models", "/v1/balance-summary",
-            "/usage", "/v1/usage", "/usage/recent", "/usage/analytics",
+            "/usage", "/v1/usage", "/usage/recent", "/usage/events",
+            "/usage/analytics",
             "/usage/by-account", "/usage/remaining", "/usage/perf",
             "/usage/timeseries", "/usage/board", "/activity/history",
         )
@@ -23714,6 +23815,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._get_media_models(query)
         if path in ("/usage", "/v1/usage"):
             return self._get_v1_usage(query)
+        if path == "/usage/events":
+            return self._get_usage_events()
         if path == "/usage/recent":
             return self._get_usage_recent(query)
         if path == "/accounts/credits/detail":
@@ -23963,6 +24066,7 @@ class Handler(BaseHTTPRequestHandler):
         """Gemini generateContent / streamGenerateContent。"""
         if not self._authorized():
             return
+        _panel_trace(self, path)
         payload = self._payload_or_error()
         if payload is None:
             return
@@ -24013,6 +24117,10 @@ class Handler(BaseHTTPRequestHandler):
         auth = self.headers.get("Authorization")
         if auth:
             headers["Authorization"] = auth
+        # 让内部那一次 chat 调用并入外层调用的实时记录（见 _panel_trace）。
+        outer_trace = wb_panel_events.current_id()
+        if outer_trace:
+            headers["X-WB-Trace"] = outer_trace
         data = json.dumps(body, ensure_ascii=False).encode("utf-8")
         req = urllib.request.Request(url, data=data, headers=headers, method="POST")
         try:
@@ -24034,6 +24142,7 @@ class Handler(BaseHTTPRequestHandler):
         """
         if not self._authorized():
             return
+        _panel_trace(self, path)
         started = time.monotonic()
         payload = self._payload_or_error()
         if payload is None:
@@ -29279,6 +29388,7 @@ class Handler(BaseHTTPRequestHandler):
                     holder.pop("suppress_completion", None)
                     holder["suppress_lifecycle"] = rounds > 0
                     for frame in stream_responses_events(upstream, model, holder):
+                        wb_panel_events.tick()
                         if first_ms is None:
                             first_ms = int((time.time() - t_start) * 1000)
                         heartbeat.write(clean_responses_frame(frame))
@@ -29605,6 +29715,7 @@ class Handler(BaseHTTPRequestHandler):
             with heartbeat:
                 for frame in stream_messages_events(upstream, model, holder,
                                                     web_meta=web_meta):
+                    wb_panel_events.tick()
                     if first_ms is None:
                         first_ms = int((time.time() - t_start) * 1000)
                     heartbeat.write(frame)
@@ -29885,6 +29996,9 @@ class Handler(BaseHTTPRequestHandler):
                     401, "missing or invalid API key", "authentication_error")
         elif not self._authorized():
             return
+        # 账号管理类 POST 是面板自己的写操作，不算一次模型调用，不进实时视图。
+        if not is_account_route:
+            _panel_trace(self, path)
         if is_audio_route:
             kind = "tts" if path.endswith("/speech") else "asr"
             if not wb_settings.audio_enabled(ACCOUNTS_DIR, kind):
@@ -29923,6 +30037,9 @@ class Handler(BaseHTTPRequestHandler):
             payload = self._payload_or_error(allow_list=(path == "/accounts/import"))
         if payload is None:
             return
+        wb_panel_events.meta(
+            payload.get("model") if isinstance(payload, dict) else None,
+            payload.get("stream") if isinstance(payload, dict) else None)
         if not is_account_route and not is_media_route and not is_audio_route:
             if self._maybe_web_model(payload, is_messages_route):
                 return
@@ -30338,6 +30455,7 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 with heartbeat:
                     for line in iter_sse_lines(upstream, before_read=before_read):
+                        wb_panel_events.tick()
                         data = strip_data_prefix(line.decode("utf-8", "replace"))
                         if data == "[DONE]":
                             if os.environ.get("WB_STOP_AT_SSE_DONE", "").strip().lower() in ("1", "true", "yes", "on"):
