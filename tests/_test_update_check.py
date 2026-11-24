@@ -45,7 +45,7 @@ def release(tag, **overrides):
         "tag_name": tag,
         "draft": False,
         "prerelease": False,
-        "html_url": "https://github.com/niyouqianma/workbuddy2api-hub/releases/tag/" + tag,
+        "html_url": "https://github.com/mkktop/workbuddy2api-hub/releases/tag/" + tag,
         "published_at": "2026-10-08T00:00:00Z",
     }
     entry.update(overrides)
@@ -70,7 +70,7 @@ class FakeFetcher(object):
 
 
 def tag_url(tag):
-    return ("https://github.com/niyouqianma/workbuddy2api-hub"
+    return ("https://github.com/mkktop/workbuddy2api-hub"
             "/releases/tag/" + tag)
 
 
@@ -101,7 +101,7 @@ def checker(directory, fetcher, **kwargs):
 class SettingsContractTests(unittest.TestCase):
     def test_default_repository_points_to_current_maintainer(self):
         self.assertEqual(wb_updates.DEFAULT_REPOSITORY,
-                         "niyouqianma/workbuddy2api-hub")
+                         "mkktop/workbuddy2api-hub")
 
     def test_missing_key_reads_as_off(self):
         with tempfile.TemporaryDirectory(prefix="upd-set-") as d:

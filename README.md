@@ -20,7 +20,7 @@
 This project is for protocol research and personal use only. Prefer the official client, do not use your primary account, and do not resell or share access.
 
 <p align="center">
-  <a href="https://github.com/niyouqianma/workbuddy2api-hub/releases"><img src="https://img.shields.io/badge/Release-v2.2.2-2496ED?style=flat-square" alt="Version 2.2.2"></a>
+  <a href="https://github.com/mkktop/workbuddy2api-hub/releases"><img src="https://img.shields.io/badge/Release-v2.2.2-2496ED?style=flat-square" alt="Version 2.2.2"></a>
   <img src="https://img.shields.io/badge/Python-3.9+-blue.svg?style=flat-square" alt="Python">
   <img src="https://img.shields.io/badge/API-OpenAI_Compatible-412991?style=flat-square" alt="OpenAI API">
   <img src="https://img.shields.io/badge/Dual_Realm-Intl_&_CN-0DBD8B?style=flat-square" alt="Dual Realm">
@@ -82,10 +82,10 @@ This project is for protocol research and personal use only. Prefer the official
 
 ```bash
 # 官方源（直连 GitHub 环境）：
-curl -fsSL https://raw.githubusercontent.com/niyouqianma/workbuddy2api-hub/main/quick-deploy.sh | bash
+curl -fsSL https://raw.githubusercontent.com/mkktop/workbuddy2api-hub/main/quick-deploy.sh | bash
 
 # 国内网络 / NAS 加速：
-curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/niyouqianma/workbuddy2api-hub/main/quick-deploy.sh | sudo bash
+curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/mkktop/workbuddy2api-hub/main/quick-deploy.sh | sudo bash
 ```
 
 > 公网部署或配合反向代理：在管道前指定 `WB_DEPLOY_MODE=public bash`，并搭配 Nginx / Caddy / Cloudflare Tunnel 配置 TLS。
@@ -95,7 +95,7 @@ curl -fsSL https://gh-proxy.com/https://raw.githubusercontent.com/niyouqianma/wo
 ```yaml
 services:
   wb-proxy:
-    image: ghcr.io/niyouqianma/workbuddy2api-hub:latest
+    image: ghcr.io/mkktop/workbuddy2api-hub:latest
     container_name: wb-proxy
     restart: unless-stopped
     ports:
@@ -304,7 +304,7 @@ python tests/run_all.py realm      # 只跑名字里含 realm 的
 ## ⭐ Star 趋势
 
 <p align="center">
-  <a href="https://star-history.com/#niyouqianma/workbuddy2api-hub&Date">
-    <img src="https://api.star-history.com/svg?repos=niyouqianma/workbuddy2api-hub&type=Date" alt="Star History Chart" width="760">
+  <a href="https://star-history.com/#mkktop/workbuddy2api-hub&Date">
+    <img src="https://api.star-history.com/svg?repos=mkktop/workbuddy2api-hub&type=Date" alt="Star History Chart" width="760">
   </a>
 </p>
