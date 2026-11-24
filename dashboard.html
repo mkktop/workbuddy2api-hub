@@ -3967,6 +3967,13 @@ if(!window.__NEXT_UI__ && defaultConsoleLayout) {
     '重新生成链接': 'Regenerate link',
     '错误': 'errors',
     '长期有效': 'No expiry',
+    '长期有效 · 每月重置': 'Long-lived · monthly reset',
+    '按月重置': 'Monthly reset',
+    '每月重置的包也计入临期优先': 'Include monthly-reset packages in expiring-credits priority',
+    '默认关闭。开启后，免费套餐 / 体验版这类「长期有效但按计费周期每月重置」的积分包，也会按周期结束时间参与临期优先。': 'Off by default. When enabled, free-plan / trial packages that stay valid but reset each billing cycle also join expiring-credits priority by their cycle end.',
+    '已开启：每月重置的包也计入临期优先': 'Enabled: monthly-reset packages join expiring-credits priority',
+    '已关闭：每月重置的包不参与临期优先': 'Disabled: monthly-reset packages stay out of expiring-credits priority',
+    '计费周期结束（积分按月重置）': 'Billing cycle end (credits reset monthly)',
     '限': 'cap',
     '限时免费 0.00x': 'Free for a limited time 0.00x',
     '随时可出发旅行': 'Ready to travel any time',
@@ -4463,6 +4470,12 @@ if(!window.__NEXT_UI__ && defaultConsoleLayout) {
     "已导出 1 个账号 →": "已匯出 1 個帳號 →",
     "已导出 1 个账号 → ": "已匯出 1 個帳號 → ",
     "已开启临期积分优先": "已開啟臨期積分優先",
+    "长期有效 · 每月重置": "長期有效 · 每月重置",
+    "按月重置": "按月重置",
+    "每月重置的包也计入临期优先": "每月重置的包也計入臨期優先",
+    "已开启：每月重置的包也计入临期优先": "已開啟：每月重置的包也計入臨期優先",
+    "已关闭：每月重置的包不参与临期优先": "已關閉：每月重置的包不參與臨期優先",
+    "计费周期结束（积分按月重置）": "計費週期結束（積分按月重置）",
     "已开启：带渠道后缀的模型按基准模型继承定价（仅在唯一命中时）": "已開啟：帶渠道字尾的模型按基準模型繼承定價（僅在唯一命中時）",
     "已成功删除账号": "已成功刪除帳號",
     "已成功删除账号 ": "已成功刪除帳號 ",
@@ -7416,6 +7429,14 @@ html[data-ui="next"] #nextContent .console-shell > main {padding:24px;max-width:
                   <span class="switch-track"></span>
                   <span style="font-size:12px">启用临期优先</span>
                 </label>
+                <label class="switch" style="margin-top:8px">
+                  <input id="setExpiringIncludeResetToggle" type="checkbox" onchange="toggleExpiringIncludeReset(this)">
+                  <span class="switch-track"></span>
+                  <span style="font-size:12px">每月重置的包也计入临期优先</span>
+                </label>
+                <div style="font-size:12px;color:var(--dim);margin-top:4px">
+                  默认关闭。开启后，免费套餐 / 体验版这类「长期有效但按计费周期每月重置」的积分包，也会按周期结束时间参与临期优先。
+                </div>
                 <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap">
                   <span style="font-size:12px;color:var(--dim)">积分数据刷新间隔（小时）</span>
                   <input id="setCreditsRefreshHours" type="number" min="0" step="1" value="12"
@@ -15066,6 +15087,9 @@ function renderCreditsPackagesTable(){
     // 计费边界。这种包不能拿周期结束算倒计时，否则表格会显示「剩 12 天」
     // 而最近到期卡片又正确地不认它（#474）。
     const noExpiry = !!p.no_expiry;
+    // cycle_reset：no_expiry 里的免费套餐 / 体验版，CycleStartTime→CycleEndTime
+    // 是一个月的计费周期，月底会重新发额度。文案要跟普通「长期有效」区分开。
+    const cycleReset = !!p.cycle_reset;
     let days = (p.days_left !== undefined && p.days_left !== null) ? Number(p.days_left) : null;
     if(days === null && !noExpiry && endTime && endTime !== '-'){
       try {
@@ -15093,6 +15117,8 @@ function renderCreditsPackagesTable(){
       cycle_end_time: endTime,
       days_left: days,
       no_expiry: noExpiry,
+      cycle_reset: cycleReset,
+      cycle_reset_days_left: p.cycle_reset_days_left ?? null,
       is_expired: isExpired,
       /* status 3 = 上游标记为失效/用完。这类实例不会出现在「有效」查询里，但用户
          想知道「签到这么多天到底发了多少」，所以必须显示出来并归到「已用完/过期」。 */
@@ -15177,6 +15203,8 @@ function renderCreditsPackagesTable(){
       } else {
         expiryBadge = '<span class="badge mini">长期有效</span>';
       }
+    } else if(p.no_expiry && p.cycle_reset){
+      expiryBadge = '<span class="badge mini" title="积分不设抵扣截止；计费周期每月重置">长期有效 · 每月重置</span>';
     } else if(p.no_expiry){
       expiryBadge = '<span class="badge mini">长期有效</span>';
     } else if(p.cycle_end_time){
@@ -15223,7 +15251,7 @@ function renderCreditsPackagesTable(){
       + '</td>'
       + '<td style="text-align:center;padding:8px 10px">'
       +   (expiryBadge ? ('<div style="margin-bottom:3px">' + expiryBadge + '</div>') : '')
-      +   '<div class="mono" style="font-size:11px;color:var(--fg)" title="' + (p.no_expiry ? '计费周期结束（积分不过期）' : '到期时间') + '">' + esc(cycleEndTimeStr) + '</div>'
+      +   '<div class="mono" style="font-size:11px;color:var(--fg)" title="' + (p.cycle_reset ? '计费周期结束（积分按月重置）' : (p.no_expiry ? '计费周期结束（积分不过期）' : '到期时间')) + '">' + esc(cycleEndTimeStr) + '</div>'
       +   (cycleStartTimeStr ? ('<div class="mono" style="font-size:10px;color:var(--dim)" title="生效时间">自 ' + esc(cycleStartTimeStr.slice(0, 10)) + '</div>') : '')
       + '</td>'
       + '<td style="text-align:right;padding:8px 10px;font-weight:600">' + fmt(pSize) + '</td>'
@@ -18207,6 +18235,11 @@ function applyLimits(data){
     expiringToggle.checked =
       Number((limits.expiring_window_days || {}).global || 0) > 0;
   }
+  const includeResetToggle = document.getElementById('setExpiringIncludeResetToggle');
+  if(includeResetToggle){
+    includeResetToggle.checked =
+      Number((limits.expiring_include_cycle_reset || {}).global || 0) > 0;
+  }
   const toggle = document.getElementById('setLimitsPerRealm');
   if(toggle) toggle.checked = anyOverride;
   toggleLimitRealms(anyOverride);
@@ -18268,6 +18301,28 @@ async function toggleExpiringWindow(el){
   try {
     await postJSON('/settings/save', {limits:{expiring_window_days:{global:value}}});
     toast(enabled ? '已开启临期积分优先' : '已关闭临期积分优先', 'ok');
+    loadSettings();
+  } catch(e) {
+    toast('保存失败: ' + e.message, 'bad');
+    el.checked = !enabled;
+  } finally {
+    el.disabled = false;
+  }
+}
+
+/* 按月重置包是否计入临期优先：默认关闭，避免免费套餐/体验版在每个月底都被
+   当成「即将作废」而抢占流量。开启后，这类包的周期结束时间会参与同一套
+   加权调度，适合「月初重置、想先把本月额度用掉」的部署。 */
+async function toggleExpiringIncludeReset(el){
+  const enabled = !!(el && el.checked);
+  el.disabled = true;
+  try {
+    await postJSON('/settings/save', {
+      limits:{expiring_include_cycle_reset:{global: enabled ? 1 : 0}},
+    });
+    toast(enabled
+      ? '已开启：每月重置的包也计入临期优先'
+      : '已关闭：每月重置的包不参与临期优先', 'ok');
     loadSettings();
   } catch(e) {
     toast('保存失败: ' + e.message, 'bad');
@@ -23102,7 +23157,9 @@ function renderCreditGrants(data){
     const status = GRANT_STATUS_LABEL[r.status] || String(r.status || '');
     const tone = (r.status === 'expired' || r.status === 'used_up') ? 'bad'
       : (r.status === 'active' ? 'ok' : '');
-    const expiry = r.no_expiry ? '不过期' : String(r.expire_iso || '').slice(5, 16) || '—';
+    const expiry = r.no_expiry
+      ? (r.cycle_reset ? '按月重置' : '不过期')
+      : String(r.expire_iso || '').slice(5, 16) || '—';
     // 来源：上游给了发放原因就用它的原文（如「Buddy 加油站签到」「成长计划奖励」），
     // 没有就按包名与面额推断（国际版的 Bonus Pack 30/50 就是每日活跃奖励）。本机
     // 签到 / 每日活跃的记录按时间对得上时一并挂进悬停提示，指出这次发放对应哪次动作。

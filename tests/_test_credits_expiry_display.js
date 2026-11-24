@@ -18,8 +18,12 @@ function check(label, ok, detail) {
 
 check('prepared packages keep the upstream no_expiry flag',
       /const noExpiry = !!p\.no_expiry;/.test(html));
+check('prepared packages keep the monthly-reset flag',
+      /const cycleReset = !!p\.cycle_reset;/.test(html));
 check('no countdown is derived from CycleEndTime when no_expiry is set',
       /if\(days === null && !noExpiry && endTime/.test(html));
+check('monthly-reset packages get a 长期有效 · 每月重置 badge',
+      /else if\(p\.no_expiry && p\.cycle_reset\)\{[\s\S]{0,160}长期有效 · 每月重置/.test(html));
 check('no_expiry rows render a 长期有效 badge',
       /else if\(p\.no_expiry\)\{\s*expiryBadge = '<span class="badge mini">长期有效<\/span>';/.test(html));
 check('the earliest-expiring fallback skips no_expiry packages',

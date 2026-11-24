@@ -41,6 +41,7 @@ const api = new Function(script + `
     toggleLimitRealms: toggleLimitRealms,
     saveLimits: saveLimits,
     toggleExpiringWindow: toggleExpiringWindow,
+    toggleExpiringIncludeReset: toggleExpiringIncludeReset,
   };`)();
 
 (async () => {
@@ -207,6 +208,25 @@ const api = new Function(script + `
   await api.toggleExpiringWindow({checked: false, disabled: false});
   assert.deepStrictEqual(sent.limits, {expiring_window_days: {global: 0}},
                          '关闭应写 0，不动窗口天数本身');
+
+  // 7b. 按月重置包的开关：默认关，勾选状态跟限额快照走，保存发 0/1。
+  api.applyLimits({limits: {expiring_include_cycle_reset: {global: 0, intl: null, cn: null}}});
+  assert.equal(dom.byId('setExpiringIncludeResetToggle').checked, false,
+               '默认关闭');
+  api.applyLimits({limits: {expiring_include_cycle_reset: {global: 1, intl: null, cn: null}}});
+  assert.equal(dom.byId('setExpiringIncludeResetToggle').checked, true,
+               '快照为 1 时开关应为开');
+
+  sent = null;
+  await api.toggleExpiringIncludeReset({checked: true, disabled: false});
+  assert.deepStrictEqual(sent.limits,
+                         {expiring_include_cycle_reset: {global: 1}},
+                         '开启应写 1');
+  sent = null;
+  await api.toggleExpiringIncludeReset({checked: false, disabled: false});
+  assert.deepStrictEqual(sent.limits,
+                         {expiring_include_cycle_reset: {global: 0}},
+                         '关闭应写 0');
 
   // 8. 收起分版本只隐藏两列，不动全局列。
   api.toggleLimitRealms(false);

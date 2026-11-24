@@ -79,6 +79,10 @@ api.renderCreditGrants({
     row({uid: 'uid-2', nickname: 'hades', realm: 'cn', name: 'Free Plan Subscription',
          size: 100, remain: 100, used: 0, status: 'available', no_expiry: true,
          expire_iso: '2034-12-18 21:27:52', days_left: null}),
+    row({uid: 'uid-6', nickname: 'monthly', realm: 'cn', name: 'CodeBuddy个人体验版',
+         size: 500, remain: 500, used: 0, status: 'available', no_expiry: true,
+         cycle_reset: true, cycle_reset_days_left: 12.5,
+         expire_iso: '2034-12-18 21:27:52', days_left: null}),
     row({uid: 'uid-3', nickname: 'old', name: 'Bonus Pack', size: 30, remain: 0,
          used: 30, status: 'used_up', create_iso: '2026-09-19 02:53:28',
          expire_iso: '2026-10-19 02:53:26'}),
@@ -96,6 +100,7 @@ check('可用但未在扣减的包带「可用」徽章', out.includes('可用')
 check('用完的包带「已用完」徽章', out.includes('已用完'), out);
 check('过期的包带「已过期」徽章', out.includes('已过期'), out);
 check('不过期的包显示「不过期」', out.includes('不过期'), out);
+check('按月重置的包显示「按月重置」', out.includes('按月重置'), out);
 check('上游给了发放原因就原样显示在来源列', out.includes('Buddy 加油站签到'), out);
 check('本机动作关联进来源列的悬停提示',
       out.includes('本机动作：每日签到 10-10 00:07 成功'), out);

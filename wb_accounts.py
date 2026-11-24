@@ -649,6 +649,27 @@ def is_free_cap_model(realm, model):
 #: DeductionEndTime 落在 2034/2035 年，而真实包周期是 14 天或 1 个月。超过
 #: 这个天数就按「不过期」处理，不再参与到期倒计时与临期判定。
 EXPIRY_SENTINEL_DAYS = 730
+#: 一个月度计费周期的合法跨度（含 28/29/31 天的自然月与时区余量）。免费套餐
+#: 与个人体验版的 CycleStartTime/CycleEndTime 就是这个形状：月底重置，但
+#: DeductionEndTime 远在几年后，所以被标成 no_expiry。
+MONTHLY_CYCLE_MIN_DAYS = 20.0
+MONTHLY_CYCLE_MAX_DAYS = 45.0
+
+
+def _package_time_epoch(value):
+    """Parse an upstream package timestamp into a local epoch, or None.
+
+    The upstream uses ``YYYY-MM-DD HH:MM:SS`` (occasionally with a ``T``).
+    Only used for the cycle-reset heuristic; a malformed value is simply
+    "unknown", never an error.
+    """
+    text = str(value or "").replace("T", " ")[:19]
+    if not text:
+        return None
+    try:
+        return time.mktime(time.strptime(text, "%Y-%m-%d %H:%M:%S"))
+    except (OverflowError, ValueError):
+        return None
 
 
 def deduction_end_text(acc):
@@ -1252,6 +1273,11 @@ class Account(object):
         # be written off get spent first. Resolved from the global setting by
         # AccountPool.apply_expiring_window(); 0 disables the preference.
         self.expiring_window_days = 0
+        # Monthly-reset packages are `no_expiry` (their credits never lapse),
+        # but some operators want the monthly allowance spent before it rolls
+        # over. This opt-in is off by default so dispatch behaviour is
+        # unchanged until it is explicitly enabled.
+        self.expiring_include_cycle_reset = False
         # Daily token guard: an account that already burned this many tokens
         # today stops being handed out, so a client that would burn the rest
         # of the day's quota rotates to another account instead of hitting
@@ -1636,6 +1662,33 @@ class Account(object):
                 credits["remain_percent"] = "%.1f%%" % (remain / size * 100.0)
                 credits["used_percent"] = "%.1f%%" % (min(used, size) / size * 100.0)
 
+    def _expiry_days(self, package):
+        """Days until this package lapses, or None when it cannot be judged.
+
+        Normal packages use `days_left`. `no_expiry` packages are normally
+        skipped, but when the monthly-reset opt-in is on, a package the
+        builder marked `cycle_reset` uses the days until its billing cycle
+        ends instead. Enterprise quota is always skipped: its cycle resets the
+        allowance rather than voiding credits.
+        """
+        if not isinstance(package, dict):
+            return None
+        if package.get("package_code") == "enterprise":
+            return None
+        if package.get("is_expired"):
+            return None
+        if package.get("no_expiry"):
+            if not getattr(self, "expiring_include_cycle_reset", False):
+                return None
+            if not package.get("cycle_reset"):
+                return None
+            days = package.get("cycle_reset_days_left")
+        else:
+            days = package.get("days_left")
+        if not isinstance(days, (int, float)) or days < 0:
+            return None
+        return float(days)
+
     def soonest_expiring_days(self):
         """Days until the earliest credit package that still has credits left.
 
@@ -1649,31 +1702,24 @@ class Account(object):
         make those accounts look permanently "about to lapse" - the free plan
         would even look urgent at every month end, when its billing cycle rolls
         over but its credits keep working.
+
+        Monthly-reset packages can opt in through
+        `expiring_include_cycle_reset`; then their billing-cycle end becomes
+        the deadline, because unused allowance is written off at the reset.
         """
         credits = self.credits
         if not isinstance(credits, dict):
             return None
         soonest = None
         for package in (credits.get("packages") or []):
-            if not isinstance(package, dict):
+            days = self._expiry_days(package)
+            if days is None:
                 continue
-            # `no_expiry` is the general rule; the package_code check is a
-            # belt-and-braces guard for credit blobs written before the flag
-            # existed, which are still on disk until the next refresh.
-            if package.get("no_expiry"):
-                continue
-            if package.get("package_code") == "enterprise":
-                continue
-            if package.get("is_expired"):
-                continue
-            days = package.get("days_left")
             remain = package.get("remain")
-            if not isinstance(days, (int, float)) or days < 0:
-                continue
             if not isinstance(remain, (int, float)) or remain <= 0:
                 continue
             if soonest is None or days < soonest:
-                soonest = float(days)
+                soonest = days
         return soonest
 
     def soonest_expiring_remain(self):
@@ -1694,22 +1740,14 @@ class Account(object):
         soonest = None
         remain_of_soonest = None
         for package in (credits.get("packages") or []):
-            if not isinstance(package, dict):
+            days = self._expiry_days(package)
+            if days is None:
                 continue
-            if package.get("no_expiry"):
-                continue
-            if package.get("package_code") == "enterprise":
-                continue
-            if package.get("is_expired"):
-                continue
-            days = package.get("days_left")
             remain = package.get("remain")
-            if not isinstance(days, (int, float)) or days < 0:
-                continue
             if not isinstance(remain, (int, float)) or remain <= 0:
                 continue
             if soonest is None or days < soonest:
-                soonest = float(days)
+                soonest = days
                 remain_of_soonest = float(remain)
         return remain_of_soonest
 
@@ -3302,6 +3340,24 @@ class Account(object):
         if not in_usage and not is_expired and remain > 0 and used > 0:
             in_usage = True
 
+        # 按月重置：免费套餐 / 体验版的抵扣截止远在几年后（no_expiry），但
+        # CycleStartTime→CycleEndTime 是一个月的计费周期，周期结束时会重新发
+        # 额度。把它单独标出来，面板可以显示「长期有效 · 每月重置」，调度也能
+        # 在显式开启后按周期结束时间参与「临期积分优先」。
+        cycle_start_str = acc.get("CycleStartTime") or ""
+        cycle_reset = False
+        cycle_reset_days_left = None
+        if no_expiry and cycle_start_str and end_time_str:
+            start_ts = _package_time_epoch(cycle_start_str)
+            end_ts = _package_time_epoch(end_time_str)
+            if start_ts is not None and end_ts is not None:
+                span_days = (end_ts - start_ts) / 86400.0
+                if MONTHLY_CYCLE_MIN_DAYS <= span_days <= MONTHLY_CYCLE_MAX_DAYS:
+                    cycle_reset = True
+                    left_days = (end_ts - time.time()) / 86400.0
+                    if left_days >= 0:
+                        cycle_reset_days_left = round(left_days, 1)
+
         return {
             "name": pkg_name,
             "package_code": pkg_code,
@@ -3317,10 +3373,12 @@ class Account(object):
             "unit": acc.get("CapacityUnit") or "credits",
             "in_usage": in_usage,
             "auto_renew": bool(acc.get("AutoRenewFlag") or acc.get("SupportAutoRenew")),
-            "cycle_start_time": acc.get("CycleStartTime") or "",
+            "cycle_start_time": cycle_start_str,
             "cycle_end_time": end_time_str,
             "expire_time": expire_time_str,
             "no_expiry": no_expiry,
+            "cycle_reset": cycle_reset,
+            "cycle_reset_days_left": cycle_reset_days_left,
             "days_left": days_left,
             "is_expired": is_expired,
             "status": acc.get("Status", 0),
@@ -4956,7 +5014,7 @@ class AccountPool(object):
                         free_models.get(account.realm) or ())
         return values
 
-    def apply_expiring_window(self, values=None):
+    def apply_expiring_window(self, values=None, include_values=None):
         """Re-resolve the expiring-credits window for every account.
 
         Same shape as apply_reserve_credits(): settings.json holds the window
@@ -4964,14 +5022,23 @@ class AccountPool(object):
         request path needs no extra settings lookup. The window is a dispatch
         preference, not a guard: it never makes an account unavailable, it
         only decides who is handed out first.
+
+        `include_values` is the monthly-reset opt-in
+        (`expiring_include_cycle_reset`), same per-realm shape. It defaults to
+        off; tests that only exercise the window can omit it.
         """
         import wb_settings
 
         if values is None:
             values = wb_settings.limit_values(self.dir, "expiring_window_days")
+        if include_values is None:
+            include_values = wb_settings.limit_values(
+                self.dir, "expiring_include_cycle_reset")
         with self._lock:
             for account in self.accounts:
                 account.expiring_window_days = _realm_limit(values, account.realm)
+                account.expiring_include_cycle_reset = bool(
+                    _realm_limit(include_values, account.realm))
         return values
 
     def apply_remaining_weights(self, weights):

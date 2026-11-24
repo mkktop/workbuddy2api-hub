@@ -35,10 +35,12 @@ def make_account(uid, realm="cn", credits=None, **extra):
     return wb_accounts.Account(data)
 
 
-def credits(*days, package_code="package", remain=100, no_expiry=False):
+def credits(*days, package_code="package", remain=100, no_expiry=False,
+            cycle_reset=False, cycle_reset_days_left=None):
     """A credits blob whose packages expire in the given days.
 
     A None day stands for a package the upstream gave no end date for.
+    ``cycle_reset`` marks the monthly-reset opt-in fixtures.
     """
     packages = []
     for index, day in enumerate(days):
@@ -50,6 +52,8 @@ def credits(*days, package_code="package", remain=100, no_expiry=False):
             "size": remain,
             "days_left": day,
             "no_expiry": no_expiry,
+            "cycle_reset": bool(cycle_reset),
+            "cycle_reset_days_left": cycle_reset_days_left,
             "is_expired": day is not None and day < 0,
         })
     total = remain * len(packages)
@@ -66,22 +70,26 @@ def _epoch_ms(offset_days, base=None):
     return int(stamp.timestamp() * 1000)
 
 
-def raw_package(cycle_end, deduction_end=None, size=100, remain=100, code="pkg"):
+def raw_package(cycle_end, deduction_end=None, size=100, remain=100, code="pkg",
+                cycle_start=None):
     acc = {
         "PackageName": "P", "PackageCode": code,
         "CycleCapacitySize": size, "CycleCapacityRemain": remain,
         "CycleCapacityUsed": size - remain,
         "CycleEndTime": cycle_end,
     }
+    if cycle_start is not None:
+        acc["CycleStartTime"] = cycle_start
     if deduction_end is not None:
         acc["DeductionEndTime"] = deduction_end
     return acc
 
 
-def built_package(cycle_end, deduction_end):
+def built_package(cycle_end, deduction_end, cycle_start=None):
     """A package the way _parse_package_account would have built it."""
     return make_account("helper")._parse_package_account(
-        raw_package(cycle_end=cycle_end, deduction_end=deduction_end))
+        raw_package(cycle_end=cycle_end, deduction_end=deduction_end,
+                    cycle_start=cycle_start))
 
 
 class ExpiringWindowSettingTests(unittest.TestCase):
@@ -104,6 +112,17 @@ class ExpiringWindowSettingTests(unittest.TestCase):
             self.assertEqual(wb_settings.reserve_credits(directory), 0)
             self.assertEqual(wb_settings.daily_credit_limit(directory), 0)
             self.assertEqual(wb_settings.model_daily_token_limit(directory), 0)
+
+    def test_monthly_reset_switch_is_off_by_default_and_round_trips(self):
+        with tempfile.TemporaryDirectory(prefix="expiry-setting-") as directory:
+            self.assertEqual(
+                wb_settings.expiring_include_cycle_reset(directory), 0)
+            self.assertEqual(
+                wb_settings.set_expiring_include_cycle_reset(directory, 1), 1)
+            self.assertEqual(
+                wb_settings.expiring_include_cycle_reset(directory), 1)
+            self.assertEqual(
+                wb_settings.set_expiring_include_cycle_reset(directory, 0), 0)
 
 
 class CreditsRefreshSettingTests(unittest.TestCase):
@@ -175,6 +194,40 @@ class ExpirySemanticsTests(unittest.TestCase):
             ],
         })
         self.assertAlmostEqual(account.soonest_expiring_days(), 5.0, delta=0.2)
+
+    def test_monthly_cycle_is_detected_for_no_expiry_packages(self):
+        account = make_account("s6")
+        package = account._parse_package_account(raw_package(
+            cycle_start=_local_text(-6), cycle_end=_local_text(23),
+            deduction_end=_epoch_ms(365 * 8)))
+        self.assertTrue(package["no_expiry"])
+        self.assertTrue(package["cycle_reset"])
+        self.assertIsNone(package["days_left"])
+        self.assertAlmostEqual(package["cycle_reset_days_left"], 23.0, delta=0.2)
+
+    def test_a_long_span_is_not_a_monthly_cycle(self):
+        account = make_account("s7")
+        package = account._parse_package_account(raw_package(
+            cycle_start=_local_text(-365), cycle_end=_local_text(23),
+            deduction_end=_epoch_ms(365 * 8)))
+        self.assertTrue(package["no_expiry"])
+        self.assertFalse(package["cycle_reset"])
+        self.assertIsNone(package["cycle_reset_days_left"])
+
+    def test_cycle_reset_packages_are_skipped_by_default(self):
+        account = make_account("s8", credits=credits(
+            1, no_expiry=True, cycle_reset=True, cycle_reset_days_left=2.0))
+        # Fixture day=1 is ignored because no_expiry forces the cycle deadline.
+        self.assertFalse(account.expiring_include_cycle_reset)
+        self.assertIsNone(account.soonest_expiring_days())
+
+    def test_cycle_reset_packages_join_when_enabled(self):
+        account = make_account("s9", credits=credits(
+            None, remain=500, no_expiry=True, cycle_reset=True,
+            cycle_reset_days_left=2.5))
+        account.expiring_include_cycle_reset = True
+        self.assertEqual(account.soonest_expiring_days(), 2.5)
+        self.assertEqual(account.soonest_expiring_remain(), 500.0)
 
 
 class SoonestExpiringTests(unittest.TestCase):
@@ -356,6 +409,16 @@ class ApplyWindowTests(unittest.TestCase):
             pool.load()
             self.assertEqual(pool.accounts[0].expiring_window_days, 5)
             self.assertTrue(pool.accounts[0].in_expiring_window())
+
+    def test_pool_copies_the_monthly_reset_opt_in(self):
+        with tempfile.TemporaryDirectory(prefix="expiry-apply-") as directory:
+            wb_settings.set_expiring_include_cycle_reset(directory, 1)
+            pool = wb_accounts.AccountPool(directory, log=lambda _m: None)
+            pool.accounts = [make_account("a1"), make_account("a2", realm="intl")]
+            pool.apply_expiring_window()
+            self.assertEqual(
+                [a.expiring_include_cycle_reset for a in pool.accounts],
+                [True, True])
 
 
 class CreditsRefresherTests(unittest.TestCase):

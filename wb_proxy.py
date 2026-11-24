@@ -7730,6 +7730,8 @@ def credit_grants(now=None):
                 "expire_at": _parse_stamp_epoch(expire_iso),
                 "expire_iso": str(expire_iso),
                 "no_expiry": bool(pkg.get("no_expiry")),
+                "cycle_reset": bool(pkg.get("cycle_reset")),
+                "cycle_reset_days_left": pkg.get("cycle_reset_days_left"),
                 "days_left": pkg.get("days_left"),
                 "status": _grant_status(pkg, now),
                 "action": _grant_action(actions, account.uid, create_at),
@@ -26400,7 +26402,8 @@ class Handler(BaseHTTPRequestHandler):
                 # One pass refreshes all three: a limit edit is rare, and the
                 # guards publish from the same fold anyway.
                 apply_daily_guards(refresh=True)
-            if "expiring_window_days" in touched and POOL:
+            if any(k in touched for k in ("expiring_window_days",
+                                          "expiring_include_cycle_reset")) and POOL:
                 POOL.apply_expiring_window()
 
         if "pricing_enabled" in payload:

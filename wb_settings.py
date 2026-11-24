@@ -857,7 +857,7 @@ def set_auth_disabled(accounts_dir, disabled):
 # and one that does only ever has to reason about a single number per guard.
 LIMIT_KEYS = ("reserve_credits", "daily_token_limit",
               "daily_credit_limit", "model_daily_token_limit",
-              "expiring_window_days")
+              "expiring_window_days", "expiring_include_cycle_reset")
 LIMIT_REALMS = ("intl", "cn")
 LIMIT_SCOPES = ("global",) + LIMIT_REALMS
 LIMITS_KEY = "limits"
@@ -1121,6 +1121,24 @@ def expiring_window_days(accounts_dir, realm=None):
 def set_expiring_window_days(accounts_dir, value):
     """Persist the window. Returns the stored value."""
     return set_limit(accounts_dir, "expiring_window_days", "global", value)["global"]
+
+
+def expiring_include_cycle_reset(accounts_dir, realm=None):
+    """Whether monthly-reset packages join the expiring-credits preference.
+
+    Free-plan / trial packages carry a deduction deadline years out, so they
+    are normally marked `no_expiry`: their credits do not lapse, the billing
+    cycle just rolls over. Some deployments still want to burn the monthly
+    allowance before it resets. This opt-in is off by default so the existing
+    dispatch behaviour is unchanged.
+    """
+    return limit_value(accounts_dir, "expiring_include_cycle_reset", realm)
+
+
+def set_expiring_include_cycle_reset(accounts_dir, value):
+    """Persist the monthly-reset opt-in. Returns the stored value."""
+    return set_limit(accounts_dir, "expiring_include_cycle_reset",
+                     "global", value)["global"]
 
 
 def credits_refresh_hours(accounts_dir):
