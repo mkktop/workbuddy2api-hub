@@ -105,7 +105,7 @@ docker compose up -d            # 首次启动
 docker compose pull && docker compose up -d   # 更新镜像
 ```
 
-- 建议生产环境把 `:latest` 换成固定版本标签（如 `:v2.3.0`），回滚时改回旧标签并 `docker compose up -d` 即可。
+- 建议生产环境把 `:latest` 换成固定版本标签（如 `:v2.4.0`），回滚时改回旧标签并 `docker compose up -d` 即可。
 - Compose 默认以 root（`0:0`）运行；如需以宿主用户运行，设置 `PUID` / `PGID` 并确保 `accounts/`、`usage/` 可写。
 - Docker 镜像在构建阶段已经编译好当前架构的 Go/uTLS 桥，容器内不需要 Go。未设置 `WB_TLS_FINGERPRINT` 时默认 `auto`；如需彻底关闭桥，可加 `- WB_TLS_FINGERPRINT=python`，卷中的账号、设置和用量不会因此改变。
 - 启动后访问 **Web 看板** `http://<主机>:8788/`（默认密码 `admin`，首次登录请修改）与 **API 地址** `http://<主机>:8788/v1`。
@@ -298,12 +298,6 @@ docker compose pull && docker compose up -d
 ```
 
 升级前建议备份 `docker-compose.yml` 与 `accounts/`；回滚时把 `image:` 改回旧版本标签并重新 `up -d`。完整发布纪律与提交规范见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
-
-### Unreleased
-
-- **圣轮界面**：重绘黑白浑天仪的轨道、刻度、扫光和调用动效。总览新增独立的七项读数仪表带，窄屏也可查看完整指标。同步优化导航、卡片和调用序列的层次与可读性。
-- **圣轮功能页**：统一网关、账号、接口、用量、自动化任务、智能体、媒体、设置和日志的布局。设置在宽屏使用分类侧栏，用量指标在手机上双列显示，并改善窄屏筛选、操作按钮和接口文档的排布。
-- **用量热力图**：圣轮皮肤强化了五档灰阶和今天的标记。窄屏优先展示最近几周，可横向翻阅历史，点按日期可查看当天的请求数与 Token。
 
 <a id="security"></a>
 ## 安全与风险
