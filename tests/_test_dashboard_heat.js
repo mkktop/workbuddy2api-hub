@@ -36,4 +36,17 @@ now = new RealDate(2026, 8, 22, 0, 0, 5).getTime();
 build({series});
 assert.match(element('hmGrid').innerHTML, /data-d="2026-09-22" data-r="7"/);
 assert.match(element('hmMeta').textContent, /11/);
+assert.match(element('hmGrid').innerHTML, /data-d="2026-09-22"[^>]*aria-current="date"/);
+
+// Data beyond the displayed dates must not skew the legend or peak-day summary.
+build({series: series.concat({at: new RealDate(2025, 8, 1).getTime() / 1000, requests: 1000})});
+assert.match(element('hmGrid').innerHTML, /class="hm-cell l4" data-d="2026-09-22"/);
+assert.match(element('hmStats').innerHTML, /<b>7<\/b><span>峰值单日 · 09-22/);
+
+now = new RealDate(2026, 8, 27).getTime(); // Sunday completes the last column.
+build({series: [{at: now / 1000, requests: 0}]});
+const dayCount = (element('hmGrid').innerHTML.match(/data-d=/g) || []).length;
+assert.strictEqual(dayCount % 7, 0);
+assert.match(element('hmGrid').style.gridTemplateColumns, new RegExp('^repeat\\(' + dayCount / 7 + ','));
+assert.match(element('hmStats').innerHTML, /<b>—<\/b><span>峰值单日<\/span>/);
 console.log('dashboard heat snapshot assertions passed');

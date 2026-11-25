@@ -81,20 +81,27 @@ const api = new Function(script + `
     }
     return true;
   }
-  return { refresh, waitRefreshIdle, openRecentFailDetail, closeRecentFailDetail,
+  return { refresh, waitRefreshIdle, openRecentFailDetail, showRecentFailDetail, closeRecentFailDetail,
            setRecentFilter, clearRecentFilters, RECENT_FILTERS };`)();
 
 (async () => {
   window.VIEW_REALM = 'intl';
-  await api.refresh();
-
-  const rendered = dom.byId('recent').innerHTML;
   let checks = 0;
   const check = (label, cond, extra) => {
     checks += 1;
     assert.ok(cond, label + (extra ? '  [' + extra + ']' : ''));
   };
 
+  // 实时序列可能先于最近请求表加载，直接传入的失败事件也能打开详情。
+  api.showRecentFailDetail({model: 'live-model', account: 'live-account', status: 503,
+                            outcome: 'failed', message: 'live upstream unavailable'});
+  const mask = dom.byId('recentFailModal');
+  check('最近请求加载前也能显示实时失败详情',
+        mask.classList.contains('show') && dom.byId('recentFailMsg').textContent.includes('live upstream unavailable'));
+  api.closeRecentFailDetail();
+  await api.refresh();
+
+  const rendered = dom.byId('recent').innerHTML;
   const headers = headerLabels(rendered);
   const rows = bodyRows(rendered);
   check('少了那条「失败原因」列（详情只在点开的弹窗里）',
@@ -121,7 +128,6 @@ const api = new Function(script + `
 
   // 点开详情：弹窗要 show，内容要带上码与上游原话，元信息要带模型与账号。
   api.openRecentFailDetail(idx);
-  const mask = dom.byId('recentFailModal');
   check('弹窗被打开（.modal-mask 加 show）', mask.classList.contains('show'), mask.className);
   const msg = dom.byId('recentFailMsg').textContent;
   const meta = dom.byId('recentFailMeta').innerHTML;

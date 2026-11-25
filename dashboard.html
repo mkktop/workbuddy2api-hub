@@ -5957,7 +5957,7 @@ html[data-ui="next"][data-skin="sanctum"]{
   --sct-bad:#ffffff; --sct-bad-soft:rgba(242,242,242,.10);
   --sct-soft:rgba(242,242,242,.06); --sct-soft-2:rgba(242,242,242,.11);
   --sct-on-accent:#050505;
-  --sct-hm0:#0a0a0a; --sct-hm1:#1d1d1d; --sct-hm2:#3a3a3a; --sct-hm3:#8b8b8b; --sct-hm4:#f2f2f2;
+  --sct-hm0:#181818; --sct-hm1:#3c3c3c; --sct-hm2:#717171; --sct-hm3:#adadad; --sct-hm4:#f2f2f2;
   --sct-chart-bar:#f2f2f2; --sct-chart-bar-soft:rgba(242,242,242,.16);
   --sct-chart-line:#c9c9c9; --sct-chart-axis:#5c5c5c; --sct-chart-text:#9a9a9a;
   --sct-terminal-bg:#050505; --sct-terminal-head:#0a0a0a; --sct-terminal-border:rgba(242,242,242,.16);
@@ -5986,7 +5986,7 @@ html[data-ui="next"][data-skin="sanctum"][data-theme="light"]{
   --sct-bad:#000000; --sct-bad-soft:rgba(17,17,17,.09);
   --sct-soft:rgba(17,17,17,.06); --sct-soft-2:rgba(17,17,17,.11);
   --sct-on-accent:#f6f6f6;
-  --sct-hm0:#f6f6f6; --sct-hm1:#cfcfcf; --sct-hm2:#8d8d8d; --sct-hm3:#3d3d3d; --sct-hm4:#111111;
+  --sct-hm0:#ededed; --sct-hm1:#c0c0c0; --sct-hm2:#878787; --sct-hm3:#4f4f4f; --sct-hm4:#111111;
   --sct-chart-bar:#111111; --sct-chart-bar-soft:rgba(17,17,17,.16);
   --sct-chart-line:#4a4a4a; --sct-chart-axis:#888888; --sct-chart-text:#5a5a5a;
   --sct-terminal-bg:#f6f6f6; --sct-terminal-head:#e5e5e5; --sct-terminal-border:rgba(17,17,17,.2);
@@ -6034,7 +6034,7 @@ html[data-ui="next"][data-skin="sanctum"] #pageAnalytics{
 /* ---- 外壳：侧栏、顶栏 ---- */
 html[data-ui="next"][data-skin="sanctum"] body{
   background-color:var(--bg);
-  background-image:radial-gradient(ellipse 110% 70% at 50% -12%,rgba(var(--sct-ink-rgb),.05),transparent 62%);
+  background-image:radial-gradient(ellipse 90% 62% at 74% 0%,var(--sct-soft),transparent 72%);
   background-attachment:fixed;
 }
 html[data-ui="next"][data-skin="sanctum"] ::selection{background:var(--fg);color:var(--bg)}
@@ -6047,25 +6047,26 @@ html[data-ui="next"][data-skin="sanctum"] code,
 html[data-ui="next"][data-skin="sanctum"] pre{border-radius:2px}
 
 html[data-ui="next"][data-skin="sanctum"] #nextSidebar{
-  background:transparent;border-right:1px solid var(--sct-hair);padding:22px 14px 14px;
+  background:linear-gradient(160deg,var(--sct-soft),transparent 45%),var(--panel);
+  border-right:1px solid var(--sct-hair);padding:22px 14px 14px;
 }
 html[data-ui="next"][data-skin="sanctum"] .next-brand{gap:12px;padding:2px 6px 24px}
 html[data-ui="next"][data-skin="sanctum"] .next-brand-mark{
   width:34px;height:34px;flex-basis:34px;border-radius:50%;background:transparent;
   border:1px solid var(--fg);outline:1px solid var(--sct-hair);outline-offset:3px;
-  color:var(--fg);box-shadow:none;font-family:var(--serif);font-weight:500;font-size:15px;
+  color:var(--fg);box-shadow:inset 0 0 0 4px var(--sct-soft);font-family:var(--serif);font-weight:500;font-size:15px;
 }
 html[data-ui="next"][data-skin="sanctum"] .next-brand-text b{
   font-family:var(--serif);font-size:13px;font-weight:500;letter-spacing:.26em;text-transform:uppercase;
 }
 html[data-ui="next"][data-skin="sanctum"] .next-brand-text span{
-  font-family:var(--sct-mono);font-size:8.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim-light);
+  font-family:var(--sct-mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
 }
 html[data-ui="next"][data-skin="sanctum"] .next-nav-label{
-  font-family:var(--sct-mono);font-size:9px;font-weight:500;letter-spacing:.26em;color:var(--dim-light);padding:0 8px 10px;
+  font-family:var(--sct-mono);font-size:10px;font-weight:500;letter-spacing:.16em;color:var(--dim);padding:0 8px 10px;
 }
 html[data-ui="next"][data-skin="sanctum"] .next-nav-item{
-  border-radius:0;padding:9px 10px 9px 16px;color:var(--dim);font-weight:450;letter-spacing:.03em;
+  border-radius:4px;padding:9px 10px 9px 16px;color:var(--dim);font-weight:450;letter-spacing:.03em;
   position:relative;transition:color .15s ease,background .15s ease;
 }
 /* 导航项左侧那一小段线是刻度：悬停伸长，当前页最长。 */
@@ -6076,7 +6077,8 @@ html[data-ui="next"][data-skin="sanctum"] .next-nav-item::before{
 html[data-ui="next"][data-skin="sanctum"] .next-nav-item:hover{background:transparent;color:var(--fg)}
 html[data-ui="next"][data-skin="sanctum"] .next-nav-item:hover::before{width:6px}
 html[data-ui="next"][data-skin="sanctum"] .next-nav-item.active{
-  background:var(--accent-soft);color:var(--fg);font-weight:600;
+  background:linear-gradient(90deg,var(--sct-soft-2),var(--sct-soft));
+  box-shadow:inset 0 0 0 1px var(--sct-hair);color:var(--fg);font-weight:600;
 }
 html[data-ui="next"][data-skin="sanctum"] .next-nav-item.active::before{width:12px}
 html[data-ui="next"][data-skin="sanctum"] .next-nav-item svg{stroke-width:1.2;opacity:.72}
@@ -6100,10 +6102,11 @@ html[data-ui="next"][data-skin="sanctum"] #nextPageTitle{
   font-family:var(--serif);font-size:17px;font-weight:500;letter-spacing:.16em;
 }
 html[data-ui="next"][data-skin="sanctum"] #nextPageDesc{
-  font-family:var(--sct-mono);font-size:10px;letter-spacing:.04em;color:var(--dim-light);
+  font-family:var(--sct-mono);font-size:11px;letter-spacing:.04em;color:var(--dim);
 }
 html[data-ui="next"][data-skin="sanctum"] .next-icon-btn{
-  width:32px;height:32px;flex-basis:32px;border-radius:0;border-color:var(--sct-hair-strong);background:transparent;
+  width:32px;height:32px;flex-basis:32px;padding:0;border-radius:4px;
+  border-color:var(--sct-hair-strong);background:transparent;
 }
 html[data-ui="next"][data-skin="sanctum"] .next-icon-btn:hover{color:var(--fg);border-color:var(--fg)}
 html[data-ui="next"][data-skin="sanctum"] .next-pill{
@@ -6163,7 +6166,8 @@ html[data-ui="next"][data-skin="sanctum"] main section,
 html[data-ui="next"][data-skin="sanctum"] main .card,
 html[data-ui="next"][data-skin="sanctum"] main .panel,
 html[data-ui="next"][data-skin="sanctum"] main .kpi{
-  border-radius:2px;border:1px solid var(--sct-hair);box-shadow:none;background:var(--panel);
+  border-radius:5px;border:1px solid var(--sct-hair);
+  box-shadow:inset 0 1px rgba(var(--sct-ink-rgb),.05);background:var(--panel);
 }
 html[data-ui="next"][data-skin="sanctum"] main section{padding:20px 22px;margin-bottom:20px}
 /* 衬线体只留给英文大标题和顶栏页名：中文字号小又要加粗时，宋体没有对应的
@@ -6325,24 +6329,235 @@ html[data-ui="next"][data-skin="sanctum"] #panelGate button{
   font-family:var(--sct-mono)!important;letter-spacing:.2em!important;
 }
 
-/* ---- 用量页：只换表面 ---- */
-html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .kpi,
-html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .panel{border-radius:2px!important;border-color:var(--sct-hair)!important;box-shadow:none!important}
-html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .kpi .k{font-family:var(--sct-mono);letter-spacing:.14em;text-transform:uppercase!important}
-html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .kpi .v,
-html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .pagetitle{font-family:var(--serif)!important;font-weight:500!important}
-html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .pagetitle{letter-spacing:.12em!important}
+/* ---- 功能页：区块导航、面板与操作栏 ---- */
+html[data-ui="next"][data-skin="sanctum"] main .main-page:not(#pageOverview) > .page-sidebar{
+  padding:7px!important;margin-bottom:16px!important;border:1px solid var(--sct-hair)!important;
+  border-radius:6px;background:linear-gradient(var(--sct-soft),transparent),var(--panel)!important;
+}
+html[data-ui="next"][data-skin="sanctum"] main .main-page:not(#pageOverview) .page-nav-item{
+  font-family:inherit;font-size:11px!important;letter-spacing:.02em;
+  border-radius:3px!important;padding:6px 9px!important;
+}
+html[data-ui="next"][data-skin="sanctum"] main .main-page:not(#pageOverview) .page-nav-item.active{
+  background:var(--sct-soft-2)!important;border-color:var(--line-hover)!important;
+}
+html[data-ui="next"][data-skin="sanctum"] main .main-page:not(#pageOverview) section{
+  min-width:0;background-image:linear-gradient(var(--sct-soft),transparent 130px);border-radius:7px;
+}
+html[data-ui="next"][data-skin="sanctum"] main .main-page:not(#pageOverview) section h2{font-size:15px;letter-spacing:.035em}
+html[data-ui="next"][data-skin="sanctum"] body.win-capped main :is(#pageGateway,#pageAccounts,#pageAgents,#pageMedia,#pageSettings) section{
+  --sct-section-inset:22px;padding-top:0;
+}
+html[data-ui="next"][data-skin="sanctum"] body.win-capped main :is(#pageGateway,#pageAccounts,#pageAgents,#pageMedia,#pageSettings) section > :first-child{
+  padding:12px var(--sct-section-inset);margin-inline:calc(-1 * var(--sct-section-inset));
+  margin-bottom:12px!important;border-bottom:1px solid var(--sct-hair);
+  background:linear-gradient(var(--panel2),var(--panel));
+}
+html[data-ui="next"][data-skin="sanctum"] main .main-page:not(#pageOverview) :is(.console-filterbar,.log-filters){
+  padding:9px!important;gap:8px!important;background:var(--panel2)!important;
+  border:1px solid var(--sct-hair);border-radius:5px!important;
+}
+html[data-ui="next"][data-skin="sanctum"] main .main-page:not(#pageOverview) :is(.table-wrap,.next-table-scroll){border-radius:5px;max-width:100%}
+html[data-ui="next"][data-skin="sanctum"] main .main-page:not(#pageOverview) table thead th{
+  background:var(--panel2)!important;font-size:10px!important;letter-spacing:.04em!important;font-weight:600!important;
+}
+html[data-ui="next"][data-skin="sanctum"] main .main-page:not(#pageOverview) table tbody tr:last-child td{border-bottom:0!important}
+html[data-ui="next"][data-skin="sanctum"] main .main-page:not(#pageOverview) .empty{padding:26px 14px;color:var(--dim);font-size:12px;line-height:1.65}
+html[data-ui="next"][data-skin="sanctum"] main .main-page:not(#pageOverview) :is(button.sec,button.primary){border-radius:4px!important}
+
+/* 模型目录与账号池 */
+html[data-ui="next"][data-skin="sanctum"] #pageGateway .next-page-intro{
+  align-items:center;padding:14px 18px;margin-bottom:14px;border:1px solid var(--sct-hair);
+  border-radius:7px;background:linear-gradient(100deg,var(--sct-soft),transparent),var(--panel);
+}
+html[data-ui="next"][data-skin="sanctum"] #pageGateway .next-page-intro h2{font-size:24px;letter-spacing:.04em}
+html[data-ui="next"][data-skin="sanctum"] #gatewayModelsSection .models-head h2{
+  display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;width:100%;
+}
+html[data-ui="next"][data-skin="sanctum"] #modelPickActions{margin-left:auto!important}
+html[data-ui="next"][data-skin="sanctum"] #modelCatalogFilter{width:clamp(220px,36%,430px);min-width:0}
+html[data-ui="next"][data-skin="sanctum"] #gatewayModelsSection .models-head-detail{width:100%}
+html[data-ui="next"][data-skin="sanctum"] #gatewayModelsSection .models-head-detail button{margin-left:auto}
+html[data-ui="next"][data-skin="sanctum"] #accountsHeader{margin-bottom:12px!important;justify-content:flex-end!important}
+html[data-ui="next"][data-skin="sanctum"] #accountToolbar{flex-wrap:wrap;overflow:visible;gap:7px 10px;padding:4px 0 8px}
+html[data-ui="next"][data-skin="sanctum"] #accountToolbar .tb-group{gap:5px;flex-wrap:wrap;max-width:100%;border-radius:5px}
+html[data-ui="next"][data-skin="sanctum"] #accountsBody .acct-filterbar .console-search{min-width:0}
+html[data-ui="next"][data-skin="sanctum"] #accountsBody .acct-filterbar select{max-width:100%}
+
+/* API 接入 */
+html[data-ui="next"][data-skin="sanctum"] #pageApi .api-page-head{margin-bottom:12px}
+html[data-ui="next"][data-skin="sanctum"] #pageApi .api-page-tabs{gap:4px;padding:5px;border-radius:5px;background:var(--panel)}
+html[data-ui="next"][data-skin="sanctum"] #pageApi .api-page-tab{border-radius:3px;min-height:34px}
+html[data-ui="next"][data-skin="sanctum"] #pageApi .api-page-tab.active{background:var(--fg);border-color:var(--fg);color:var(--sct-on-accent)}
+html[data-ui="next"][data-skin="sanctum"] #pageApi .api-section-head{align-items:center;padding-bottom:12px;border-bottom:1px solid var(--sct-hair)}
+html[data-ui="next"][data-skin="sanctum"] #pageApi .api-doc-list{border-radius:6px;padding:9px}
+html[data-ui="next"][data-skin="sanctum"] #pageApi .api-doc-item{border-radius:4px}
+html[data-ui="next"][data-skin="sanctum"] #pageApi .api-doc-item.active{border-color:var(--sct-hair-strong)}
+html[data-ui="next"][data-skin="sanctum"] #pageApi .api-doc-method{padding:1px 4px;border:1px solid var(--sct-hair-strong);border-radius:3px}
+html[data-ui="next"][data-skin="sanctum"] #pageApi .api-doc-path{overflow-wrap:anywhere;word-break:normal}
+html[data-ui="next"][data-skin="sanctum"] #pageApi .api-doc-contract{border-left-width:2px}
+
+/* ---- 用量页 ---- */
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .pagehead{
+  justify-content:flex-start;gap:8px;padding:9px;border:1px solid var(--sct-hair);
+  border-radius:6px;background:var(--panel);
+}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics #rangeSeg{flex-wrap:wrap;max-width:100%}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics #usageBoardRefresh{margin-inline-start:auto}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics #usageBoardStatus:not(:empty){display:block!important;flex-basis:100%}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics #rangeCustomBox:not([hidden]){display:flex;gap:8px;flex-wrap:wrap;min-width:0}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics #rangeCustomBox input{max-width:100%}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .kpis{
+  gap:1px!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;
+  background:var(--sct-hair);border-color:var(--sct-hair);border-radius:7px;
+}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .kpi{
+  min-width:0;display:flex;flex-direction:column;border:0!important;border-radius:0!important;
+  background:linear-gradient(var(--sct-soft),transparent),var(--panel)!important;
+}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .kpi .k{font-family:inherit;letter-spacing:.04em;white-space:normal;overflow-wrap:anywhere}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .kpi .k .ic{display:none}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .kpi .v{font-family:var(--sct-mono)!important;font-weight:600!important;overflow-wrap:anywhere}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .kpi.big .spark{margin-top:auto;padding-top:6px}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .kpi .ring .hole{inset:7px}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .panel{padding:0;border-color:var(--sct-hair)!important;box-shadow:none!important}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .maingrid .panel{margin-bottom:0}
 html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .phead h2,
-html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .fold summary h2{font-family:inherit!important;font-weight:600!important;letter-spacing:.08em!important}
-html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .fold{border-radius:2px!important;border-color:var(--sct-hair)!important}
-html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .hm-cell{border-radius:0!important}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .fold summary h2{font-family:inherit!important;font-weight:600!important;letter-spacing:.04em!important}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .fold{border-radius:6px!important;border-color:var(--sct-hair)!important}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .pbody:has(> .hm-row){display:grid;gap:9px}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .hm-row{display:contents}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics :is(#hmMeta,#hmSummary){display:none}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics #hmScroll{
+  --hm-cell-size:clamp(10px,1.02vw,15px);--hm-gap:3px;
+  min-width:0;padding:11px 10px 9px 0;border:1px solid var(--sct-hair);border-radius:5px;
+  background:var(--panel2);overscroll-behavior-inline:contain;scrollbar-width:thin;
+}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .hm-wrap{display:flex;width:max-content;margin-inline:auto;gap:8px}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .hm-days{
+  position:sticky;left:0;z-index:1;padding:18px 5px 0 8px;
+  grid-template-rows:repeat(7,var(--hm-cell-size));gap:var(--hm-gap);
+  background:var(--panel2);color:var(--dim);font-size:10px;
+}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .hm-days span{height:var(--hm-cell-size);line-height:var(--hm-cell-size)}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .hm-months{
+  height:14px;margin-bottom:4px;color:var(--dim);
+  font-family:var(--sct-mono);font-size:10px;line-height:14px;
+}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .hm-grid{
+  grid-template-rows:repeat(7,var(--hm-cell-size));grid-auto-columns:var(--hm-cell-size);gap:var(--hm-gap);
+}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .hm-cell{border-radius:2px!important}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics #hmGrid .hm-cell{width:var(--hm-cell-size);height:var(--hm-cell-size)}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics #hmGrid .hm-cell.l0{box-shadow:inset 0 0 0 1px var(--sct-hair)}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics #hmGrid .hm-cell:is(:hover,[aria-current="date"]){
+  outline:1px solid var(--fg);outline-offset:1px;transform:none;
+}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .hm-foot{grid-row:2;justify-content:flex-end;margin:0}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .hm-legend{gap:4px}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .hm-legend .hm-cell{width:11px;height:11px;cursor:default;outline:none;transform:none}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .hm-legend .l0{box-shadow:inset 0 0 0 1px var(--sct-hair)}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .hm-stats{
+  grid-row:3;grid-template-columns:repeat(4,minmax(0,1fr));min-width:0;padding:0;gap:1px;
+  border:1px solid var(--sct-hair);border-radius:5px;overflow:hidden;background:var(--sct-hair);
+}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .hm-stat{min-width:0;padding:9px 12px;background:linear-gradient(var(--sct-soft),transparent),var(--panel)}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .hm-stat b{font-family:var(--sct-mono);font-size:18px;letter-spacing:-.035em}
+html[data-ui="next"][data-skin="sanctum"] #pageAnalytics #hmTip{border-radius:5px;box-shadow:var(--sct-modal-shadow)}
+@media (max-width: 640px){
+  html[data-ui="next"][data-skin="sanctum"] #pageAnalytics #rangeSeg{flex:1 0 100%}
+  html[data-ui="next"][data-skin="sanctum"] #pageAnalytics #usageBoardStatus:not(:empty){flex:1 1 140px;min-width:0}
+  html[data-ui="next"][data-skin="sanctum"] #pageAnalytics #usageBoardRefresh{order:1}
+  html[data-ui="next"][data-skin="sanctum"] #pageAnalytics #rangeCustomBox:not([hidden]){flex-basis:100%}
+  html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .hm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* ---- 自动化、智能体与媒体 ---- */
+html[data-ui="next"][data-skin="sanctum"] #pageTasks .task-realm-panel{
+  padding:14px!important;margin-top:10px!important;border:1px solid var(--sct-hair)!important;border-radius:6px;
+  background:linear-gradient(var(--sct-soft),transparent 105px);
+}
+html[data-ui="next"][data-skin="sanctum"] #pageTasks .task-actions{
+  flex:0 1 auto!important;flex-wrap:wrap!important;justify-content:flex-start!important;max-width:100%;
+}
+html[data-ui="next"][data-skin="sanctum"] #pageTasks .task-realm-panel .cards{grid-template-columns:repeat(auto-fit,minmax(min(175px,100%),1fr))!important}
+html[data-ui="next"][data-skin="sanctum"] #pageTasks :is(#intlDailyChatPanel,#taskLogBox){border:1px solid var(--sct-hair);border-radius:5px!important}
+html[data-ui="next"][data-skin="sanctum"] #agentCardGrid{grid-template-columns:repeat(auto-fit,minmax(min(245px,100%),1fr))!important}
+html[data-ui="next"][data-skin="sanctum"] #agentCardGrid > div{
+  background:linear-gradient(var(--sct-soft),transparent 110px),var(--panel2)!important;
+  border-color:var(--sct-hair)!important;border-radius:6px!important;min-width:0;overflow-wrap:anywhere;
+}
+html[data-ui="next"][data-skin="sanctum"] #pageAgents :is(#agentOpenAIUrl,#agentAnthropicUrl){overflow-wrap:anywhere}
+html[data-ui="next"][data-skin="sanctum"] #mediaSettingsRow{
+  display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(148px,100%),1fr));align-items:end!important;
+}
+html[data-ui="next"][data-skin="sanctum"] #mediaSettingsRow :is(div,label){min-width:0!important}
+html[data-ui="next"][data-skin="sanctum"] #mediaSettingsRow :is(label,button){margin-top:0!important}
+html[data-ui="next"][data-skin="sanctum"] #mediaSettingsRow label{padding:0 9px;border:1px solid var(--sct-hair);border-radius:4px;background:var(--panel2)}
+
+/* ---- 设置与日志 ---- */
+html[data-ui="next"][data-skin="sanctum"] #nextSettingsGroups{width:100%;background:var(--panel);border-color:var(--sct-hair);border-radius:6px;padding:5px}
+html[data-ui="next"][data-skin="sanctum"] #nextSettingsGroups .next-settings-group{border:1px solid transparent;border-radius:3px;min-height:34px;white-space:normal}
+html[data-ui="next"][data-skin="sanctum"] #nextSettingsGroups .next-settings-group.active{border-color:var(--sct-hair-strong);background:var(--sct-soft-2);box-shadow:none}
+html[data-ui="next"][data-skin="sanctum"] #pageSettings .next-settings-head{padding:13px 0 14px;border-bottom:1px solid var(--sct-hair)}
+html[data-ui="next"][data-skin="sanctum"] #pageSettings :is(input,select,textarea){max-width:100%}
+@media (min-width: 1060px){
+  html[data-ui="next"][data-skin="sanctum"] #pageSettings > .page-nav-body{display:flow-root!important;padding-inline-start:172px}
+  html[data-ui="next"][data-skin="sanctum"] #nextSettingsGroups{
+    position:sticky;top:70px;float:left;width:156px;margin-left:-172px;
+    align-items:stretch;flex-direction:column;
+  }
+  html[data-ui="next"][data-skin="sanctum"] #nextSettingsGroups .next-settings-group{text-align:left}
+}
+html[data-ui="next"][data-skin="sanctum"] #pageLogs .log-controls{
+  margin-bottom:8px!important;padding:10px 12px;border:1px solid var(--sct-hair);border-radius:6px;
+  background:linear-gradient(var(--sct-soft),transparent),var(--panel);
+}
+html[data-ui="next"][data-skin="sanctum"] #pageLogs .log-filters{box-shadow:none!important;margin-bottom:8px!important}
+html[data-ui="next"][data-skin="sanctum"] #pageLogs .log-filters > div{max-width:100%}
+html[data-ui="next"][data-skin="sanctum"] #pageLogs .log-filters .log-search-wrap{flex:1 1 205px!important;min-width:0!important}
+html[data-ui="next"][data-skin="sanctum"] #pageLogs .log-viewport{border-radius:7px!important;box-shadow:none!important}
+html[data-ui="next"][data-skin="sanctum"] #pageLogs .log-viewport-head{gap:6px;flex-wrap:wrap;border-bottom-color:var(--sct-hair)!important}
+html[data-ui="next"][data-skin="sanctum"] #logTerminalBody{height:clamp(300px,64vh,720px)!important;padding:4px 10px!important}
+html[data-ui="next"][data-skin="sanctum"] #logTerminalBody .log-line{border-radius:0;border-bottom:1px solid var(--sct-hair);padding:6px 4px;font-size:11.5px}
+html[data-ui="next"][data-skin="sanctum"] #logTerminalBody .log-line:hover{background:var(--sct-soft)}
+html[data-ui="next"][data-skin="sanctum"] #logTerminalBody .log-msg{min-width:0;word-break:normal;overflow-wrap:anywhere}
+
+@media (max-width: 1260px){
+  html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media (max-width: 760px){
+  html[data-ui="next"][data-skin="sanctum"] #pageApi .api-doc-list{display:grid;overflow:visible}
+  html[data-ui="next"][data-skin="sanctum"] #pageApi .api-doc-item{min-width:0;display:grid;grid-template-columns:42px minmax(0,1fr);align-items:start;gap:7px}
+}
+@media (max-width: 640px){
+  html[data-ui="next"][data-skin="sanctum"] #accountsHeader{justify-content:flex-start!important}
+  html[data-ui="next"][data-skin="sanctum"] #accountsBody .acct-filterbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:center}
+  html[data-ui="next"][data-skin="sanctum"] #accountsBody .acct-filterbar .console-search{grid-column:1 / -1;min-height:36px}
+  html[data-ui="next"][data-skin="sanctum"] #accountsBody .acct-filterbar select{min-width:0;min-height:34px}
+  html[data-ui="next"][data-skin="sanctum"] #accountsBody .acct-filterbar button{grid-column:1 / -1}
+  html[data-ui="next"][data-skin="sanctum"] #modelPickActions{width:100%;margin-left:0!important}
+  html[data-ui="next"][data-skin="sanctum"] #modelCatalogFilter{width:100%}
+  html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .kpi{padding:10px!important}
+  html[data-ui="next"][data-skin="sanctum"] #pageAnalytics .kpi .v{font-size:20px!important}
+  html[data-ui="next"][data-skin="sanctum"] #pageTasks .task-realm-panel{padding:10px!important}
+  html[data-ui="next"][data-skin="sanctum"] #pageSettings #nextSettingsGroups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  html[data-ui="next"][data-skin="sanctum"] #pageSettings .next-settings-group{padding:5px}
+  html[data-ui="next"][data-skin="sanctum"] #pageSettings .next-settings-head{padding-top:0}
+}
+@media (max-width: 520px){
+  html[data-ui="next"][data-skin="sanctum"] body.win-capped main :is(#pageGateway,#pageAccounts,#pageAgents,#pageMedia,#pageSettings) section{
+    --sct-section-inset:13px;
+  }
+}
 
 /* ---- 手机壳 ---- */
 html[data-ui="next"][data-skin="sanctum"] .next-more-item{border-radius:2px;border-color:var(--sct-hair-strong)}
 html[data-ui="next"][data-skin="sanctum"] .next-more-item.active{border-color:var(--fg);background:var(--accent-soft);color:var(--fg)}
 html[data-ui="next"][data-skin="sanctum"] .next-more-item.active svg{color:var(--fg)}
 html[data-ui="next"][data-skin="sanctum"] .next-more-system{font-family:var(--sct-mono);border-radius:0}
-html[data-ui="next"][data-skin="sanctum"] .next-bottom-item{border-radius:0;font-family:var(--sct-mono)}
+html[data-ui="next"][data-skin="sanctum"] .next-bottom-item{border-radius:4px;color:var(--dim);font-family:var(--sct-mono)}
 html[data-ui="next"][data-skin="sanctum"] .next-bottom-item.active{color:var(--fg);background:var(--accent-soft)}
 html[data-ui="next"][data-skin="sanctum"] .next-more-panel{border-radius:0;box-shadow:none;border:1px solid var(--sct-hair-strong)}
 
@@ -6382,130 +6597,156 @@ html[data-ui="next"][data-skin="sanctum"] .log-lvl.lvl-ERROR{border-style:double
 html[data-ui="next"][data-skin="sanctum"] .log-lvl.lvl-DEBUG{color:var(--sct-dim)!important}
 html[data-ui="next"][data-skin="sanctum"] div[style*="border-bottom:1px solid #2b2820"]{border-bottom-color:var(--sct-terminal-border)!important}
 
-/* ============================================================
-   首页舞台：画布 + 四角刻度 + 两栏（场景 / 调用序列）
-   不开皮肤时整块隐藏。
-   ============================================================ */
+/* ---- 总览：实时浑天仪、调用序列和七项读数 ---- */
 html:not([data-ui="next"][data-skin="sanctum"]) #sanctumStage{display:none!important}
+html[data-ui="next"][data-skin="sanctum"] #gatewayPageHead{display:none!important}
+/* 调用序列独立滚动，舞台不走通用窗口限高和首行吸顶。 */
 html[data-ui="next"][data-skin="sanctum"] #sanctumStage{
-  display:grid;grid-template-columns:minmax(0,1fr) clamp(300px,27vw,400px);
-  margin:0 0 22px;padding:0;border:1px solid var(--sct-hair);border-radius:2px;background:var(--panel);
-  min-height:clamp(420px,62vh,720px);
+  --sct-scene-height:clamp(410px,58vh,600px);
+  display:grid;grid-template-columns:minmax(0,1fr) clamp(276px,25vw,368px);
+  margin:0 0 22px;max-height:none;padding:0;overflow:hidden;border:1px solid var(--sct-hair-strong);border-radius:8px;
+  background:var(--panel);box-shadow:0 16px 44px rgba(0,0,0,.16);
 }
 html[data-ui="next"][data-skin="sanctum"] #sanctumScene{
-  position:relative;min-width:0;min-height:clamp(420px,62vh,720px);overflow:hidden;
-  background:radial-gradient(ellipse 62% 58% at 50% 50%,rgba(var(--sct-ink-rgb),.055),transparent 72%);
+  grid-area:1 / 1;display:grid;grid-template-rows:auto minmax(0,1fr) auto;min-width:0;height:var(--sct-scene-height);
+  position:static;padding:0;background:transparent;
+}
+html[data-ui="next"][data-skin="sanctum"] .sct-scene-head{
+  padding:20px 24px 4px;
+  background:linear-gradient(115deg,var(--sct-soft),transparent 76%);
+}
+html[data-ui="next"][data-skin="sanctum"] #sanctumScene .sct-title{
+  margin:0;font-family:var(--sct-serif);font-size:clamp(24px,2.4vw,34px);font-weight:600;
+  letter-spacing:.06em;line-height:1.12;color:var(--fg);
+}
+html[data-ui="next"][data-skin="sanctum"] .sct-sub{
+  margin:7px 0 0;font-family:var(--sct-mono);font-size:11px;line-height:1.4;color:var(--dim);
+}
+html[data-ui="next"][data-skin="sanctum"] .sct-viewport{
+  position:relative;overflow:hidden;isolation:isolate;
+  background:radial-gradient(ellipse at 50% 52%,rgba(var(--sct-ink-rgb),.12),transparent 65%);
+}
+html[data-ui="next"][data-skin="sanctum"] .sct-viewport::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(to right,rgba(var(--sct-ink-rgb),.065) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(var(--sct-ink-rgb),.065) 1px,transparent 1px);
+  background-size:32px 32px;background-position:center;
+  mask-image:radial-gradient(ellipse 66% 69% at center,#000,transparent 88%);
 }
 html[data-ui="next"][data-skin="sanctum"] #sanctumCanvas{
   position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none;
 }
 html[data-ui="next"][data-skin="sanctum"] #sanctumCanvas:active{cursor:grabbing}
-/* 四角刻度 */
 html[data-ui="next"][data-skin="sanctum"] .sct-corner{
-  position:absolute;width:16px;height:16px;pointer-events:none;z-index:2;border:0 solid var(--sct-hair-strong);
+  position:absolute;width:18px;height:18px;pointer-events:none;border:0 solid var(--sct-hair-strong);
 }
-html[data-ui="next"][data-skin="sanctum"] .sct-corner.tl{top:10px;left:10px;border-top-width:1px;border-left-width:1px}
-html[data-ui="next"][data-skin="sanctum"] .sct-corner.tr{top:10px;right:10px;border-top-width:1px;border-right-width:1px}
-html[data-ui="next"][data-skin="sanctum"] .sct-corner.bl{bottom:10px;left:10px;border-bottom-width:1px;border-left-width:1px}
-html[data-ui="next"][data-skin="sanctum"] .sct-corner.br{bottom:10px;right:10px;border-bottom-width:1px;border-right-width:1px}
-/* 文字层 */
-html[data-ui="next"][data-skin="sanctum"] .sct-hud{position:absolute;z-index:2;pointer-events:none}
-html[data-ui="next"][data-skin="sanctum"] .sct-hud-tl{top:26px;left:30px;max-width:60%}
-html[data-ui="next"][data-skin="sanctum"] .sct-hud-tr{top:26px;right:30px;text-align:right}
-html[data-ui="next"][data-skin="sanctum"] .sct-hud-bl{bottom:24px;left:30px;pointer-events:auto}
-html[data-ui="next"][data-skin="sanctum"] .sct-hud-br{bottom:26px;right:30px;text-align:right}
-html[data-ui="next"][data-skin="sanctum"] .sct-eyebrow{
-  font-family:var(--sct-mono);font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--dim-light);
+html[data-ui="next"][data-skin="sanctum"] .sct-corner.tl{top:12px;left:24px;border-top-width:1px;border-left-width:1px}
+html[data-ui="next"][data-skin="sanctum"] .sct-corner.tr{top:12px;right:24px;border-top-width:1px;border-right-width:1px}
+html[data-ui="next"][data-skin="sanctum"] .sct-corner.bl{bottom:12px;left:24px;border-bottom-width:1px;border-left-width:1px}
+html[data-ui="next"][data-skin="sanctum"] .sct-corner.br{bottom:12px;right:24px;border-bottom-width:1px;border-right-width:1px}
+html[data-ui="next"][data-skin="sanctum"] .sct-toolbar{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 24px 14px;
 }
-html[data-ui="next"][data-skin="sanctum"] .sct-title{
-  margin-top:4px;font-family:var(--serif);font-size:clamp(20px,2.3vw,30px);font-weight:500;
-  letter-spacing:.3em;line-height:1.15;color:var(--fg);text-shadow:var(--sct-glow);
-}
-html[data-ui="next"][data-skin="sanctum"] .sct-rule{width:64px;height:1px;background:var(--sct-hair-strong);margin:12px 0 8px}
-html[data-ui="next"][data-skin="sanctum"] .sct-sub{font-family:var(--sct-mono);font-size:10px;letter-spacing:.1em;color:var(--dim)}
-/* 右上：四项读数 */
-html[data-ui="next"][data-skin="sanctum"] .sct-read{
-  display:grid;grid-template-columns:auto auto;gap:8px 18px;align-items:baseline;
-  font-family:var(--sct-mono);font-variant-numeric:tabular-nums;
-}
-html[data-ui="next"][data-skin="sanctum"] .sct-read-label{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim-light);text-align:right}
-html[data-ui="next"][data-skin="sanctum"] .sct-read-value{font-size:15px;color:var(--fg);text-align:left;min-width:64px}
-/* 左下：操作与图例 */
-html[data-ui="next"][data-skin="sanctum"] .sct-actions{display:flex;gap:8px;flex-wrap:wrap}
+html[data-ui="next"][data-skin="sanctum"] .sct-actions{display:flex;gap:7px;flex-wrap:wrap}
 html[data-ui="next"][data-skin="sanctum"] .sct-btn{
-  appearance:none;border:0;background:transparent;color:var(--dim);cursor:pointer;
-  font-family:var(--sct-mono);font-size:10px;letter-spacing:.12em;padding:5px 2px;border-radius:0;
+  appearance:none;border:1px solid var(--sct-hair-strong);background:var(--sct-soft);color:var(--fg);
+  cursor:pointer;font-family:var(--sct-mono);font-size:11px;line-height:1.3;min-height:32px;padding:6px 10px;border-radius:4px;
 }
-html[data-ui="next"][data-skin="sanctum"] .sct-btn::before{content:'[ '}
-html[data-ui="next"][data-skin="sanctum"] .sct-btn::after{content:' ]'}
-html[data-ui="next"][data-skin="sanctum"] .sct-btn:hover{color:var(--fg)}
+html[data-ui="next"][data-skin="sanctum"] .sct-btn:hover{border-color:var(--fg);background:var(--sct-soft-2)}
 html[data-ui="next"][data-skin="sanctum"] .sct-btn:focus-visible{outline:1px solid var(--fg);outline-offset:2px}
-html[data-ui="next"][data-skin="sanctum"] .sct-legend{
-  margin-top:12px;display:grid;grid-template-columns:auto auto auto;gap:3px 10px;align-items:baseline;
-  font-family:var(--sct-mono);font-size:9.5px;letter-spacing:.04em;color:var(--dim);
-}
-html[data-ui="next"][data-skin="sanctum"] .sct-legend-numeral{color:var(--dim-light);text-align:right}
-html[data-ui="next"][data-skin="sanctum"] .sct-legend-value{text-align:right;color:var(--fg);font-variant-numeric:tabular-nums;min-width:52px}
-html[data-ui="next"][data-skin="sanctum"] .sct-hint{font-family:var(--sct-mono);font-size:9.5px;letter-spacing:.1em;color:var(--dim-light)}
+html[data-ui="next"][data-skin="sanctum"] .sct-hint{font-family:var(--sct-mono);font-size:10px;color:var(--dim);text-align:right}
 html[data-ui="next"][data-skin="sanctum"] .sct-tip{
-  position:absolute;z-index:4;pointer-events:none;max-width:280px;padding:7px 10px;
-  border:1px solid var(--sct-hair-strong);background:var(--panel);color:var(--fg);
-  font-family:var(--sct-mono);font-size:10.5px;line-height:1.6;white-space:pre-line;
+  position:absolute;z-index:4;pointer-events:none;max-width:min(280px,calc(100% - 16px));padding:7px 10px;
+  border:1px solid var(--sct-hair-strong);border-radius:4px;background:var(--panel);color:var(--fg);
+  font-family:var(--sct-mono);font-size:11px;line-height:1.6;white-space:pre-line;overflow-wrap:anywhere;
 }
 html[data-ui="next"][data-skin="sanctum"] [hidden].sct-tip{display:none}
-/* 画布不可用时的兜底说明 */
 html[data-ui="next"][data-skin="sanctum"] .sct-fallback{
-  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:1;
-  font-family:var(--sct-mono);font-size:11px;letter-spacing:.16em;color:var(--dim);
+  position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;
+  font-family:var(--sct-mono);font-size:12px;color:var(--dim);pointer-events:none;
 }
 html[data-ui="next"][data-skin="sanctum"] #sanctumScene[data-live="1"] .sct-fallback{display:none}
 
-/* 右栏：调用序列 */
+/* 右栏随场景保持等高，历史条目在栏内滚动。 */
 html[data-ui="next"][data-skin="sanctum"] .sct-ledger{
-  display:flex;flex-direction:column;min-height:0;max-height:clamp(420px,62vh,720px);
-  border-left:1px solid var(--sct-hair);background:var(--panel);
+  grid-area:1 / 2;display:flex;flex-direction:column;min-width:0;height:var(--sct-scene-height);
+  border-left:1px solid var(--sct-hair);background:linear-gradient(var(--sct-soft),transparent 96px),var(--panel);
 }
 html[data-ui="next"][data-skin="sanctum"] .sct-panel-head{
-  display:flex;align-items:baseline;justify-content:space-between;gap:10px;
-  padding:14px 16px 12px;border-bottom:1px solid var(--sct-hair);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:17px 16px;border-bottom:1px solid var(--sct-hair);
 }
-html[data-ui="next"][data-skin="sanctum"] .sct-panel-title{font-family:var(--sct-mono);font-size:11.5px;letter-spacing:.12em;color:var(--fg)}
+html[data-ui="next"][data-skin="sanctum"] .sct-panel-title{margin:0;color:var(--fg)}
 html[data-ui="next"][data-skin="sanctum"] .sct-feed{
-  font-family:var(--sct-mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim-light);white-space:nowrap;
+  display:inline-flex;align-items:center;gap:6px;padding:4px 7px;border:1px solid var(--sct-hair);
+  border-radius:4px;font-family:var(--sct-mono);font-size:10px;color:var(--dim);white-space:nowrap;
 }
 html[data-ui="next"][data-skin="sanctum"] .sct-feed::before{
-  content:'';display:inline-block;width:6px;height:6px;margin-right:7px;border:1px solid currentColor;vertical-align:1px;
+  content:'';width:6px;height:6px;border:1px solid currentColor;border-radius:50%;
 }
 html[data-ui="next"][data-skin="sanctum"] .sct-feed.is-live{color:var(--fg)}
 html[data-ui="next"][data-skin="sanctum"] .sct-feed.is-live::before{background:currentColor;box-shadow:var(--sct-glow)}
 html[data-ui="next"][data-skin="sanctum"] .sct-ledger-rows{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain}
 html[data-ui="next"][data-skin="sanctum"] .sct-row{
-  display:grid;grid-template-columns:60px 14px minmax(0,1fr) auto;gap:0 8px;align-items:baseline;
-  padding:8px 16px;border-bottom:1px solid var(--sct-hair);
+  display:grid;grid-template-columns:16px minmax(0,1fr) auto;gap:5px 8px;align-items:center;
+  padding:11px 16px;border-bottom:1px solid var(--sct-hair);
   font-family:var(--sct-mono);font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums;
   transition:background .12s ease;
 }
+html[data-ui="next"][data-skin="sanctum"] .sct-row:focus-visible{outline-offset:-2px}
 html[data-ui="next"][data-skin="sanctum"] .sct-row:hover,
 html[data-ui="next"][data-skin="sanctum"] .sct-row.is-focus{background:var(--accent-soft);color:var(--fg)}
 html[data-ui="next"][data-skin="sanctum"] .sct-row.is-fail{cursor:pointer}
 html[data-ui="next"][data-skin="sanctum"] .sct-row.is-new{animation:sctRowIn .6s ease-out}
-html[data-ui="next"][data-skin="sanctum"] .sct-row-time{color:var(--dim-light)}
-html[data-ui="next"][data-skin="sanctum"] .sct-row-mark{text-align:center;font-weight:700}
-html[data-ui="next"][data-skin="sanctum"] .sct-row-mark.ok{color:var(--fg)}
-html[data-ui="next"][data-skin="sanctum"] .sct-row-mark.bad{color:var(--fg);font-weight:800}
-html[data-ui="next"][data-skin="sanctum"] .sct-row-mark.mute{color:var(--dim-light);font-weight:400}
-html[data-ui="next"][data-skin="sanctum"] .sct-row-model{color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-html[data-ui="next"][data-skin="sanctum"] .sct-row-meta{color:var(--dim-light);white-space:nowrap}
+html[data-ui="next"][data-skin="sanctum"] .sct-row-mark{
+  display:grid;place-items:center;align-self:start;width:16px;height:16px;line-height:1;
+  color:var(--fg);border:1px solid var(--sct-hair-strong);border-radius:3px;
+}
+html[data-ui="next"][data-skin="sanctum"] .sct-row-mark.ok{background:var(--fg);border-color:var(--fg);color:var(--panel)}
+html[data-ui="next"][data-skin="sanctum"] .sct-row-mark.bad{border-color:var(--fg);font-weight:700}
+html[data-ui="next"][data-skin="sanctum"] .sct-row-mark.mute{border-style:dashed;color:var(--dim)}
+html[data-ui="next"][data-skin="sanctum"] .sct-row-model{color:var(--fg);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html[data-ui="next"][data-skin="sanctum"] .sct-row-meta{color:var(--fg);white-space:nowrap}
 html[data-ui="next"][data-skin="sanctum"] .sct-row-detail{
-  grid-column:1 / -1;display:flex;gap:0 12px;flex-wrap:wrap;font-size:10px;color:var(--dim-light);padding-top:2px;
+  grid-column:2 / -1;display:flex;align-items:baseline;gap:2px 7px;flex-wrap:wrap;font-size:10px;color:var(--dim);
+  line-height:1.45;overflow-wrap:anywhere;
 }
 html[data-ui="next"][data-skin="sanctum"] .sct-empty{
-  padding:34px 18px;text-align:center;font-family:var(--sct-mono);font-size:10px;
-  letter-spacing:.18em;color:var(--dim-light);line-height:2;
+  display:grid;align-content:center;justify-items:center;gap:7px;min-height:100%;padding:24px 20px;
+  text-align:center;font-size:12px;color:var(--dim);line-height:1.55;
 }
+html[data-ui="next"][data-skin="sanctum"] .sct-empty::before{
+  content:'';width:32px;height:32px;margin-bottom:5px;border:1px solid var(--sct-hair-strong);
+  border-radius:50%;box-shadow:inset 0 0 0 6px var(--sct-soft);
+  background:
+    linear-gradient(var(--sct-hair-strong),var(--sct-hair-strong)) center/12px 1px,
+    linear-gradient(var(--sct-hair-strong),var(--sct-hair-strong)) center/1px 12px;
+  background-repeat:no-repeat;
+}
+html[data-ui="next"][data-skin="sanctum"] .sct-empty strong{color:var(--fg);font-size:14px;font-weight:600}
 html[data-ui="next"][data-skin="sanctum"] .sct-panel-foot{
-  padding:10px 16px;border-top:1px solid var(--sct-hair);
-  font-family:var(--sct-mono);font-size:9px;letter-spacing:.14em;color:var(--dim-light);
+  padding:10px 16px;border-top:1px solid var(--sct-hair);font-size:11px;color:var(--dim);
+}
+
+/* 七项读数的编号对应浑天仪由内向外的轨道。 */
+html[data-ui="next"][data-skin="sanctum"] .sct-legend{
+  grid-row:2;grid-column:1 / -1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;margin:0;
+  border-top:1px solid var(--sct-hair);background:var(--sct-hair);
+}
+html[data-ui="next"][data-skin="sanctum"] .sct-legend-item{
+  display:flex;flex-direction:column;justify-content:space-between;gap:6px;
+  min-width:0;padding:10px 14px 12px;background:linear-gradient(var(--sct-soft),transparent),var(--panel);
+}
+html[data-ui="next"][data-skin="sanctum"] .sct-legend-label{
+  font-size:11px;line-height:1.3;color:var(--dim);
+}
+html[data-ui="next"][data-skin="sanctum"] .sct-legend-numeral{
+  display:inline-block;margin-right:5px;font-family:var(--sct-mono);color:var(--fg);font-weight:600;
+}
+html[data-ui="next"][data-skin="sanctum"] .sct-legend-value{
+  margin:0;font-family:var(--sct-mono);font-size:clamp(17px,1.55vw,24px);line-height:1.1;
+  letter-spacing:-.05em;color:var(--fg);font-variant-numeric:tabular-nums;
 }
 /* 总览上原本只在控制台布局里露面的洞察区，这里作为舞台下方的仪盘显示。 */
 html[data-ui="next"][data-skin="sanctum"] .console-insights{
@@ -6520,17 +6761,31 @@ html[data-ui="next"][data-skin="sanctum"] .console-insight-note{font-family:var(
 
 @media (max-width: 1100px){
   html[data-ui="next"][data-skin="sanctum"] #sanctumStage{grid-template-columns:minmax(0,1fr)}
-  html[data-ui="next"][data-skin="sanctum"] #sanctumScene{min-height:clamp(320px,48vh,520px)}
-  html[data-ui="next"][data-skin="sanctum"] .sct-ledger{border-left:0;border-top:1px solid var(--sct-hair);max-height:340px}
+  html[data-ui="next"][data-skin="sanctum"] #sanctumScene{height:clamp(370px,54vh,520px)}
+  html[data-ui="next"][data-skin="sanctum"] .sct-ledger{grid-area:3 / 1;border-left:0;border-top:1px solid var(--sct-hair);height:280px}
   html[data-ui="next"][data-skin="sanctum"] .console-insights{grid-template-columns:minmax(0,1fr)}
 }
-@media (max-width: 600px){
-  html[data-ui="next"][data-skin="sanctum"] .sct-hud-tl{top:20px;left:22px}
-  html[data-ui="next"][data-skin="sanctum"] .sct-hud-tr,
+@media (max-width: 740px){
+  html[data-ui="next"][data-skin="sanctum"] .sct-legend{grid-template-columns:repeat(12,minmax(0,1fr))}
+  html[data-ui="next"][data-skin="sanctum"] .sct-legend-item{grid-column:span 3}
+  html[data-ui="next"][data-skin="sanctum"] .sct-legend-item:nth-child(n+5){grid-column:span 4}
+}
+@media (max-width: 480px){
+  html[data-ui="next"][data-skin="sanctum"] #sanctumScene{height:clamp(325px,47svh,380px)}
+  html[data-ui="next"][data-skin="sanctum"] .sct-scene-head,
+  html[data-ui="next"][data-skin="sanctum"] .sct-toolbar{padding-left:16px;padding-right:16px}
+  html[data-ui="next"][data-skin="sanctum"] .sct-corner.tl,
+  html[data-ui="next"][data-skin="sanctum"] .sct-corner.bl{left:16px}
+  html[data-ui="next"][data-skin="sanctum"] .sct-corner.tr,
+  html[data-ui="next"][data-skin="sanctum"] .sct-corner.br{right:16px}
+  html[data-ui="next"][data-skin="sanctum"] .sct-legend-item{padding:9px 8px}
+  html[data-ui="next"][data-skin="sanctum"] .sct-legend-numeral{display:block;margin:0 0 2px}
+  html[data-ui="next"][data-skin="sanctum"] .sct-legend-value{font-size:16px}
+}
+@media (pointer: coarse){
+  html[data-ui="next"][data-skin="sanctum"] #sanctumCanvas{touch-action:pan-y}
+  html[data-ui="next"][data-skin="sanctum"] .sct-btn{min-height:40px}
   html[data-ui="next"][data-skin="sanctum"] .sct-hint{display:none}
-  html[data-ui="next"][data-skin="sanctum"] .sct-hud-bl{bottom:20px;left:22px}
-  html[data-ui="next"][data-skin="sanctum"] .sct-title{font-size:19px}
-  html[data-ui="next"][data-skin="sanctum"] .sct-legend{display:none}
 }
 @media (prefers-reduced-motion: reduce){
   html[data-ui="next"][data-skin="sanctum"] .sct-row{animation:none!important;transition:none!important}
@@ -6801,46 +7056,38 @@ html[data-ui="next"][data-skin="sanctum"] .console-insight-note{font-family:var(
     <h2 id="gatewayPageTitle" style="margin:0;font-size:17px;color:var(--fg);font-family:var(--serif);font-weight:600;letter-spacing:.02em">网关与账号</h2>
     <div id="gatewayPageDesc" style="font-size:12px;color:var(--dim);margin-top:4px">管理账号池与代理出口，查看当日调用量、估算花费、成功率、最近请求与网关模型清单。</div>
   </div>
-  <!-- 圣轮舞台（只在圣轮皮肤下显示）：画布 + 四角刻度 + 文字层，右栏是调用序列。
+  <!-- 圣轮舞台（只在圣轮皮肤下显示）：实时画布、调用序列和七项读数。
        这一块的文案由文末的圣轮脚本按当前语言自己渲染——整块标了 data-no-i18n，
        词典和代码放在一起，不散落到上面的表里。
        不放在页首：新导航靠「#pageOverview 的第一个 div」隐藏旧标题块。
        不用 <table>：有套件靠文件里第一个 <thead> 定位。 -->
   <section id="sanctumStage" data-no-i18n aria-label="网关实时调用">
     <div id="sanctumScene">
-      <canvas id="sanctumCanvas" role="img" aria-label="网关实时调用图"></canvas>
-      <div class="sct-fallback" id="sanctumFallback">正在启动实时视图</div>
-      <span class="sct-corner tl" aria-hidden="true"></span>
-      <span class="sct-corner tr" aria-hidden="true"></span>
-      <span class="sct-corner bl" aria-hidden="true"></span>
-      <span class="sct-corner br" aria-hidden="true"></span>
-      <div class="sct-hud sct-hud-tl">
-        <div class="sct-eyebrow" id="sanctumEyebrow">GATEWAY OBSERVATORY</div>
-        <div class="sct-title">WORKBUDDY</div>
-        <div class="sct-rule" aria-hidden="true"></div>
-        <div class="sct-sub" id="sanctumMotto">每一次调用，都有迹可循</div>
+      <div class="sct-scene-head">
+        <h2 class="sct-title" id="sanctumTitle">圣轮</h2>
+        <p class="sct-sub" id="sanctumMotto">网关实时调用 · 最近 60 秒</p>
       </div>
-      <div class="sct-hud sct-hud-tr">
-        <div class="sct-read">
-          <span class="sct-read-label" id="sanctumPerMinLabel">调用 / 分钟</span><span class="sct-read-value" id="sanctumPerMin">0</span>
-          <span class="sct-read-label" id="sanctumLiveLabel">在途</span><span class="sct-read-value" id="sanctumLive">0</span>
-          <span class="sct-read-label" id="sanctumTokLabel">输出 token / 秒</span><span class="sct-read-value" id="sanctumTok">0</span>
-          <span class="sct-read-label" id="sanctumOkLabel">成功</span><span class="sct-read-value" id="sanctumOk">—</span>
-        </div>
+      <div class="sct-viewport" id="sanctumViewport">
+        <canvas id="sanctumCanvas" role="img" aria-label="网关实时调用图"></canvas>
+        <span class="sct-corner tl" aria-hidden="true"></span>
+        <span class="sct-corner tr" aria-hidden="true"></span>
+        <span class="sct-corner bl" aria-hidden="true"></span>
+        <span class="sct-corner br" aria-hidden="true"></span>
+        <div class="sct-fallback" id="sanctumFallback">正在启动实时视图</div>
+        <div class="sct-tip" id="sanctumTooltip" hidden></div>
       </div>
-      <div class="sct-hud sct-hud-bl">
+      <div class="sct-toolbar">
         <div class="sct-actions">
-          <button type="button" class="sct-btn" id="sanctumPauseBtn">暂停</button>
+          <button type="button" class="sct-btn" id="sanctumPauseBtn">暂停动画</button>
           <button type="button" class="sct-btn" id="sanctumResetBtn">复位视角</button>
         </div>
-        <div class="sct-legend" id="sanctumLegend"></div>
+        <div class="sct-hint" id="sanctumHint">拖拽旋转 · 滚轮缩放 · 双击复位</div>
       </div>
-      <div class="sct-hud sct-hud-br"><div class="sct-hint" id="sanctumHint">拖拽旋转 · 滚轮缩放 · 双击复位</div></div>
-      <div class="sct-tip" id="sanctumTooltip" hidden></div>
     </div>
-    <aside class="sct-ledger" aria-label="调用序列">
+    <dl class="sct-legend" id="sanctumLegend"></dl>
+    <aside class="sct-ledger" aria-labelledby="sanctumLedgerTitle">
       <div class="sct-panel-head">
-        <span class="sct-panel-title" id="sanctumLedgerTitle">≡ 调用序列</span>
+        <h2 class="sct-panel-title" id="sanctumLedgerTitle">调用序列</h2>
         <span class="sct-feed" id="sanctumFeed">连接中</span>
       </div>
       <div class="sct-ledger-rows" id="sanctumLedger"></div>
@@ -7053,9 +7300,9 @@ html[data-ui="next"][data-skin="sanctum"] .console-insight-note{font-family:var(
 
   <!-- 版本模型库与能力清单 -->
   <section id="gatewayModelsSection">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+    <div class="models-head" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">
       <h2 style="margin:0">网关模型清单<em id="modelsRealmTag" style="color:var(--dim);font-weight:500"></em><em id="availModelCount"></em><span id="modelPickActions" class="page-nav-exclude" style="font-weight:400;margin-left:10px;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap"><button class="sec mini" onclick="applyModelPickAction('all')">全选</button><button class="sec mini" onclick="applyModelPickAction('none')">全不选</button><button class="sec mini" onclick="applyModelPickAction('invert')">反选</button><button class="sec mini" id="btnSaveModelSelection" onclick="saveModelSelection()">保存勾选</button><span id="modelSelectionStatus" style="font-size:11px;font-weight:500;color:var(--warn)"></span></span></h2>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div class="models-head-detail" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <div style="font-size:12px;color:var(--dim)">展示当前视图下官方对话大模型、上下文容量、推理/视觉能力、思考控制、默认采样参数及在售倍率</div>
         <!-- 手动刷新：强制走一次上游 /v3/config（只在当前视图的版本上，用该
              版本的账号），成功后本表立即重载。服务端同一版本 30s 冷却。 -->
@@ -7259,12 +7506,12 @@ html[data-ui="next"][data-skin="sanctum"] .console-insight-note{font-family:var(
         <h2 style="margin:0">每日任务</h2>
         <div style="font-size:12px;color:var(--dim)">国际版每日签到与国内版每日福利；按天刷新，可单项执行，也可一键跑完。</div>
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:nowrap;align-items:center;flex:0 0 auto;justify-content:flex-end">
+      <div class="task-actions" style="display:flex;gap:6px;flex-wrap:nowrap;align-items:center;flex:0 0 auto;justify-content:flex-end">
         <button class="primary" id="btnRunAllDailyTasks" onclick="runAllDailyTasks(this)">一键执行每日任务</button>
       </div>
     </div>
 
-    <div style="border-top:1px solid var(--line);padding-top:16px">
+    <div class="task-realm-panel" style="border-top:1px solid var(--line);padding-top:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px">
         <div>
           <h3 style="margin:0;font-size:14px">国际版每日签到</h3>
@@ -7303,7 +7550,7 @@ html[data-ui="next"][data-skin="sanctum"] .console-insight-note{font-family:var(
       </div>
     </div>
 
-    <div style="border-top:1px solid var(--line);padding-top:16px;margin-top:18px">
+    <div class="task-realm-panel" style="border-top:1px solid var(--line);padding-top:16px;margin-top:18px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px">
         <div>
           <h3 style="margin:0;font-size:14px">国内版每日福利</h3>
@@ -7370,7 +7617,7 @@ html[data-ui="next"][data-skin="sanctum"] .console-insight-note{font-family:var(
         <h2 style="margin:0">一次性 / 活动福利</h2>
         <div style="font-size:12px;color:var(--dim)">批量接取、事件上报并领取成长任务、活动任务与小程序任务奖励；不包含任何每日福利。</div>
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:nowrap;align-items:center;flex:0 0 auto;justify-content:flex-end">
+      <div class="task-actions" style="display:flex;gap:6px;flex-wrap:nowrap;align-items:center;flex:0 0 auto;justify-content:flex-end">
         <div class="acct-picker" id="growthAcctPicker">
           <button type="button" class="acct-trigger" id="growthAcctTrigger" onclick="toggleGrowthPicker('growth', event)" aria-haspopup="listbox" aria-expanded="false">
             <span class="acct-trigger-label" id="growthAcctCurrent">全部国内账号 (批量)</span>
@@ -7629,7 +7876,7 @@ html[data-ui="next"][data-skin="sanctum"] .console-insight-note{font-family:var(
     </div>
     <div class="pbody">
       <div class="hm-row">
-        <div class="hm-scroll">
+        <div class="hm-scroll" id="hmScroll" tabindex="0" role="region" aria-label="近一年每日活动">
           <div class="hm-wrap">
             <div class="hm-days"><span>一</span><span></span><span>三</span><span></span><span>五</span><span></span><span></span></div>
             <div class="hm-cols">
@@ -9239,7 +9486,7 @@ html[data-ui="next"][data-skin="sanctum"] .console-insight-note{font-family:var(
   </div>
 
   <div id="pageLogs" class="main-page">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+    <div class="log-controls" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px">
       <div>
         <h2 style="margin:0;font-size:17px;color:var(--fg);font-family:var(--serif);font-weight:600;letter-spacing:.02em">网关运行日志</h2>
         <div id="logPageHint" style="font-size:12px;color:var(--dim);margin-top:4px">实时捕获反向代理请求、流式转发、调度巡检、任务打卡与异常告警 (内存保留最新 2000 条)</div>
@@ -9256,7 +9503,7 @@ html[data-ui="next"][data-skin="sanctum"] .console-insight-note{font-family:var(
     </div>
 
     <!-- 筛选控制工具栏 -->
-    <div style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:var(--shadow)">
+    <div class="log-filters" style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;box-shadow:var(--shadow)">
       <div style="display:inline-flex;gap:3px;background:var(--panel2);padding:3px;border-radius:8px;border:1px solid var(--line)">
         <button class="range-btn active" id="btnLogLvlAll" onclick="setLogFilterLevel('')">全部级别</button>
         <button class="range-btn" id="btnLogLvlInfo" onclick="setLogFilterLevel('INFO')">INFO</button>
@@ -9270,7 +9517,7 @@ html[data-ui="next"][data-skin="sanctum"] .console-insight-note{font-family:var(
         <button class="range-btn active" data-tag="" onclick="setLogFilterTag('')">全部模块</button>
       </div>
 
-      <div style="flex:1;min-width:180px;position:relative">
+      <div class="log-search-wrap" style="flex:1;min-width:180px;position:relative">
         <input id="logSearchInput" type="text" placeholder="过滤关键字 (如 deepseek, 11128, 401, error)..."
                oninput="onLogSearchInput()"
                style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:5px 10px;font-size:12px;color:var(--fg);outline:none">
@@ -9278,8 +9525,8 @@ html[data-ui="next"][data-skin="sanctum"] .console-insight-note{font-family:var(
     </div>
 
     <!-- 终端视窗 -->
-    <div style="background:var(--terminal-bg);border:1px solid var(--terminal-border);border-radius:12px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.15)">
-      <div style="background:var(--terminal-head);border-bottom:1px solid #2b2820;padding:8px 14px;display:flex;align-items:center;justify-content:space-between">
+    <div class="log-viewport" style="background:var(--terminal-bg);border:1px solid var(--terminal-border);border-radius:12px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.15)">
+      <div class="log-viewport-head" style="background:var(--terminal-head);border-bottom:1px solid #2b2820;padding:8px 14px;display:flex;align-items:center;justify-content:space-between">
         <div style="display:flex;align-items:center;gap:7px">
           <span style="width:10px;height:10px;border-radius:50%;background:var(--terminal-error);display:inline-block"></span>
           <span style="width:10px;height:10px;border-radius:50%;background:var(--terminal-warn);display:inline-block"></span>
@@ -16655,7 +16902,9 @@ function renderRecentView(){
    这一点在弹窗里也写明，免得有人以为网关把错误吃掉了）。 */
 function openRecentFailDetail(idx){
   const rows = (RECENT_RENDER && RECENT_RENDER.tableRows) || [];
-  const r = rows[idx];
+  showRecentFailDetail(rows[idx]);
+}
+function showRecentFailDetail(r){
   const mask = document.getElementById('recentFailModal');
   if(!r || !mask) return;
   const outcome = r.outcome || (r.error ? 'failed' : 'completed');
@@ -16664,10 +16913,11 @@ function openRecentFailDetail(idx){
   const badge = document.getElementById('recentFailBadge');
   if(badge) badge.innerHTML = '<span class="badge ' + (outcome === 'failed' ? 'bad' : 'warn') + '">' + esc(label) + '</span>';
   const code = Number(r.status) > 0 ? String(Number(r.status)) : '';
+  const accountName = RECENT_RENDER && RECENT_RENDER.acctName(r.account);
   const pairs = [
     ['时间', String(r.iso || '').replace('T', ' ') || '—'],
     ['模型', r.model || '—'],
-    ['账号', (RECENT_RENDER.acctName(r.account) || '—') + (r.account ? '（' + String(r.account).slice(0, 8) + '…）' : '')],
+    ['账号', (accountName || '—') + (r.account ? '（' + String(r.account).slice(0, 8) + '…）' : '')],
     ['API Key', r.key_name || r.key || '—'],
     ['HTTP 状态', code || '—'],
     ['耗时', (r.elapsed_ms != null ? ms(r.elapsed_ms) : '—')],
@@ -24693,64 +24943,75 @@ function drawSeries(){
 function buildHeatGrid(heat){
   const grid = $('hmGrid'), monthsEl = $('hmMonths');
   if (!heat || !heat.series){ return; }
-  const days = heat.series.filter(b => b.at > 0);
-  const map = new Map(days.map(b => [fmtDate(b.at), b]));
-  const cells = [];
+  const scroll = typeof document !== 'undefined' && document.documentElement.getAttribute('data-skin') === 'sanctum'
+    ? $('hmScroll') : null;
+  const followLatest = scroll && (!grid.childElementCount || scroll.scrollLeft >= scroll.scrollWidth - scroll.clientWidth - 2);
   const today = new Date(); today.setHours(0,0,0,0);
   const start = new Date(today); start.setDate(start.getDate() - 365);
   // 对齐到周一
   const dow = (start.getDay() + 6) % 7;
   start.setDate(start.getDate() - dow);
-  const maxReq = Math.max(1, ...days.map(b => b.requests || 0));
+  const startKey = fmtDate(start.getTime()/1000), todayKey = fmtDate(today.getTime()/1000);
+  const map = new Map(heat.series.filter(b => b.at > 0).map(b => [fmtDate(b.at), b])
+    .filter(([day]) => day >= startKey && day <= todayKey));
+  const maxReq = Math.max(1, ...Array.from(map.values(), b => b.requests || 0));
+  const cells = [];
   let totalReq = 0, totalTok = 0, activeDays = 0;
+  let peakRequests = 0, peakDate = '';
   const monthSpans = []; let lastMonth = -1, weekIdx = 0;
   for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)){
     const key = fmtDate(d.getTime()/1000);
     const b = map.get(key);
     const req = b ? (b.requests || 0) : 0;
     totalReq += req; totalTok += b ? (b.total_tokens||0) : 0;
-    if (req > 0) activeDays++;
+    if (req > 0){
+      activeDays++;
+      if (req >= peakRequests){ peakRequests = req; peakDate = key; }
+    }
     const lv = req === 0 ? 0 : req < maxReq*.08 ? 1 : req < maxReq*.25 ? 2 : req < maxReq*.6 ? 3 : 4;
     const m = d.getMonth();
     if (m !== lastMonth){ monthSpans.push({m, col: weekIdx}); lastMonth = m; }
-    cells.push(`<div class="hm-cell l${lv}" data-d="${key}" data-r="${req}" data-t="${b?(b.total_tokens||0):0}"></div>`);
+    cells.push(`<div class="hm-cell l${lv}" data-d="${key}" data-r="${req}" data-t="${b?(b.total_tokens||0):0}"${key === todayKey ? ' aria-current="date"' : ''}></div>`);
     if (d.getDay() === 0) weekIdx++;
   }
-  grid.style.gridTemplateColumns = `repeat(${weekIdx + 1}, 10px)`;
+  const totalCols = Math.ceil(cells.length / 7);
+  const columns = `repeat(${totalCols}, var(--hm-cell-size, 10px))`;
+  grid.style.gridTemplateColumns = columns;
   grid.innerHTML = cells.join('');
   // 月份标签：按列定位
-  const totalCols = weekIdx + 1;
-  monthsEl.style.gridTemplateColumns = `repeat(${totalCols}, 10px)`;
-  monthsEl.style.gap = '2px';
+  monthsEl.style.gridTemplateColumns = columns;
+  monthsEl.style.gap = 'var(--hm-gap, 2px)';
   monthsEl.innerHTML = monthSpans.map((s, i) => {
     const nextCol = i + 1 < monthSpans.length ? monthSpans[i+1].col : totalCols;
     const w = nextCol - s.col;
     if (w < 2) return '';
     return `<span style="grid-column:${s.col+1} / span ${w}">${s.m+1}月</span>`;
   }).join('');
+  if (followLatest) scroll.scrollLeft = scroll.scrollWidth;
   $('hmMeta').textContent = `${activeDays} 天有活动 · 共 ${fmtCompact(totalReq)} 次请求`;
   $('hmSummary').textContent = `近一年 ${fmtCompact(totalTok)} tokens`;
   // B 版：年度统计数字组
-  let peakDay = null;
-  for (const b of days){ if (!peakDay || (b.requests || 0) > (peakDay.requests || 0)) peakDay = b; }
   $('hmStats').innerHTML = `
     <div class="hm-stat"><b>${activeDays}</b><span>天有活动</span></div>
     <div class="hm-stat"><b>${fmtCompact(totalReq)}</b><span>总请求</span></div>
     <div class="hm-stat"><b>${fmtCompact(totalTok)}</b><span>总 Token</span></div>
-    <div class="hm-stat"><b>${peakDay ? fmtCompact(peakDay.requests || 0) : '—'}</b><span>峰值单日${peakDay ? ' · ' + fmtDate(peakDay.at).slice(5) : ''}</span></div>`;
+    <div class="hm-stat"><b>${peakDate ? fmtCompact(peakRequests) : '—'}</b><span>峰值单日${peakDate ? ' · ' + peakDate.slice(5) : ''}</span></div>`;
   // tooltip
   const tip = $('hmTip');
-  grid.onmouseover = ev => {
+  const showTip = ev => {
     const c = ev.target.closest('.hm-cell');
     if (!c) return;
     tip.style.opacity = 1;
     tip.innerHTML = `<div class="tt-t">${c.dataset.d}</div>` +
       `<div class="tt-r"><span>请求</span><b>${fmtCompact(+c.dataset.r)}</b></div>` +
       `<div class="tt-r"><span>Token</span><b>${fmtCompact(+c.dataset.t)}</b></div>`;
-    tip.style.left = Math.min(window.innerWidth - 200, ev.clientX + 14) + 'px';
-    tip.style.top = Math.max(8, ev.clientY - 70) + 'px';
+    tip.style.left = Math.max(8, Math.min(window.innerWidth - tip.offsetWidth - 8, ev.clientX + 12)) + 'px';
+    tip.style.top = Math.max(8, ev.clientY - tip.offsetHeight - 8) + 'px';
   };
-  grid.onmouseleave = () => { tip.style.opacity = 0; };
+  const hideTip = () => { tip.style.opacity = 0; };
+  grid.onmouseover = showTip;
+  grid.onmouseleave = hideTip;
+  if (scroll){ grid.onclick = showTip; scroll.onscroll = hideTip; }
 }
 
 /* ---------------- 用量明细（维度切换） ---------------- */
@@ -26406,21 +26667,18 @@ function toggleSanctumSkin(){
      舞台整块标了 data-no-i18n（见 #sanctumStage 的注释），所以这里的字不会
      被上面的大词典碰到；词典和代码放在一起，加一句话不用翻两处。 */
   var STRINGS = {
-    motto: {zh: '每一次调用，都有迹可循', 'zh-Hant': '每一次呼叫，都有跡可循', en: 'Every call leaves a trace'},
+    title: {zh: '圣轮', 'zh-Hant': '聖輪', en: 'Sanctum'},
+    motto: {zh: '网关实时调用 · 最近 {n} 秒', 'zh-Hant': '閘道即時呼叫 · 最近 {n} 秒', en: 'Live gateway calls · Last {n} seconds'},
     stage: {zh: '网关实时调用', 'zh-Hant': '閘道即時呼叫', en: 'Gateway calls, live'},
     canvas: {zh: '网关实时调用图：每次调用一颗星，每个账号一只眼', 'zh-Hant': '閘道即時呼叫圖：每次呼叫一顆星，每個帳號一隻眼', en: 'Live picture of gateway calls: one star per call, one eye per account'},
-    perMin: {zh: '调用 / 分钟', 'zh-Hant': '呼叫 / 分鐘', en: 'Calls / min'},
-    live: {zh: '在途', 'zh-Hant': '執行中', en: 'In flight'},
-    tok: {zh: '输出 token / 秒', 'zh-Hant': '輸出 token / 秒', en: 'Out tokens / s'},
-    ok: {zh: '成功', 'zh-Hant': '成功', en: 'Succeeded'},
-    pause: {zh: '暂停', 'zh-Hant': '暫停', en: 'Pause'},
-    resume: {zh: '继续', 'zh-Hant': '繼續', en: 'Resume'},
+    pause: {zh: '暂停动画', 'zh-Hant': '暫停動畫', en: 'Pause animation'},
+    resume: {zh: '继续动画', 'zh-Hant': '繼續動畫', en: 'Resume animation'},
     resetView: {zh: '复位视角', 'zh-Hant': '重置視角', en: 'Reset view'},
     hint: {zh: '拖拽旋转 · 滚轮缩放 · 双击复位', 'zh-Hant': '拖曳旋轉 · 滾輪縮放 · 雙擊重置', en: 'Drag to orbit · Scroll to zoom · Double-click to reset'},
-    ledger: {zh: '≡ 调用序列', 'zh-Hant': '≡ 呼叫序列', en: '≡ Call ledger'},
+    ledger: {zh: '调用序列', 'zh-Hant': '呼叫序列', en: 'Call ledger'},
     foot: {zh: '点失败的调用可看上游原话', 'zh-Hant': '點失敗的呼叫可看上游原話', en: 'Click a failed call for the upstream message'},
     empty1: {zh: '还没有调用', 'zh-Hant': '還沒有呼叫', en: 'No calls yet'},
-    empty2: {zh: '发一次请求，第一颗星就会出现在这里', 'zh-Hant': '發一次請求，第一顆星就會出現在這裡', en: 'Send a request and the first star appears here'},
+    empty2: {zh: '调用结束后会出现在这里', 'zh-Hant': '呼叫結束後會出現在這裡', en: 'Requests appear here once they end'},
     starting: {zh: '正在启动实时视图', 'zh-Hant': '正在啟動即時視圖', en: 'Starting the live view'},
     unsupported: {zh: '这个浏览器不支持画布，动画无法显示；右侧的调用序列仍然可用', 'zh-Hant': '這個瀏覽器不支援畫布，動畫無法顯示；右側的呼叫序列仍然可用', en: 'This browser cannot draw the animation; the call ledger still works'},
     feed_live: {zh: '实时', 'zh-Hant': '即時', en: 'Live'},
@@ -26440,13 +26698,13 @@ function toggleSanctumSkin(){
     kind_tts: {zh: '语音合成', 'zh-Hant': '語音合成', en: 'tts'},
     kind_asr: {zh: '语音识别', 'zh-Hant': '語音辨識', en: 'asr'},
     kind_web: {zh: '工具', 'zh-Hant': '工具', en: 'tool'},
-    leg0: {zh: '调用', 'zh-Hant': '呼叫', en: 'Calls'},
+    leg0: {zh: '调用 / 分钟', 'zh-Hant': '呼叫 / 分鐘', en: 'Calls / min'},
     leg1: {zh: '在途', 'zh-Hant': '執行中', en: 'In flight'},
-    leg2: {zh: '输入', 'zh-Hant': '輸入', en: 'Input'},
-    leg3: {zh: '输出', 'zh-Hant': '輸出', en: 'Output'},
+    leg2: {zh: '输入 token / 秒', 'zh-Hant': '輸入 token / 秒', en: 'Input tokens / s'},
+    leg3: {zh: '输出 token / 秒', 'zh-Hant': '輸出 token / 秒', en: 'Output tokens / s'},
     leg4: {zh: '成功率', 'zh-Hant': '成功率', en: 'Success'},
-    leg5: {zh: '首字', 'zh-Hant': '首字', en: 'First token'},
-    leg6: {zh: '积分', 'zh-Hant': '積分', en: 'Credits'},
+    leg5: {zh: '首字时延', 'zh-Hant': '首字延遲', en: 'First-token latency'},
+    leg6: {zh: '积分 / 秒', 'zh-Hant': '積分 / 秒', en: 'Credits / s'},
     eye_ok: {zh: '空闲', 'zh-Hant': '閒置', en: 'Idle'},
     eye_cool: {zh: '冷却中', 'zh-Hant': '冷卻中', en: 'Cooling down'},
     eye_err: {zh: '已熔断', 'zh-Hant': '已熔斷', en: 'Tripped'},
@@ -26948,14 +27206,16 @@ function toggleSanctumSkin(){
       {seg: 96, glow: true, trail: 8, stars: 70},
       {seg: 144, glow: true, trail: 12, stars: 90}
     ];
-    var LEVELS = [0.2, 0.32, 0.44, 0.56, 0.7];
+    var LEVELS = [0.06, 0.17, 0.28, 0.39, 0.5, 0.61, 0.72, 0.83];
     var RING_R = [0.30, 0.395, 0.49, 0.585, 0.68, 0.775, 0.87];
-    var RING_TILT = [0, 0.10, 0.22, 0.16, 0.30, 0.24, 0.40];
+    var RING_TILT = [0, 0.16, 0.26, 0.2, 0.34, 0.28, 0.46];
     var EYE_RING = 2, HOLD_RING = 4;
     var NO_DASH = [];
+    var GUIDE_DASH = [2, 7];
     var NOFX = {act: 0, blink: 0};
-    var buckets = [[], [], [], [], []];
+    var buckets = LEVELS.map(function(){ return []; });
     var hits = [], glowList = [], stars = [];
+    var epoch = Date.now();
     var S0 = {x: 0, y: 0, z: 0, q: 0}, S1 = {x: 0, y: 0, z: 0, q: 0};
     var S2 = {x: 0, y: 0, z: 0, q: 0}, S3 = {x: 0, y: 0, z: 0, q: 0};
     (function(){
@@ -26976,17 +27236,19 @@ function toggleSanctumSkin(){
 
     function ink(a){ return 'rgba(' + pal.ink + ',' + a + ')'; }
     function depth(z){ return clamp01((z + 1.1) / 2.2); }        // nearer is brighter
-    function precOf(i, now){ return i * 1.7 + (now / 1000) * 0.02 * (i + 1); }
+    function artTime(v, now){ return v.reduceMotion ? 0 : (now - epoch) / 1000; }
+    function precOf(i, t){ return i * 1.7 + t * 0.02 * (i + 1); }
 
     function resize(w, h, ratio){
-      W = Math.max(1, w); H = Math.max(1, h); dpr = ratio;
+      w = Math.max(1, w); h = Math.max(1, h);
+      if(W === w && H === h && dpr === ratio && canvas.width === Math.round(w * ratio)) return;
+      W = w; H = h; dpr = ratio;
       canvas.width = Math.round(W * dpr);
       canvas.height = Math.round(H * dpr);
-      // The dial is one unit wide and its marks reach out to 1.16. It sits a
-      // little right of centre and low: the title takes the top-left corner.
-      scale = Math.min(W, H) * 0.44;
-      ox = W / 2 + Math.min(W, H) * 0.065;
-      oy = H / 2 + Math.min(H * 0.045, 26);
+      // Lift the centre slightly to leave room for the nearer rim.
+      scale = Math.min(W * 0.51, H * 0.62);
+      ox = W / 2;
+      oy = H * 0.45;
       glow.width = Math.max(1, Math.round(canvas.width / 4));
       glow.height = Math.max(1, Math.round(canvas.height / 4));
     }
@@ -27059,22 +27321,22 @@ function toggleSanctumSkin(){
         seg(S0.x, S0.y, S1.x, S1.y, base + gain * depth(S1.z));
       }
     }
-    // 一条亮弧：指标越高弧越长。粗、亮，并进辉光层。
-    function arc(cam, r, a0, a1, tilt, prec, n, width, alpha){
+    // 一条亮弧：指标越高弧越长。发光的弧另外进辉光层。
+    function arc(cam, r, a0, a1, tilt, prec, n, width, alpha, bloom){
       ringPoint(cam, r, a0, tilt, prec, S0);
       ctx.strokeStyle = ink(alpha);
       ctx.lineWidth = width;
       ctx.beginPath();
       ctx.moveTo(S0.x, S0.y);
-      var pts = [S0.x, S0.y];
+      var pts = bloom ? [S0.x, S0.y] : null;
       for(var k = 1; k <= n; k++){
         ringPoint(cam, r, a0 + (a1 - a0) * k / n, tilt, prec, S1);
         ctx.lineTo(S1.x, S1.y);
-        pts.push(S1.x, S1.y);
+        if(pts) pts.push(S1.x, S1.y);
       }
       ctx.stroke();
       ctx.lineWidth = 1;
-      glowList.push({type: 'poly', pts: pts, w: width * 2.2});
+      if(pts) glowList.push({type: 'poly', pts: pts, w: width * 2.2});
     }
     // 轮子平面上的一圈，直接描（不进分桶）：给光晕和完成时的光环用。
     function ring(cam, r, n, width, alpha){
@@ -27107,22 +27369,39 @@ function toggleSanctumSkin(){
       ctx.fill();
     }
 
+    function drawGuides(){
+      var radius = Math.min(W * 0.41, H * 0.36);
+      ctx.setLineDash(GUIDE_DASH);
+      line(W * 0.085, oy, W * 0.915, oy, 1, 0.17);
+      line(ox, H * 0.075, ox, H * 0.92, 1, 0.17);
+      ctx.beginPath();
+      ctx.arc(ox, oy, radius, 0, TAU);
+      ctx.strokeStyle = ink(0.14);
+      ctx.stroke();
+      ctx.setLineDash(NO_DASH);
+      for(var i = 0; i < 4; i++){
+        var a = i * TAU / 4, x = Math.cos(a), y = Math.sin(a);
+        line(ox + x * (radius - 4), oy + y * (radius - 4), ox + x * (radius + 5), oy + y * (radius + 5), 1, 0.42);
+      }
+    }
+
     /* ---- 外圈刻度：一分钟一圈，调用在它结束的那一秒留下刻痕 ---- */
     function drawDial(v, now, spec){
       var cam = v.cam, model = v.model;
-      circle(cam, 1, 0, 0, spec.seg, 0.4, 0.5);
-      circle(cam, 0.93, 0, 0, spec.seg, 0.18, 0.4);
-      ticks(cam, 1, 0.035, 60, 0, 0, 0, 0.3, 0.45);
-      ticks(cam, 1, 0.085, 12, 0, 0, 0, 0.5, 0.45);
+      circle(cam, 1.027, 0, 0, spec.seg, 0.09, 0.30);
+      circle(cam, 1, 0, 0, spec.seg, 0.28, 0.62);
+      circle(cam, 0.91, 0, 0, spec.seg, 0.10, 0.30);
+      ticks(cam, 1, 0.038, 60, 0, 0, 0, 0.18, 0.52);
+      ticks(cam, 1, 0.077, 12, 0, 0, 0, 0.42, 0.45);
       flush();
       // 四个秒数读数
-      ctx.font = '8px ' + pal.mono;
+      ctx.font = '10px ' + pal.mono;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillStyle = ink(0.5);
+      ctx.fillStyle = ink(0.77);
       for(var s = 0; s < 4; s++){
-        ringPoint(cam, 1.085, -Math.PI / 2 + s * TAU / 4, 0, 0, S0);
-        ctx.fillText(String(s * 15), S0.x, S0.y);
+        ringPoint(cam, 1.095, -Math.PI / 2 + s * TAU / 4, 0, 0, S0);
+        ctx.fillText(s === 0 ? '00' : String(s * 15), S0.x, S0.y);
       }
       // 刻痕
       var nowSec = Math.floor(now / 1000);
@@ -27142,19 +27421,23 @@ function toggleSanctumSkin(){
         } else {
           // 失败的刻痕画成双线：和成功的单线一眼分得开。
           if(b.fail && b.fail >= b.n){
-            var dx = -(S1.y - S0.y) * 0.018, dy = (S1.x - S0.x) * 0.018;
-            line(S0.x + dx, S0.y + dy, S1.x + dx, S1.y + dy, 1, 0.25 + 0.65 * fade);
+            var dx = -(S1.y - S0.y), dy = S1.x - S0.x;
+            var offset = 3 / Math.max(1, Math.hypot(dx, dy));
+            line(S0.x + dx * offset, S0.y + dy * offset, S1.x + dx * offset, S1.y + dy * offset, 1, 0.25 + 0.65 * fade);
           }
           line(S0.x, S0.y, S1.x, S1.y, 1.6, 0.3 + 0.7 * fade);
         }
       }
       // 指针：此刻在 这一分钟 的哪里
-      var secNow = (now / 1000) % DIAL_SECONDS;
+      var secNow = (v.reduceMotion ? nowSec : now / 1000) % DIAL_SECONDS;
       var ang = -Math.PI / 2 + secNow / DIAL_SECONDS * TAU;
-      ringPoint(cam, 0.86, ang, 0, 0, S0);
-      ringPoint(cam, 1.0, ang, 0, 0, S1);
-      line(S0.x, S0.y, S1.x, S1.y, 1.4, 0.95);
-      glowList.push({type: 'line', x1: S0.x, y1: S0.y, x2: S1.x, y2: S1.y, w: 4});
+      arc(cam, 1.0, ang - 0.42, ang, 0, 0, 18, 3, 0.28, false);
+      arc(cam, 1.0, ang - 0.09, ang, 0, 0, 6, 2, 0.95, spec.glow);
+      ringPoint(cam, 0.88, ang, 0, 0, S0);
+      ringPoint(cam, 1.027, ang, 0, 0, S1);
+      line(S0.x, S0.y, S1.x, S1.y, 1.8, 0.98);
+      dot(S1.x, S1.y, 2.8, 1);
+      glowList.push({type: 'dot', x: S1.x, y: S1.y, r: 19});
     }
 
     /* ---- 账号之眼：躺在账号环上，瞳孔追着在途的调用 ---- */
@@ -27163,7 +27446,7 @@ function toggleSanctumSkin(){
       v.eyeScreen.length = 0;
       if(!n) return;
       var cam = v.cam, spin = v.spin[EYE_RING];
-      var tilt = RING_TILT[EYE_RING], prec = precOf(EYE_RING, now), r = RING_R[EYE_RING];
+      var tilt = RING_TILT[EYE_RING], prec = precOf(EYE_RING, artTime(v, now)), r = RING_R[EYE_RING];
       for(var j = 0; j < n; j++){
         var e = eyes[j], a = spin + j * TAU / n;
         ringPoint(cam, r, a, tilt, prec, S0);
@@ -27225,7 +27508,7 @@ function toggleSanctumSkin(){
     // 还没分配账号的，先在里圈上绕行。位置只由时间和调用自身决定，所以拖尾
     // 可以按「几毫秒之前它在哪」算出来，不用存轨迹。
     function sparkScreen(v, call, tms, out){
-      var age = Math.max(0, (tms - call.t0) / 1000);
+      var age = v.reduceMotion ? 0 : Math.max(0, (tms - call.t0) / 1000);
       var phase = v.reduceMotion ? 1 : Math.min(1, age / 0.9);
       var eased = 1 - Math.pow(1 - phase, 3);
       ringPoint(v.cam, 1, call.phi, 0, 0, S2);
@@ -27236,7 +27519,7 @@ function toggleSanctumSkin(){
         tx = c.x + Math.cos(th) * orb;
         ty = c.y + Math.sin(th) * orb * 0.7;
       } else {
-        ringPoint(v.cam, RING_R[HOLD_RING], call.phi + age * 0.9, RING_TILT[HOLD_RING], precOf(HOLD_RING, tms), S3);
+        ringPoint(v.cam, RING_R[HOLD_RING], call.phi + age * 0.9, RING_TILT[HOLD_RING], precOf(HOLD_RING, artTime(v, tms)), S3);
         tx = S3.x;
         ty = S3.y;
       }
@@ -27258,23 +27541,30 @@ function toggleSanctumSkin(){
         var call = calls[i];
         var flash = call.flash || 0;
         var size = 4 + 4 * taper(call.chunks, 3, 120);     // grows as the answer streams in
-        // 拖尾
-        ctx.strokeStyle = ink(0.22 + 0.3 * flash);
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        sparkScreen(v, call, now - (spec.trail - 1) * 45, p0);
-        ctx.moveTo(p0.x, p0.y);
-        for(var k = spec.trail - 2; k >= 0; k--){
-          sparkScreen(v, call, now - k * 45, p1);
-          ctx.lineTo(p1.x, p1.y);
-        }
-        ctx.stroke();
         sparkScreen(v, call, now, p1);
+        // 拖尾从旧位置渐亮到星尖。
+        if(!v.reduceMotion){
+          sparkScreen(v, call, now - (spec.trail - 1) * 45, p0);
+          var trail = ctx.createLinearGradient(p0.x, p0.y, p1.x, p1.y);
+          trail.addColorStop(0, ink(0));
+          trail.addColorStop(0.55, ink(0.17 + 0.2 * flash));
+          trail.addColorStop(1, ink(0.7 + 0.24 * flash));
+          ctx.strokeStyle = trail;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(p0.x, p0.y);
+          for(var k = spec.trail - 2; k > 0; k--){
+            sparkScreen(v, call, now - k * 45, p0);
+            ctx.lineTo(p0.x, p0.y);
+          }
+          ctx.lineTo(p1.x, p1.y);
+          ctx.stroke();
+        }
         // 四芒星
         line(p1.x, p1.y - size, p1.x, p1.y + size, 1.2, 0.95);
         line(p1.x - size * 0.62, p1.y, p1.x + size * 0.62, p1.y, 1.2, 0.95);
         dot(p1.x, p1.y, 1.5 + flash * 1.5, 1);
-        glowList.push({type: 'dot', x: p1.x, y: p1.y, r: 5 + flash * 4});
+        glowList.push({type: 'dot', x: p1.x, y: p1.y, r: 12 + flash * 9});
         hits.push({x: p1.x, y: p1.y, r: size + 5, kind: 'spark', ref: call});
         if(call.account && !gaze.has(call.account)) gaze.set(call.account, {x: p1.x, y: p1.y});
         // 标注：最多给最新的六颗，左右交替
@@ -27310,8 +27600,10 @@ function toggleSanctumSkin(){
             dot(x, y, 2.6, 1);
             glowList.push({type: 'dot', x: x, y: y, r: 9});
           } else {
-            var q = (age - 0.4) / 1.1;
-            ring(v.cam, 0.09 + 0.5 * f.size * (1 - Math.pow(1 - q, 3)), 48, 1.5, (1 - q) * 0.85);
+            var q = (age - 0.4) / 1.1, fadeRing = 1 - q;
+            var radius = 0.13 + (0.33 + 0.38 * f.size) * (1 - Math.pow(fadeRing, 3));
+            ring(v.cam, radius, 64, 1.5, fadeRing * 0.9);
+            ring(v.cam, radius * 0.84, 48, 1, fadeRing * 0.46);
           }
         } else {
           if(age > 0.9){ v.fx.splice(k, 1); continue; }
@@ -27321,18 +27613,34 @@ function toggleSanctumSkin(){
             var sp = 70 + (i * 37) % 60;
             var frag = 1 - Math.pow(age / 0.9, 2);
             var fx = f.x + Math.cos(th) * sp * age, fy = f.y + Math.sin(th) * sp * age;
-            line(fx, fy, fx - Math.cos(th) * 9 * frag, fy - Math.sin(th) * 9 * frag, 1, fade);
+            line(fx, fy, fx - Math.cos(th) * 13 * frag, fy - Math.sin(th) * 13 * frag, 1, fade);
+            dot(fx, fy, 1.3 * frag, fade);
           }
         }
       }
     }
-    function drawCore(v){
+    function drawCore(v, t){
       var live = v.model.live.size;
-      var q = scale * v.cam.focal / v.cam.dist;             // pixels per unit at the centre
-      var r = q * (0.062 + 0.03 * taper(live, 0.5, 16)) * (1 + 0.3 * v.pulse);
-      dot(ox, oy, r, 0.96);
-      ring(v.cam, 0.11 + 0.05 * taper(live, 0.5, 16), 48, 1, 0.5);
-      glowList.push({type: 'dot', x: ox, y: oy, r: r * 2.6});
+      var activity = taper(live, 0.5, 16);
+      var q = scale * v.cam.focal / v.cam.dist;
+      var r = q * (0.092 + 0.028 * activity) * (1 + 0.18 * v.pulse);
+      ring(v.cam, 0.18 + 0.04 * activity, 48, 1, 0.54);
+      arc(v.cam, 0.215, t * 0.45, t * 0.45 + TAU * 0.32, 0.33, 0.7, 20, 1.2, 0.65, false);
+      arc(v.cam, 0.215, t * 0.45 + Math.PI, t * 0.45 + TAU * 0.82, 0.33, 0.7, 20, 1.2, 0.65, false);
+      var corona = ctx.createRadialGradient(ox, oy, 0, ox, oy, r * 3.7);
+      corona.addColorStop(0, ink(0.82));
+      corona.addColorStop(0.25, ink(0.38));
+      corona.addColorStop(0.53, ink(0.12));
+      corona.addColorStop(1, ink(0));
+      ctx.fillStyle = corona;
+      ctx.fillRect(ox - r * 3.7, oy - r * 3.7, r * 7.4, r * 7.4);
+      ctx.beginPath();
+      ctx.arc(ox, oy, r, 0, TAU);
+      ctx.strokeStyle = ink(0.9);
+      ctx.stroke();
+      dot(ox, oy, r * 0.48, 1);
+      line(ox - r * 2.5, oy, ox + r * 2.5, oy, 1, 0.46);
+      line(ox, oy - r * 1.65, ox, oy + r * 1.65, 1, 0.46);
     }
     function renderGlow(){
       if(!glow.width || !glow.height) return;
@@ -27380,13 +27688,14 @@ function toggleSanctumSkin(){
       ctx.restore();
     }
 
-    function draw(v, now, dt){
-      var spec = TIERS[tier], t = now / 1000, cam = v.cam;
+    function draw(v, now){
+      var spec = TIERS[tier], t = artTime(v, now), cam = v.cam;
       hits.length = 0;
       glowList.length = 0;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, W, H);
       ctx.lineCap = 'butt';
+      drawGuides();
       // 星点
       for(var i = 0; i < spec.stars && i < stars.length; i++){
         var s = stars[i];
@@ -27394,27 +27703,30 @@ function toggleSanctumSkin(){
         ctx.fillStyle = ink(s.a * (0.45 + 0.55 * depth(S0.z)));
         ctx.fillRect(S0.x, S0.y, s.r, s.r);
       }
-      // 大圆：两道近乎竖立的子午环穿过轮心，外加一道平缓的外环——浑天仪的背景。
-      circle(cam, 1.03, 1.36, t * 0.021, Math.round(spec.seg * 0.7), 0.09, 0.05);
-      circle(cam, 1.09, 1.22, -t * 0.013 + 1.9, Math.round(spec.seg * 0.7), 0.07, 0.04);
-      circle(cam, 1.27, 0.30, t * 0.009 + 2, Math.round(spec.seg * 0.6), 0.05, 0.04);
+      // 两道子午环和外层环架。近侧亮、远侧暗，保留中央七条轨道的轮廓。
+      var mountSeg = Math.round(spec.seg * 0.75);
+      circle(cam, 1.13, 1.37, t * 0.021 + 0.24, mountSeg, 0.04, 0.53);
+      circle(cam, 1.16, 1.37, t * 0.021 + 0.24, mountSeg, 0.04, 0.23);
+      circle(cam, 1.11, 1.20, -t * 0.013 + 1.9, mountSeg, 0.04, 0.44);
+      circle(cam, 1.15, 0.39, t * 0.009 + 2.8, mountSeg, 0.07, 0.37);
+      ticks(cam, 1.13, 0.035, 40, 0, 1.37, t * 0.021 + 0.24, 0.03, 0.28);
       flush();
       drawDial(v, now, spec);
       // 七重环
       var signals = v.signals || [];
       for(var j = 0; j < RING_COUNT; j++){
-        var prec = precOf(j, now);
-        circle(cam, RING_R[j], RING_TILT[j], prec, spec.seg, 0.26, 0.5);
-        ticks(cam, RING_R[j], 0.022, 48 + j * 12, v.spin[j], RING_TILT[j], prec, 0.14, 0.4);
+        var prec = precOf(j, t);
+        circle(cam, RING_R[j], RING_TILT[j], prec, spec.seg, 0.09, 0.51);
+        ticks(cam, RING_R[j], 0.022, 26 + j * 8, v.spin[j], RING_TILT[j], prec, 0.06, 0.36);
       }
       flush();
       for(var k = 0; k < RING_COUNT; k++){
         var value = signals[k] ? signals[k].value : 0;
         if(value > 0.02){
-          arc(cam, RING_R[k], v.spin[k], v.spin[k] + value * TAU * 0.7, RING_TILT[k], precOf(k, now), 28, 2.2, 0.9);
+          arc(cam, RING_R[k], v.spin[k], v.spin[k] + value * TAU * 0.7, RING_TILT[k], precOf(k, t), 28, 2.2, 0.92, spec.glow);
         }
       }
-      drawCore(v);
+      drawCore(v, t);
       // 眼的注视点来自上一帧算出的星位
       var gaze = v.nextGaze;
       if(gaze) v.eyes.forEach(function(e){ e.gaze = gaze.get(e.uid) || (v.mouse.over ? v.mouse : null); });
@@ -27438,11 +27750,12 @@ function toggleSanctumSkin(){
      ================================================================== */
   var view = null, renderer = null, feed = null, rafId = 0, pollTimer = null;
   var running = false, paused = false, seeded = false, wired = false, observer = null;
-  var lastFrame = 0, hudAt = 0, ledgerAt = 0, ledgerDirty = true, tipAt = 0;
-  var feedState = 'paused', eyesKey = '';
+  var lastFrame = 0, drawAt = 0, hudAt = 0, ledgerAt = 0, ledgerDirty = true, tipAt = 0;
+  var feedState = 'paused', eyesKey = '', legendKey = '';
   var tier = 2, tierMax = 2, slow = 0, fast = 0;
   var dragging = false, dragX = 0, dragY = 0, focusRow = null, ledgerPress = 0;
   var CANVAS_OK = null, REDUCE = null;
+  var REST_VIEW = {yaw: -0.62, pitch: 0.78, dist: 3.15};
 
   function byId(id){ return document.getElementById(id); }
   function escapeHtml(s){ return typeof esc === 'function' ? esc(String(s == null ? '' : s)) : String(s == null ? '' : s); }
@@ -27478,9 +27791,8 @@ function toggleSanctumSkin(){
     return REDUCE;
   }
   function makeView(){
-    var cam = {yaw: -0.62, pitch: 0.52, dist: 3.15, focal: 1.9};
     return {
-      model: createModel(), cam: cam, target: {yaw: cam.yaw, pitch: cam.pitch, dist: cam.dist},
+      model: createModel(), cam: Object.assign({focal: 1.9}, REST_VIEW), target: Object.assign({}, REST_VIEW),
       spin: [0, 0.6, 1.1, 1.7, 2.3, 2.9, 3.5], pulse: 0, idleFor: 0,
       eyes: [], eyeIndex: new Map(), eyeFx: new Map(), eyeScreen: [], overflow: 0,
       fx: [], focusAt: 0, mouse: {x: 0, y: 0, over: false},
@@ -27506,11 +27818,15 @@ function toggleSanctumSkin(){
   }
   function resize(){
     if(!renderer) return;
-    var scene = byId('sanctumScene');
-    if(!scene) return;
-    var rect = scene.getBoundingClientRect();
+    var viewport = byId('sanctumViewport');
+    if(!viewport) return;
+    var rect = viewport.getBoundingClientRect();
     renderer.resize(Math.round(rect.width), Math.round(rect.height),
                     Math.min([1.25, 1.5, 2][tier], window.devicePixelRatio || 1));
+    redrawPaused();
+  }
+  function redrawPaused(){
+    if(running && paused && renderer && drawAt) renderer.draw(view, drawAt);
   }
   function start(){
     var scene = byId('sanctumScene'), canvas = byId('sanctumCanvas');
@@ -27588,25 +27904,28 @@ function toggleSanctumSkin(){
     govern(raw);
     var dt = Math.min(0.1, raw / 1000);
     stepView(dt, now);
-    if(renderer && !paused) renderer.draw(view, now, dt);
+    if(renderer && !paused){
+      drawAt = now;
+      renderer.draw(view, now);
+    }
     if(now - hudAt > 250){ hudAt = now; renderHud(now); }
     if(ledgerDirty && now - ledgerAt > 120){ ledgerAt = now; ledgerDirty = false; renderLedger(now); }
     if(renderer && !paused && view.mouse.over && now - tipAt > 80){ tipAt = now; renderTip(); }
   }
   function stepView(dt, now){
     var v = view, cam = v.cam, tg = v.target;
+    v.metrics = metrics(v.model, now);
+    if(paused) return;
     if(!dragging && !v.reduceMotion){
       v.idleFor += dt;
       if(v.idleFor > 4) tg.yaw += 0.03 * dt;        // 没人动的时候慢慢自转
     }
-    var ease = Math.min(1, dt * 9);
+    var ease = v.reduceMotion ? 1 : Math.min(1, dt * 9);
     cam.yaw += (tg.yaw - cam.yaw) * ease;
     cam.pitch += (tg.pitch - cam.pitch) * ease;
     cam.dist += (tg.dist - cam.dist) * ease;
-    if(paused) return;
-    v.metrics = metrics(v.model, now);
     v.signals = ringSignals(v.metrics);
-    var motion = v.reduceMotion ? 0.12 : 1;
+    var motion = v.reduceMotion ? 0 : 1;
     for(var i = 0; i < RING_COUNT; i++) v.spin[i] += v.signals[i].speed * dt * motion;
     v.pulse = Math.max(0, v.pulse - dt * 2.2);
     v.model.live.forEach(function(c){ c.flash = Math.max(0, (c.flash || 0) - dt * 3); });
@@ -27626,9 +27945,9 @@ function toggleSanctumSkin(){
     if(kind === 'snapshot' || kind === 'start' || kind === 'finish'
        || (kind === 'live' && view.model.live.size > liveBefore)) ledgerDirty = true;
     if(kind === 'finish'){
-      view.pulse = 1;
+      if(!view.reduceMotion && !paused) view.pulse = 1;
       var ok = outcomeOf(f.row) === 'completed';
-      if(renderer && call && !view.reduceMotion){
+      if(renderer && call && !view.reduceMotion && !paused){
         var p = renderer.sparkScreen(view, call, now, null);
         if(ok){
           view.fx.push({kind: 'burst', t0: now, x: p.x, y: p.y, size: 0.25 + 0.75 * taper(num(f.row.total_tokens), 50, 20000)});
@@ -27642,7 +27961,7 @@ function toggleSanctumSkin(){
         if(fx) fx.blink = 1;
       }
       ledgerDirty = true;
-    } else if(kind === 'bind' && f.account){
+    } else if(kind === 'bind' && f.account && !view.reduceMotion && !paused){
       // 光束的起点是这只眼第一次接到活：登记一次，随时间衰减。
       if(!view.eyeFx.has(f.account)) view.eyeFx.set(f.account, {act: 0, blink: 0});
       view.eyeFx.get(f.account).act = 1;
@@ -27678,11 +27997,8 @@ function toggleSanctumSkin(){
   }
   function renderTexts(){
     var lang = langNow();
-    setText('sanctumMotto', textOf(lang, 'motto'));
-    setText('sanctumPerMinLabel', textOf(lang, 'perMin'));
-    setText('sanctumLiveLabel', textOf(lang, 'live'));
-    setText('sanctumTokLabel', textOf(lang, 'tok'));
-    setText('sanctumOkLabel', textOf(lang, 'ok'));
+    setText('sanctumTitle', textOf(lang, 'title'));
+    setText('sanctumMotto', fill(lang, 'motto', {n: DIAL_SECONDS}));
     setText('sanctumLedgerTitle', textOf(lang, 'ledger'));
     setText('sanctumFoot', textOf(lang, 'foot'));
     setText('sanctumHint', textOf(lang, 'hint'));
@@ -27711,20 +28027,19 @@ function toggleSanctumSkin(){
     seed();
     var lang = langNow();
     var m = view.metrics || metrics(view.model, now);
-    setText('sanctumPerMin', compact(m.perMin));
-    setText('sanctumLive', String(m.live));
-    setText('sanctumTok', compact(m.tokOut));
-    setText('sanctumOk', m.okD ? Math.round(m.okRate * 1000) / 10 + '%' : '—');
+    var vals = [
+      compact(m.perMin), String(m.live), compact(m.tokIn), compact(m.tokOut),
+      m.okD ? Math.round(m.okRate * 1000) / 10 + '%' : '—', m.ttft ? Math.round(m.ttft) + 'ms' : '—',
+      m.creditPerSec > 0 ? m.creditPerSec.toFixed(2) : '0'
+    ];
     var legend = byId('sanctumLegend');
-    if(legend){
-      var vals = [
-        compact(m.perMin), String(m.live), compact(m.tokIn), compact(m.tokOut),
-        m.okD ? Math.round(m.okRate * 100) + '%' : '—', m.ttft ? Math.round(m.ttft) + 'ms' : '—',
-        m.creditPerSec > 0 ? m.creditPerSec.toFixed(2) : '0'
-      ];
+    var metricKey = lang + '|' + vals.join('|');
+    if(legend && legendKey !== metricKey){
+      legendKey = metricKey;
       legend.innerHTML = LEGEND.map(function(key, i){
-        return '<span class="sct-legend-numeral">' + NUMERAL[i] + '</span><span>' + escapeHtml(textOf(lang, key))
-          + '</span><span class="sct-legend-value">' + escapeHtml(vals[i]) + '</span>';
+        return '<div class="sct-legend-item"><dt class="sct-legend-label"><span class="sct-legend-numeral" aria-hidden="true">'
+          + NUMERAL[i] + '</span>' + escapeHtml(textOf(lang, key))
+          + '</dt><dd class="sct-legend-value">' + escapeHtml(vals[i]) + '</dd></div>';
       }).join('');
     }
     // 账号 -> 眼：名单或状态变了才重建，编号才稳定。
@@ -27748,8 +28063,8 @@ function toggleSanctumSkin(){
     var lang = langNow();
     var list = view.model.ledger;
     if(!list.length){
-      box.innerHTML = '<div class="sct-empty">' + escapeHtml(textOf(lang, 'empty1')) + '<br>'
-        + escapeHtml(textOf(lang, 'empty2')) + '</div>';
+      box.innerHTML = '<div class="sct-empty"><strong>' + escapeHtml(textOf(lang, 'empty1')) + '</strong><span>'
+        + escapeHtml(textOf(lang, 'empty2')) + '</span></div>';
       return;
     }
     // 正按着的时候不动列表，等松开以后再补上。
@@ -27776,13 +28091,12 @@ function toggleSanctumSkin(){
     var fresh = !e.shown;
     e.shown = true;
     return '<div class="sct-row' + (line.fail ? ' is-fail' : '') + (fresh ? ' is-new' : '') + '" role="listitem" tabindex="0" data-key="' + escapeHtml(e.uid) + '" data-at="' + Math.floor(e.at / 1000) + '">'
-      + '<span class="sct-row-time">' + line.time + '</span>'
       + '<span class="sct-row-mark ' + line.mark + '" title="' + escapeHtml(line.title) + '">' + line.glyph + '</span>'
       + '<span class="sct-row-model" title="' + escapeHtml(e.route || e.model) + '">' + escapeHtml(line.model) + '</span>'
       + '<span class="sct-row-meta">' + escapeHtml(line.meta) + '</span>'
-      + (line.detail.length
-        ? '<span class="sct-row-detail">' + line.detail.map(escapeHtml).join('<span aria-hidden="true"> · </span>') + '</span>'
-        : '')
+      + '<span class="sct-row-detail">' + [line.time].concat(line.detail).map(function(item){
+        return '<span>' + escapeHtml(item) + '</span>';
+      }).join('<span aria-hidden="true">·</span>') + '</span>'
       + '</div>';
   }
   function setFocus(row){
@@ -27802,21 +28116,9 @@ function toggleSanctumSkin(){
   function openFailure(row){
     var key = row.getAttribute('data-key');
     var e = view.model.ledger.find(function(x){ return x.uid === key; });
-    if(!e || e.ok || typeof openRecentFailDetail !== 'function') return;
-    // 失败详情弹窗认的是请求列表当前这一页的下标：先按完成时刻找同一行。
-    var rows = (typeof RECENT_RENDER !== 'undefined' && RECENT_RENDER && Array.isArray(RECENT_RENDER.tableRows))
-      ? RECENT_RENDER.tableRows : [];
-    for(var i = 0; i < rows.length; i++){
-      if(rows[i] && rows[i].model === e.model && Math.abs(num(rows[i].at) * 1000 - e.rawAt) < 1){
-        openRecentFailDetail(i);
-        return;
-      }
-    }
-    // 翻不到（不在第一页、被出口筛掉了、或根本没写用量行）：把这一行临时借挂到
-    // 列表末尾，交给同一个弹窗展示，展示完立刻摘掉。
-    var d = new Date(e.at), p = function(n){ return (n < 10 ? '0' : '') + n; };
-    rows.push({
-      at: e.rawAt / 1000,
+    if(!e || e.ok || typeof showRecentFailDetail !== 'function') return;
+    var d = new Date(e.rawAt || e.at), p = function(n){ return (n < 10 ? '0' : '') + n; };
+    showRecentFailDetail({
       iso: d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
         + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()),
       model: e.model, account: e.account, key: e.key, key_name: e.key, status: e.status,
@@ -27824,7 +28126,6 @@ function toggleSanctumSkin(){
       completion_tokens: e.completion, total_tokens: e.total, kind: e.kind,
       outcome: e.outcome, message: e.message
     });
-    try { openRecentFailDetail(rows.length - 1); } finally { rows.pop(); }
   }
   function hideTip(){ var tip = byId('sanctumTooltip'); if(tip) tip.hidden = true; }
   function renderTip(){
@@ -27847,22 +28148,25 @@ function toggleSanctumSkin(){
     if(!lines){ hideTip(); return; }
     tip.textContent = lines.join('\n');
     tip.hidden = false;
-    var scene = byId('sanctumScene');
-    var rect = scene.getBoundingClientRect();
-    tip.style.left = Math.max(8, Math.min(view.mouse.x + 14, rect.width - 190)) + 'px';
-    tip.style.top = Math.max(8, view.mouse.y - 16 - lines.length * 17) + 'px';
+    var viewport = byId('sanctumViewport');
+    tip.style.left = '8px';
+    tip.style.left = clamp(view.mouse.x + 14, 8, Math.max(8, viewport.clientWidth - tip.offsetWidth - 8)) + 'px';
+    tip.style.top = clamp(view.mouse.y - tip.offsetHeight - 12, 8, Math.max(8, viewport.clientHeight - tip.offsetHeight - 8)) + 'px';
   }
   function resetView(){
     var v = view;
-    v.target.yaw = -0.62;
-    v.target.pitch = 0.52;
-    v.target.dist = 3.15;
+    Object.assign(v.target, REST_VIEW);
     v.idleFor = 0;
+    if(paused){
+      Object.assign(v.cam, REST_VIEW);
+      redrawPaused();
+    }
   }
   function wireCanvas(canvas){
     if(canvas.__sctWired) return;
     canvas.__sctWired = true;
     canvas.addEventListener('pointerdown', function(ev){
+      if(paused) return;
       dragging = true;
       dragX = ev.clientX;
       dragY = ev.clientY;
@@ -27887,6 +28191,7 @@ function toggleSanctumSkin(){
     canvas.addEventListener('pointercancel', end);
     canvas.addEventListener('pointerleave', function(){ view.mouse.over = false; hideTip(); });
     canvas.addEventListener('wheel', function(ev){
+      if(paused) return;
       ev.preventDefault();
       view.target.dist = clamp(view.target.dist * (1 + (ev.deltaY || 0) * 0.0012), 1.9, 5.2);
       view.idleFor = 0;
@@ -27907,10 +28212,15 @@ function toggleSanctumSkin(){
       });
     }
     var pause = byId('sanctumPauseBtn');
-    if(pause) pause.addEventListener('click', function(){ paused = !paused; renderTexts(); });
+    if(pause) pause.addEventListener('click', function(){
+      paused = !paused;
+      if(paused){ dragging = false; hideTip(); }
+      setText('sanctumPauseBtn', textOf(langNow(), paused ? 'resume' : 'pause'));
+    });
     var reset = byId('sanctumResetBtn');
     if(reset) reset.addEventListener('click', resetView);
     window.addEventListener('resize', resize);
+    if(typeof ResizeObserver === 'function') new ResizeObserver(resize).observe(byId('sanctumViewport'));
     document.addEventListener('visibilitychange', sync);
   }
   function watchRoot(){
@@ -27921,7 +28231,10 @@ function toggleSanctumSkin(){
       REDUCE = null;
       view.reduceMotion = reduceMotion();
       renderTexts();
-      if(renderer) renderer.setPalette(readPalette());
+      if(renderer){
+        renderer.setPalette(readPalette());
+        redrawPaused();
+      }
     });
     observer.observe(document.documentElement, {attributes: true, attributeFilter: ['data-lang', 'data-theme']});
   }
