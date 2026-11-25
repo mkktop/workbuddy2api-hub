@@ -77,3 +77,6 @@ desktop.ini
 
 # Local Docker Compose override
 docker-compose.override.yml
+
+# ZCode 本地工作目录（计划/缓存），与项目无关
+.zcode/
