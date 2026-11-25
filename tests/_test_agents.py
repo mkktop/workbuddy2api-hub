@@ -763,7 +763,7 @@ try:
         cfg_data = json.load(fh)
     wb_prov = (cfg_data.get("provider") or {}).get("wb-proxy") or {}
     check("opencode models populated from catalog fallback",
-          "model-fallback-1" in (wb_prov.get("models") or {}), wb_prov)
+          "wb-cn/model-fallback-1" in (wb_prov.get("models") or {}), wb_prov)
 
     # Test 2: Frontend restore format (sends client_id)
     restore_payload_frontend = {"client_id": "opencode"}
@@ -1103,16 +1103,16 @@ try:
 
     m_free = _applied_models("intl", [free_intl, disabled_pro_intl, pro_cn])
     check("intl fallback omits Pro Only without an enabled intl paid account",
-          m_free == {"intl-free"}, m_free)
+          m_free == {"wb-intl/intl-free"}, m_free)
     m_tier = _applied_models("intl", [free_intl, pro_intl_tier])
     check("intl fallback includes Pro Only with enabled intl tier.paid account",
-          m_tier == {"intl-free", "intl-pro"}, m_tier)
+          m_tier == {"wb-intl/intl-free", "wb-intl/intl-pro"}, m_tier)
     m_legacy = _applied_models("intl", [pro_intl_legacy])
     check("intl fallback includes Pro Only with enabled intl credits.is_paid_user account",
-          m_legacy == {"intl-free", "intl-pro"}, m_legacy)
+          m_legacy == {"wb-intl/intl-free", "wb-intl/intl-pro"}, m_legacy)
     m_cn = _applied_models("cn", [])
     check("cn fallback keeps all models by default",
-          m_cn == {"cn-base", "cn-tagged"}, m_cn)
+          m_cn == {"wb-cn/cn-base", "wb-cn/cn-tagged"}, m_cn)
 finally:
     A.integrate = orig_integrate32
     A.restore = orig_restore32

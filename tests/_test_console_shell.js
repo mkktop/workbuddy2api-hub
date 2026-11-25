@@ -87,18 +87,18 @@ check(/if\(!window\.__NEXT_UI__ && tab === 'gateway'\) applyConsoleView\('overvi
 check(/\.console-view-hidden\{display:none!important\}/.test(html),
   '缺少视图收起的样式');
 
-// 页面清单没变：书签与首屏选页仍按原来的七页走。
+// 书签与首屏选页共用主导航的页面顺序。
 const headTabs = html.match(/var TABS = \[([^\]]*)\];/);
 const mainTabs = html.match(/const MAIN_TABS = \[([^\]]*)\];/);
 const names = s => s.split(',').map(x => x.trim().replace(/['"]/g, '')).filter(Boolean);
 check(headTabs && mainTabs && JSON.stringify(names(headTabs[1])) === JSON.stringify(names(mainTabs[1])),
   'head 的 TABS 与主脚本的 MAIN_TABS 必须一致');
-check(names(mainTabs[1]).length === 10 && names(mainTabs[1]).includes('overview') &&
+check(names(mainTabs[1]).length === 11 && names(mainTabs[1]).includes('runtime') &&
       names(mainTabs[1]).includes('media') && names(mainTabs[1]).includes('api') &&
       !names(mainTabs[1]).includes('models'),
-  '主页面清单包含总览、媒体页、API 接入且不含内容入口');
+  '主页面清单包含运行详情、媒体页、API 接入且不含内容入口');
 check(JSON.stringify(names(mainTabs[1])) === JSON.stringify([
-  'overview', 'gateway', 'accounts', 'api', 'analytics', 'tasks', 'agents', 'media', 'settings', 'logs'
+  'overview', 'runtime', 'gateway', 'accounts', 'api', 'analytics', 'tasks', 'agents', 'media', 'settings', 'logs'
 ]), '主页面清单顺序应与工作台菜单一致');
 
 // 侧栏折叠与手机抽屉的入口都在。
@@ -243,12 +243,16 @@ check(/function renderConsoleInsights\(rows, accts\)/.test(script), '缺少概�
 check(/function renderConsoleAccountHealth\(accts\)/.test(script), '缺少账号健康度渲染');
 check(/function renderConsoleUsageChart\(rows\)/.test(script), '缺少 Token 分布图渲染');
 
-// 健康度必须复用账号的统一过滤函数，不能再写一份区域过滤（两处会漂开）。
+// 健康卡展示两个 WorkBuddy 出口，同时沿用账号列表的健康判断。
 const health = script.slice(script.indexOf('function renderConsoleAccountHealth('),
                             script.indexOf('function renderConsoleUsageChart('));
-check(/accountsInView\(\)/.test(health), '健康度应复用 accountsInView()');
-check(!/\.filter\(a => !a\.realm \|\| a\.realm ===/.test(health),
-  '健康度不该自己再写一份区域过滤表达式');
+check(/realmAccounts\.filter\(accountIsHealthy\)/.test(health), '健康度应复用 accountIsHealthy()');
+check(/console-health-unconfigured[^\n]*未接入/.test(health), '未接入账号的出口要与账号不可用区分');
+
+const sharedStyles = html.slice(html.indexOf('<style>\n:root'), html.indexOf('<style id="wb-alibaba-console"'));
+check(/\.console-insights\{display:grid/.test(sharedStyles) && /\.console-insight\{[^}]*background:var\(--panel\)/.test(sharedStyles),
+  '运行详情卡片的布局与边框必须在常规导航下生效');
+check(/#consoleUsageChart\[hidden\]\{display:none\}/.test(sharedStyles), '无用量时隐藏坐标图');
 
 // 全页只允许存在一处区域过滤表达式（账号卡片与禁用汇总共用）。
 const realmFilters = script.match(/\.filter\(a => !a\.realm \|\| a\.realm ===/g) || [];

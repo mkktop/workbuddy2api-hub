@@ -1,4 +1,4 @@
-"""The include_usage frame on /v1/chat/completions must be a trailing one.
+"""The include_usage frame on /chat/completions must be a trailing one.
 
 OpenAI's contract for `stream_options.include_usage` is a final chunk with an
 empty `choices` list carrying the usage block, sent after the finish chunk and
@@ -231,7 +231,7 @@ try:
 
     print("[1] streaming chat: usage arrives in one trailing choices-less frame")
     code, _headers, body = request(
-        "POST", "/v1/chat/completions",
+        "POST", "/chat/completions",
         {"model": MODEL, "stream": True,
          "messages": [{"role": "user", "content": "hi"}]},
         headers={"Authorization": "Bearer TESTKEY"})

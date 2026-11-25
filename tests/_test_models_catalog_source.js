@@ -3,14 +3,13 @@
 面板必须把一批清单的出处说得醒目：通过上游 API 拿到的 → 绿色状态条
 「当前为通过 API 获取的最新数据」+ 刷新时间；不是 API 拿的（本地配置
 文件/内置快照）→ 黄色警示「当前为项目默认模型信息（未经 API 刷新）：
-模型、倍率数据可能不一致」。数据来自 /v1/models 响应的 catalog 字段
+模型、倍率数据可能不一致」。数据来自 /panel/model-catalog 响应的 catalog 字段
 （见 wb_proxy.catalog_meta），由 renderModelsSourceLine() 渲染。模型表
 本身也要带上名称、默认采样参数与思考细节（默认档位、能否关闭思考），
 而不是只有 id 和倍率。
 
-另外钉住一个给兄弟套件用的契约：模型 ID 单元格里只放 id 本身，别的列
-的内容不许混进来——_test_model_probes.js 用该单元格的纯文本当行键，
-一旦把它变成 "id 名称" 拼接，那边按行断言会整体错位。
+模型 ID 单元格只显示一个 ID，供 _test_model_probes.js 用作行键。公开目录中
+有对应记录时，显示并复制带出口前缀的 ID，复选框与别名输入继续使用上游 ID。
 
 Run with Node.
 */
@@ -32,7 +31,9 @@ dom.installDom({
 });
 
 const api = new Function(script + `
-  ; return { renderAvailableModels, renderModelsSourceLine };`)();
+  ; return { renderAvailableModels, renderModelsSourceLine, loadModels,
+    setFilter: value => { MODEL_CATALOG_FILTER = value; renderAvailableModels(); },
+  };`)();
 
 let checks = 0;
 const check = (label, cond, extra) => {
@@ -134,8 +135,8 @@ let rows = rowsById(render([{
   reasoning_can_disable: false, temperature: 0.9, top_p: 1,
 }]));
 let r = rows['hy3'];
-check('the reader finds the row by its bare id', !!r, JSON.stringify(Object.keys(rows)));
-check('the id cell stays the bare id', text(r['模型 ID']) === 'hy3', r['模型 ID']);
+check('a row without a client catalogue entry shows its upstream id', !!r, JSON.stringify(Object.keys(rows)));
+check('an upstream-only row has no client copy action', !r['模型 ID'].includes('data-copy-model-id'), r['模型 ID']);
 check('name column shows the display name', r['名称'].includes('混元 3'), r['名称']);
 check('default model carries the star', r['名称'].includes('★'), r['名称']);
 check('description rides the name tooltip',
@@ -201,4 +202,38 @@ check('the external name input offers no candidate list',
 check('the external name is not restricted by pattern/readonly',
       !/pattern=|readonly/.test(rows['hy3']['对外名称']), rows['hy3']['对外名称']);
 
-console.log('models catalog source-line assertions passed (' + checks + ' checks)');
+async function checkPublicIds(){
+  const upstream = 'example/shared-model';
+  const routes = {cn: 'wb-cn', intl: 'wb-intl', codearts: 'codearts'};
+  global.fetch = async url => ({
+    ok: true, status: 200,
+    json: async () => url === '/v1/models' ? {
+      data: Object.entries(routes).map(([realm, prefix]) => ({
+        id: prefix + '/' + upstream, route_realm: realm, upstream_model: upstream,
+      })),
+    } : {data: [{id: upstream}, {id: 'legacy/only'}]},
+  });
+
+  for (const [realm, prefix] of Object.entries(routes)) {
+    window.VIEW_REALM = realm;
+    await api.loadModels();
+    await new Promise(resolve => setImmediate(resolve));
+    const publicId = prefix + '/' + upstream;
+    const rendered = rowsById(tbody.innerHTML);
+    const cell = rendered[publicId]?.['模型 ID'];
+    check(realm + ' shows the id from the matching route', !!cell);
+    check(realm + ' copies the exact public id', cell.includes('data-copy-model-id="' + publicId + '"'), cell);
+    check(realm + ' retains the upstream id for one-click configuration', cell.includes('data-model-id="' + upstream + '"'), cell);
+    check(realm + ' does not fabricate a public id for legacy models', !rendered['legacy/only']['模型 ID'].includes('data-copy-model-id'));
+    api.setFilter(publicId);
+    check(realm + ' searches by the public id', Object.keys(rowsById(tbody.innerHTML)).join() === publicId);
+    api.setFilter('');
+  }
+}
+
+checkPublicIds().then(() => {
+  console.log('models catalog source-line assertions passed (' + checks + ' checks)');
+}).catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});

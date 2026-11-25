@@ -24,6 +24,7 @@
   - [CodeArts 原生第三出口](#codearts)
 - [账号接入与 API Key 权限](#accounts)
 - [客户端接入配置](#clients)
+- [统一模型网关](#model-gateway)
 - [常用环境变量](#env)
 - [主要 API 端点](#endpoints)
 - [测试与 CI](#tests)
@@ -156,7 +157,7 @@ WB_TLS_FINGERPRINT=node     # 强制桥；桥不可用时报明确错误
 2. 切换至看板顶部「CodeArts」视图，点击「+ 添加账号 (OAuth)」完成华为云授权；
 3. 在「设置 → API Key」中新建 Key 并绑定出口为 `CodeArts`（或全局通用）即可调用。
 
-CodeArts 的模型 ID 按上游目录**精确匹配**：`deepseek-v4.1-flash` 与 `deepseek-v4.1-flash-1017` 是两个独立模型，不会互相别名或静默回退。`/v1/models?realm=codearts` 返回的是账号当前可用的真实目录 ID；调用时请直接使用返回的完整 ID。
+CodeArts 的模型 ID 按上游目录**精确匹配**：`deepseek-v4.1-flash` 与 `deepseek-v4.1-flash-1017` 是两个独立模型，不会互相别名或静默回退。`/v1/models` 中 `codearts/` 前缀的条目来自账号的模型目录；调用时请直接使用返回的完整 ID。
 
 <a id="accounts"></a>
 ## 账号接入与 API Key 权限
@@ -171,7 +172,7 @@ CodeArts 的模型 ID 按上游目录**精确匹配**：`deepseek-v4.1-flash` �
 「设置」页支持创建多个独立 API Key：
 
 - **出口绑定**：可固定走国际版、国内版或 CodeArts；
-- **模型限制**：支持通配符白名单（如 `deepseek*`、`gpt-6-astra`），违规请求本机直接返回 400；
+- **模型限制**：支持完整模型 ID 与通配符（如 `wb-intl/deepseek*`、`codearts/*`），超出权限的 `/v1` 请求返回 403；
 - **账号白名单**：可精确限定该 Key 仅允许调度的账号范围；
 - **用量透视**：数据看板按 Key 独立统计调用次数、Token 消耗、缓存命中与积分。
 
@@ -186,7 +187,7 @@ CodeArts 的模型 ID 按上游目录**精确匹配**：`deepseek-v4.1-flash` �
 
 - **Base URL**：`http://127.0.0.1:8788/v1`（局域网为 `http://<局域网IP>:8788/v1`）
 - **API Key**：看板「设置」中添加并绑定的 Key
-- **模型名称**：调用 `/v1/models` 中列出的任意官方对齐模型 ID（如 `deepseek-v4.1-flash`、`gpt-6-astra`、`hy3`）
+- **模型名称**：调用 `/v1/models` 中列出的任意带出口前缀的模型 ID（如 `wb-intl/deepseek-v4.1-flash`）
 
 **Codex CLI / Responses API**
 
@@ -204,6 +205,31 @@ export OPENAI_API_KEY="你在看板设置中添加并绑定的API_Key"
 export ANTHROPIC_BASE_URL="http://127.0.0.1:8788"
 export ANTHROPIC_API_KEY="你在看板设置中添加并绑定的API_Key"
 ```
+
+<a id="model-gateway"></a>
+## 统一模型网关
+
+OpenAI 兼容客户端统一使用 **Base URL `http://127.0.0.1:8788/v1`**。先请求 `GET /v1/models`，再把目录中的 `id` 原样填到请求的 `model`。模型 ID 格式为 `<出口ID>/<模型ID>`。
+
+| 前缀 | 上游 |
+|---|---|
+| `wb-cn/` | WorkBuddy 国内版账号池 |
+| `wb-intl/` | WorkBuddy 国际版账号池 |
+| `codearts/` | 已启用的 CodeArts 出口 |
+
+例如，用同一个 Key 通过 `wb-intl/deepseek-v4.1-flash` 发起调用：
+
+```bash
+curl http://127.0.0.1:8788/v1/chat/completions \
+  -H "Authorization: Bearer $GATEWAY_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"wb-intl/deepseek-v4.1-flash","messages":[{"role":"user","content":"你好"}]}'
+```
+
+- **Key 权限**：在「设置」中将出口绑定留空，在「模型 ID 或通配符」填入 `wb-cn/*,codearts/*` 即可授权多个出口。模型目录与调用都按带前缀的 ID 检查权限。已绑定单一出口的 Key 仍受该绑定约束。
+- **协议入口**：Chat 与 Responses 使用 `/v1/chat/completions`、`/v1/responses`。Messages 客户端的 Base URL 填 `http://127.0.0.1:8788`，网关需启用 `WB_ENABLE_ANTHROPIC_MESSAGES=1`。Gemini 用 `/v1beta/models/<带前缀的模型ID>:generateContent` 或 `:streamGenerateContent`，路径中的 `/` 可编码为 `%2F`。
+- **路由结果**：格式错误、权限不足、目录中找不到模型、出口不可用分别返回 400、403、404、503。一个出口的目录暂不可读时，其他出口的模型仍可列出，故障出口出现在 `unavailable_routes`。用量行保存 `requested_model`、`route_id` 和 `upstream_model`。
+- **新增平台**：在 `MODEL_GATEWAY` 注册 `Provider`，实现模型目录、可用状态和上游调用。能输出 Chat SSE 的适配器只需实现 `open_chat`，复用 `TEXT_MODEL_OPERATIONS` 的四种文本协议。适配器可用 `gateway_operations` 按模型声明能力。支持账号白名单时，适配器需声明账号 ID，并在上游调度时执行传入的白名单。
 
 <a id="env"></a>
 ## 常用环境变量
@@ -254,7 +280,7 @@ export ANTHROPIC_API_KEY="你在看板设置中添加并绑定的API_Key"
 | Anthropic Token 计数 | `POST` | `/v1/messages/count_tokens` | 统计 Messages 请求的 token 数 |
 | 语音合成 | `POST` | `/v1/audio/speech` | OpenAI 兼容 TTS（WAV / PCM，需在媒体页开启） |
 | 语音转写 | `POST` | `/v1/audio/transcriptions` | OpenAI 兼容 ASR（multipart，需在媒体页开启） |
-| 模型目录 | `GET` | `/v1/models` | 获取当前出口对齐的官方可用模型列表 |
+| 模型目录 | `GET` | `/v1/models` | 获取当前 Key 可用的跨出口模型目录 |
 | 生图 | `POST` | `/v1/images/generations` | 文生图 / 图生图（始终可用，按媒体号池自动选出口） |
 | 生视频 | `POST` | `/v1/videos` | 异步生视频任务提交（本地并发排队与空闲调度） |
 | 视频状态 | `GET` | `/v1/videos/<id>` | 轮询视频生成进度与结果 |
@@ -276,7 +302,7 @@ python tests/run_all.py            # 全部套件
 python tests/run_all.py realm      # 只跑名字里含 realm 的
 ```
 
-- 315 个套件：236 个 Python + 79 个 JS；JS 需要 PATH 上有 `node`，缺失时会跳过并提示。Windows 上如果 `python` 不是 3.9+，请改用 `py -3 tests/run_all.py`。
+- 316 个套件：237 个 Python + 79 个 JS；JS 需要 PATH 上有 `node`，缺失时会跳过并提示。Windows 上如果 `python` 不是 3.9+，请改用 `py -3 tests/run_all.py`。
 - `tests/_mobile_check.py` 是独立的 Playwright 手机 / 桌面布局检查器（需自行安装 Playwright），按需手动运行，不在上面的套件集里。
 - `tests/_visual_recent.py` 是同一类手动检查器：用合成 fixture 起一份 1480 宽的「请求列表」，验证失败徽章点开的详情弹窗、四个过滤下拉真的把参数发到 `/usage/recent`，并把列表 / 弹窗 / 筛选条截图写到系统临时目录的 `wb-visual-recent/`。
 - CI（[`.github/workflows/tests.yml`](.github/workflows/tests.yml)）跑同一条命令：Ubuntu 上 Python 3.9 与 3.12（3.9 是本项目声称的最低版本），Windows 上 Python 3.12；推送 `v*` tag 时额外断言 **tag == 源码版本**（`-ci` 演练 tag 豁免）。
@@ -298,6 +324,19 @@ docker compose pull && docker compose up -d
 ```
 
 升级前建议备份 `docker-compose.yml` 与 `accounts/`；回滚时把 `image:` 改回旧版本标签并重新 `up -d`。完整发布纪律与提交规范见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。
+
+### Unreleased
+
+- 新增统一模型网关 `/v1`，用模型 ID 的出口前缀选择 WorkBuddy 国内版、国际版或 CodeArts，统一目录、权限和协议分发。
+- 圣轮大屏为整个总览页应用灰阶主题，增大实时场景并显示在途请求，支持全屏。切换到功能页时恢复普通主题。
+- 网关模型清单显示 `/v1` 可直接使用的完整模型 ID，并支持一键复制。
+- 总览页只展示圣轮大屏，出口状态、账号健康、用量摘要和请求列表移到「运行详情」。
+- 修复「运行详情」的 Token 分布与账号健康卡片样式，明确区分无请求、无用量与未接入账号。
+- 圣轮指标注明统计窗口，断流时将不可用读数标为「—」，轮询覆盖全部出口，首字时延显示 P50。
+- 圣轮用带日冕的恒星显示账号，请求沿弧线飞向对应恒星，中心星核与七重轨道共用灰阶星野。
+- 结束的请求带着模型名和原有灰阶拖尾缓慢并入圣轮轨道，满 60 秒后沿螺旋轨迹飞入中心。右侧即时记录结果，悬停星点可看倒计时。
+- 圣轮画布延伸至舞台顶部，「全屏」与「复位视角」并排放在下方。
+- 圣轮的模型名固定跟随各自星点，重叠时保持原位。
 
 <a id="security"></a>
 ## 安全与风险

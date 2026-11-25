@@ -230,7 +230,7 @@ try:
         sys.exit(1)
 
     print("[1] the first stream dies before any byte reaches the client")
-    code, body = request("/v1/chat/completions", {
+    code, body = request("/chat/completions", {
         "model": MODEL, "stream": True,
         "messages": [{"role": "user", "content": "hi"}],
     })
@@ -265,7 +265,7 @@ try:
 
     print()
     print("[3] a clean stream clears the streak")
-    code2, body2 = request("/v1/chat/completions", {
+    code2, body2 = request("/chat/completions", {
         "model": MODEL, "stream": True,
         "messages": [{"role": "user", "content": "again"}],
     })

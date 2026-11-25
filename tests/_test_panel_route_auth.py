@@ -412,6 +412,17 @@ class ApiKeySurfaceTests(BoundaryCase):
     def test_an_api_key_still_reaches_the_model_listing(self):
         status, body, _raw = self.dispatch("/v1/models", self.key_only())
         self.assertEqual(status, 200)
+        self.assertEqual({m["id"] for m in body["data"]},
+                         {"wb-cn/" + MODEL_ID, "wb-intl/" + MODEL_ID})
+
+    def test_the_regional_catalogue_requires_panel_access(self):
+        path = "/panel/model-catalog?realm=cn"
+        status, body, _raw = self.dispatch(path, self.key_only())
+        self.assertEqual(status, 401)
+        self.assertIn(PANEL_ONLY_MESSAGE, body["error"]["message"])
+        status, body, _raw = self.dispatch(path, self.session())
+        self.assertEqual(status, 200)
+        self.assertEqual(body["realm"], "cn")
         self.assertEqual([m["id"] for m in body["data"]], [MODEL_ID])
 
     def test_an_anonymous_api_call_is_refused_as_a_key_problem(self):

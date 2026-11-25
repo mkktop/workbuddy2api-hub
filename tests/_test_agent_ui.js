@@ -380,12 +380,12 @@ const check = (label, cond, extra) => {
   global.fetch = (url, opts) => {
     const u = String(url);
     requests.push({url: u, opts: opts || {}});
-    if (u.indexOf('/v1/models?realm=cn') !== -1) {
+    if (u.indexOf('/panel/model-catalog?realm=cn') !== -1) {
       const payload = {data: CN_MODELS.slice()};
       return Promise.resolve({status: 200, ok: true,
         json: () => Promise.resolve(payload), text: () => Promise.resolve(JSON.stringify(payload))});
     }
-    if (u.indexOf('/v1/models?realm=intl') !== -1) {
+    if (u.indexOf('/panel/model-catalog?realm=intl') !== -1) {
       const payload = {data: INTL_MODELS.slice()};
       return Promise.resolve({status: 200, ok: true,
         json: () => Promise.resolve(payload), text: () => Promise.resolve(JSON.stringify(payload))});

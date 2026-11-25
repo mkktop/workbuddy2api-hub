@@ -125,8 +125,8 @@ assert.ok(/data\.accounts_separate_tab === true/.test(script),
 assert.ok(/postJSON\('\/settings\/save', \{accounts_separate_tab: value\}\)/.test(script),
   '保存应只 patch accounts_separate_tab 一个键');
 // 合并之后「账号」的书签不能停在内容已经不在了的空页上
-assert.ok(/if\(tab === 'accounts' && !_accountsSeparateTab\) tab = window\.__NEXT_UI__ \? 'overview' : 'gateway';/.test(script),
-  '合并模式下 ?tab=accounts 应退回「网关与账号」/总览页');
+assert.ok(/if\(tab === 'accounts' && !_accountsSeparateTab\) tab = window\.__NEXT_UI__ \? 'runtime' : 'gateway';/.test(script),
+  '合并模式下 ?tab=accounts 应退回「运行详情」或传统网关页');
 
 /* ---- 1c. 一键切换所有出站身份 --------------------------------------- */
 

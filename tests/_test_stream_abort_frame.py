@@ -225,7 +225,7 @@ try:
         sys.exit(1)
 
     req = urllib.request.Request(
-        "http://127.0.0.1:%d/v1/chat/completions" % GATEWAY_PORT,
+        "http://127.0.0.1:%d/chat/completions" % GATEWAY_PORT,
         data=json.dumps({"model": MODEL, "stream": True,
                          "messages": [{"role": "user", "content": "hi"}]}).encode("utf-8"),
         method="POST")
@@ -256,9 +256,9 @@ try:
 
     P.wb_settings.set_enable_anthropic_messages(ACCOUNTS, True)
     for path, params in (
-        ("/v1/chat/completions", {"messages": [{"role": "user", "content": "hi"}]}),
-        ("/v1/responses", {"input": "hi"}),
-        ("/v1/messages", {"messages": [{"role": "user", "content": "hi"}], "max_tokens": 32}),
+        ("/chat/completions", {"messages": [{"role": "user", "content": "hi"}]}),
+        ("/responses", {"input": "hi"}),
+        ("/messages", {"messages": [{"role": "user", "content": "hi"}], "max_tokens": 32}),
     ):
         for stream, failure in (
             (False, {"error": {"code": 11102, "message": "model missing"}}),
@@ -280,7 +280,7 @@ try:
             count = MOCK["stream_calls"]
             MOCK["model_error"] = {"error": {"code": error_code, "message": "invalid request"}}
             MOCK["error_http"] = http_error
-            code, _, body = gateway_post("/v1/chat/completions", {
+            code, _, body = gateway_post("/chat/completions", {
                 "model": MODEL, "stream": False,
                 "messages": [{"role": "user", "content": "hi"}],
             })

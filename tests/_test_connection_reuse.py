@@ -194,14 +194,14 @@ def send_pair(bad_body, label):
     sock = socket.create_connection(("127.0.0.1", port), timeout=20)
     try:
         sock.sendall(
-            b"POST /v1/chat/completions HTTP/1.1\r\nHost: x\r\n"
+            b"POST /chat/completions HTTP/1.1\r\nHost: x\r\n"
             b"Authorization: Bearer BADKEY\r\nContent-Type: application/json\r\n"
             b"Content-Length: " + str(len(bad_body)).encode() + b"\r\n\r\n" + bad_body
         )
         first = read_response(sock)
         small = b'{"model":"x","messages":[{"role":"user","content":"hi"}]}'
         sock.sendall(
-            b"POST /v1/chat/completions HTTP/1.1\r\nHost: x\r\n"
+            b"POST /chat/completions HTTP/1.1\r\nHost: x\r\n"
             b"Authorization: Bearer GOODKEY\r\nContent-Type: application/json\r\n"
             b"Content-Length: " + str(len(small)).encode() + b"\r\n\r\n" + small
         )
@@ -297,7 +297,7 @@ try:
     print("[3] a good request alone still works")
     sock = socket.create_connection(("127.0.0.1", port), timeout=15)
     body = b'{"model":"x","messages":[{"role":"user","content":"hi"}]}'
-    sock.sendall(b"POST /v1/chat/completions HTTP/1.1\r\nHost: x\r\n"
+    sock.sendall(b"POST /chat/completions HTTP/1.1\r\nHost: x\r\n"
                  b"Authorization: Bearer GOODKEY\r\nContent-Type: application/json\r\n"
                  b"Content-Length: " + str(len(body)).encode() + b"\r\n\r\n" + body)
     try:

@@ -64,7 +64,7 @@ class ProbeRunTests(unittest.TestCase):
         result = wb_probes.probe_model("http://127.0.0.1:8788", "k", "m1",
                                        dry_run=True)
         self.assertTrue(result["dry_run"])
-        self.assertEqual(result["url"], "http://127.0.0.1:8788/v1/chat/completions")
+        self.assertEqual(result["url"], "http://127.0.0.1:8788/chat/completions")
         self.assertEqual(result["request"]["max_tokens"], 1000000)
 
     def test_length_finish_reason_is_the_clamp(self):

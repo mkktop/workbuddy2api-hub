@@ -96,7 +96,7 @@ class PinnedRouteTests(unittest.TestCase):
     def test_exact_uid_and_nickname(self):
         status, payload, _ = self.dispatch("/u/abcdef123456/v1/models")
         self.assertEqual(status, 200)
-        self.assertEqual([m["id"] for m in payload["data"]], ["m1", "m2"])
+        self.assertEqual([m["id"] for m in payload["data"]], ["wb-intl/m1", "wb-intl/m2"])
         status, _payload, _ = self.dispatch("/u/alpha/v1/models")
         self.assertEqual(status, 200)
 
@@ -114,10 +114,11 @@ class PinnedRouteTests(unittest.TestCase):
         self.assertEqual(status, 404)
         self.assertIn("was not found", payload["error"]["message"])
 
-    def test_legacy_path_is_unchanged(self):
+    def test_unpinned_v1_catalogue_lists_both_realms(self):
         status, payload, _ = self.dispatch("/v1/models")
         self.assertEqual(status, 200)
-        self.assertEqual(len(payload["data"]), 2)
+        self.assertEqual({m["id"] for m in payload["data"]},
+                         {"wb-cn/m1", "wb-cn/m2", "wb-intl/m1", "wb-intl/m2"})
 
     def test_query_is_preserved(self):
         status, _payload, _ = self.dispatch("/u/abcdef123456/v1/models?x=1")
@@ -133,7 +134,7 @@ class PinnedRouteTests(unittest.TestCase):
         self.pool.accounts[0].disabled_models = frozenset({"m1"})
         status, payload, _ = self.dispatch("/u/abcdef123456/v1/models")
         self.assertEqual(status, 200)
-        self.assertEqual([m["id"] for m in payload["data"]], ["m2"])
+        self.assertEqual([m["id"] for m in payload["data"]], ["wb-intl/m2"])
 
     def test_pinned_account_must_be_ready(self):
         account = self.pool.accounts[0]

@@ -126,7 +126,7 @@ PowerShell：
 
 ```powershell
 $headers = @{ Authorization = "Bearer $env:WB_API_KEY"; "Content-Type" = "application/json" }
-$body = '{"model":"deepseek-v4.1-flash","messages":[{"role":"user","content":"hi"}],"stream":false}'
+$body = '{"model":"wb-intl/deepseek-v4.1-flash","messages":[{"role":"user","content":"hi"}],"stream":false}'
 Invoke-RestMethod -Method Post -Uri 'http://127.0.0.1:8788/v1/chat/completions' -Headers $headers -Body $body
 ```
 
@@ -136,7 +136,7 @@ Linux / macOS：
 curl -sS http://127.0.0.1:8788/v1/chat/completions \
   -H "Authorization: Bearer $WB_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"model":"deepseek-v4.1-flash","messages":[{"role":"user","content":"hi"}],"stream":false}'
+  -d '{"model":"wb-intl/deepseek-v4.1-flash","messages":[{"role":"user","content":"hi"}],"stream":false}'
 ```
 
 结果解释：

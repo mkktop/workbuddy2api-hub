@@ -232,7 +232,7 @@ try:
 
     print("[1] every frame of one reply carries the same id")
     code, _headers, body = request(
-        "POST", "/v1/chat/completions",
+        "POST", "/chat/completions",
         {"model": MODEL, "stream": True, "reasoning_effort": "high",
          "messages": [{"role": "user", "content": "hi"}]},
         headers={"Authorization": "Bearer TESTKEY"})

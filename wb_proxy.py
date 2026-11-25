@@ -81,6 +81,7 @@ import wb_logstore
 import wb_media
 import wb_media_client
 import wb_media_tasks
+import wb_model_gateway
 import wb_pool_media
 import wb_pool_scope
 import wb_pool_text
@@ -1698,6 +1699,13 @@ def _best_cached_tokens(usage):
     return 0
 
 
+def _workbuddy_usage_account(uid):
+    route = wb_model_gateway.current_route()
+    if route is not None and route.provider.realm not in ("cn", "intl"):
+        return None
+    return POOL.get(uid) if uid and POOL else None
+
+
 def record_usage(model, usage, stream=None, elapsed_ms=None, ttft_ms=None, gen_ms=None, fp=None,
                 account=None, outcome="completed", key=None, effort=None,
                 requested_model=None, realm=None, proxy_slot=None, proxy_exit=None,
@@ -1755,7 +1763,7 @@ def record_usage(model, usage, stream=None, elapsed_ms=None, ttft_ms=None, gen_m
         row["proxy_slot"] = proxy_slot
     if proxy_exit:
         row["proxy_exit"] = proxy_exit
-    acc = POOL.get(account) if (account and POOL) else None
+    acc = _workbuddy_usage_account(account)
     row["realm"] = realm or (acc.realm if acc else CURRENT_REALM)
     # The refresher visits one account per tick, so on a large pool the cached
     # balance can be hours old; subtract this request's real cost at once so
@@ -1830,7 +1838,7 @@ def record_upstream_usage(upstream, requested_model, usage, **kwargs):
         usage = finalize(usage)
     billed_model = getattr(upstream, "_wb_billed_model", requested_model)
     # 出口归因（#743）：每条完成行都带上响应对象的账号槽位与实际出口。
-    account = POOL.get(getattr(upstream, "_wb_account_uid", "")) if POOL else None
+    account = _workbuddy_usage_account(getattr(upstream, "_wb_account_uid", ""))
     if account is not None:
         kwargs.setdefault("proxy_slot", account.proxy_slot)
         kwargs.setdefault("proxy_exit", egress_exit(account.proxy))
@@ -1846,6 +1854,12 @@ def _persist_usage(row, fail_label):
     loads that file (every aggregate re-reads usage.jsonl), so the work was
     pure overhead on the request path. One append per request now.
     """
+    route = wb_model_gateway.current_route()
+    if route is not None:
+        row["route_id"] = route.provider.id
+        row["requested_model"] = route.public_model
+        row["upstream_model"] = row["model"]
+        row["realm"] = route.usage_realm
     # 实时视图不等落盘：磁盘写失败时这一次调用照样有始有终（见 wb_panel_events）。
     wb_panel_events.finish(row)
     try:
@@ -1934,7 +1948,7 @@ def record_error(model, status, message, elapsed_ms=None, account=None,
         row["realm"] = realm
     if account:
         row["account"] = account
-        acc = POOL.get(account) if POOL else None
+        acc = _workbuddy_usage_account(account)
         if not realm:
             row["realm"] = acc.realm if acc else CURRENT_REALM
     if proxy_slot:
@@ -18708,6 +18722,12 @@ def open_upstream(payload, session_key=None, target_realm=None, prebuilt_body=No
                   allow_product_switch=True,
                   pin_account=None, defer_egress_success=False,
                   allowed_accounts=None):
+    adapter = wb_model_gateway.chat_adapter()
+    if adapter is not None:
+        stream, account, effort = adapter(payload, session_key=session_key,
+                                          allowed_accounts=allowed_accounts)
+        wb_panel_events.bind(account.uid)
+        return stream, account, effort
     # Refresh the daily guards before picking. The scan underneath is
     # incremental and TTL-cached, so this is a stat() plus a cached dict on
     # the hot path, and an account parked by any of the guards is skipped
@@ -21727,7 +21747,7 @@ def chat_to_messages(obj):
         "id": _anthropic_message_id(obj.get("id")),
         "type": "message",
         "role": "assistant",
-        "model": _anthropic_text(obj.get("model")),
+        "model": wb_model_gateway.response_model(_anthropic_text(obj.get("model"))),
         "content": content,
         "stop_reason": _anthropic_stop_reason(finish),
         "stop_sequence": None,
@@ -21855,7 +21875,7 @@ def stream_messages_events(raw_iter, model, holder=None, web_meta=None):
                 "type": "message",
                 "role": "assistant",
                 "content": [],
-                "model": state["model"],
+                "model": wb_model_gateway.response_model(state["model"]),
                 "stop_reason": None,
                 "stop_sequence": None,
                 "usage": {"input_tokens": 0, "output_tokens": 0},
@@ -22118,7 +22138,7 @@ def chat_to_response(chat_obj, model, custom_names=None, request_meta=None, name
         "object": "response",
         "created_at": int(time.time()),
         "status": "completed" if finish != "length" else "incomplete",
-        "model": model,
+        "model": wb_model_gateway.response_model(model),
         "output": output,
         "output_text": text,
         "metadata": {},
@@ -22154,7 +22174,7 @@ def reasoning_only_response(result):
 
 def stream_responses_events(upstream, model, holder):
     """Yield Responses-API SSE frames translated from chat-completions chunks."""
-    logical_model = model
+    logical_model = wb_model_gateway.response_model(model)
     resp_id, msg_id, rs_id = _new_id("resp_"), _new_id("msg_"), _new_id("rs_")
     created = int(time.time())
     seq = 0
@@ -22824,6 +22844,44 @@ BODYLESS_PANEL_POSTS = ("/console/toggle", "/shutdown", "/updates/check",
                         "/settings/restriction/reset",
                         "/settings/device-token/reload")
 
+def _routed_workbuddy_models(realm):
+    for model, meta in fetch_models(realm=realm):
+        yield model_entry(model, meta, realm)
+
+
+def _routed_codearts_models():
+    try:
+        return wb_codearts.model_entries(wb_codearts.load_config(ACCOUNTS_DIR))
+    except wb_codearts.CodeArtsError as exc:
+        raise RuntimeError("CodeArts catalogue unavailable") from exc
+
+
+def _routed_workbuddy_accounts(realm):
+    texts, _ = _ensure_pools()
+    return (account.uid for account in texts.accounts() if account.realm == realm) if texts else ()
+
+
+TEXT_MODEL_OPERATIONS = {
+    "chat": lambda handler, payload: handler._dispatch_chat_post("/v1/chat/completions", payload),
+    "responses": lambda handler, payload: handler._dispatch_chat_post("/v1/responses", payload),
+    "compact": lambda handler, payload: handler._dispatch_chat_post("/v1/responses/compact", payload),
+    "messages": lambda handler, payload: handler._handle_messages(payload),
+    "count_tokens": lambda handler, payload: handler._handle_messages_count_tokens(payload),
+}
+MODEL_GATEWAY = wb_model_gateway.Registry((
+    wb_model_gateway.Provider("wb-cn", lambda: _routed_workbuddy_models("cn"),
+                              TEXT_MODEL_OPERATIONS, lambda: True, realm="cn",
+                              account_ids=lambda: _routed_workbuddy_accounts("cn")),
+    wb_model_gateway.Provider("wb-intl", lambda: _routed_workbuddy_models("intl"),
+                              TEXT_MODEL_OPERATIONS, lambda: True, realm="intl",
+                              account_ids=lambda: _routed_workbuddy_accounts("intl")),
+    wb_model_gateway.Provider("codearts", _routed_codearts_models, TEXT_MODEL_OPERATIONS,
+                              lambda: wb_codearts.configured(ACCOUNTS_DIR), realm="codearts",
+                              account_ids=lambda: (a.uid for a in wb_codearts.pool_for(
+                                  ACCOUNTS_DIR, trigger_auto=False).accounts)),
+), banned=lambda model: is_model_banned(model))
+
+
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     # 关掉 Nagle（对连接设 TCP_NODELAY）：响应头和响应体是两次独立 write，Nagle
@@ -22855,6 +22913,7 @@ class Handler(BaseHTTPRequestHandler):
         # it inherited the realm binding of whatever API key used the connection
         # before it - sending that request to the wrong upstream exit.
         self.key_entry = None
+        self._client_model = ""
         # 校验符同理：留着上一轮的 tag，下一次 _json() 就会把别的请求的 ETag
         # 发出去（keep-alive 上同一个 Handler 实例服务一整条连接）。
         self._json_etag = None
@@ -23393,7 +23452,7 @@ class Handler(BaseHTTPRequestHandler):
                 supplied = supplied[1:-1].strip()
         if supplied:
             return supplied
-        for name in ("x-api-key", "api-key", "x-auth-token"):
+        for name in ("x-api-key", "api-key", "x-auth-token", "x-goog-api-key"):
             value = (self.headers.get(name) or "").strip()
             if value:
                 return value
@@ -23438,6 +23497,9 @@ class Handler(BaseHTTPRequestHandler):
         international one) earns an opaque 403 from upstream, so catch it here
         and say which key is bound where.
         """
+        route = wb_model_gateway.current_route()
+        if route is not None and route.usage_realm == realm and route.model == model:
+            return ""
         if not realm or not model:
             return ""
         if realm == "codearts":
@@ -23472,6 +23534,9 @@ class Handler(BaseHTTPRequestHandler):
         otherwise be rejected the moment the alias is rewritten to its target —
         the request would be blocked by the gateway's own convenience feature.
         """
+        route = wb_model_gateway.current_route()
+        if route is not None and route.model == model:
+            return ""
         entry = self.key_entry
         if not entry:
             return ""
@@ -23505,6 +23570,9 @@ class Handler(BaseHTTPRequestHandler):
         global switch. Returning None lets open_upstream() fall back to
         model-based detection.
         """
+        route = wb_model_gateway.current_route()
+        if route is not None:
+            return route.usage_realm
         if explicit:
             return explicit
         bound = self._key_realm()
@@ -23658,7 +23726,7 @@ class Handler(BaseHTTPRequestHandler):
         Model listings stay reachable with the API key alone so that plain
         OpenAI clients can keep discovering models.
         """
-        if path.startswith("/accounts"):
+        if path == "/panel/model-catalog" or path.startswith("/accounts"):
             return True
         if path.startswith("/usage") or path.startswith("/v1/usage"):
             return True
@@ -23741,6 +23809,8 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
         query = parse_qs(parsed.query)
+        if path == "/v1/models":
+            return self._get_routed_models()
         if path == "/v1/accounts":
             return self._get_external_accounts(query)
         if path.startswith("/v1/accounts/authorize/"):
@@ -23759,7 +23829,7 @@ class Handler(BaseHTTPRequestHandler):
             or path in ("/v1/media/models", "/media/models")
         )
         is_text_route = path in (
-            "/v1/models", "/models", "/v1/balance-summary",
+            "/panel/model-catalog", "/models", "/v1/balance-summary",
             "/usage", "/v1/usage", "/usage/recent", "/usage/events",
             "/usage/analytics",
             "/usage/by-account", "/usage/remaining", "/usage/perf",
@@ -23803,7 +23873,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._get_codearts_accounts()
         if path == "/v1/balance-summary":
             return self._get_v1_balance_summary()
-        if path in ("/v1/models", "/models"):
+        if path in ("/panel/model-catalog", "/models"):
             return self._get_v1_models()
         if path == "/v1/media/tasks":
             return self._get_media_tasks(query)
@@ -24071,10 +24141,16 @@ class Handler(BaseHTTPRequestHandler):
         if payload is None:
             return
         model, action = _parse_gemini_path(path)
-        if not model:
-            return self._json(404, {"error": {"code": 404,
-                                            "message": "model not found",
-                                            "status": "NOT_FOUND"}})
+        model = urllib.parse.unquote(model)
+        if action not in ("generateContent", "streamGenerateContent"):
+            return self._routed_gemini_error(404, "unknown Gemini model action")
+        if not wb_pool_scope.entry_allows(wb_pool_scope.SCOPE_TEXT):
+            return self._routed_gemini_error(503, "this listener does not serve text models")
+        try:
+            self._resolve_routed_model(model, wb_model_gateway.CHAT)
+        except wb_model_gateway.RouteError as exc:
+            return self._routed_gemini_error(exc.status, str(exc))
+        wb_panel_events.meta(model, action == "streamGenerateContent")
         meta = None
         try:
             import wb_webgateway
@@ -24093,7 +24169,10 @@ class Handler(BaseHTTPRequestHandler):
                                             "status": "INTERNAL"}})
         chat_resp = self._call_self_chat(chat_body)
         if isinstance(chat_resp, dict) and chat_resp.get("error"):
-            return self._json(502, chat_resp)
+            status = chat_resp.get("_gateway_http_status", 502)
+            detail = chat_resp["error"]
+            return self._routed_gemini_error(
+                status, detail.get("message") if isinstance(detail, dict) else str(detail))
         out = gemini_proto.from_chat(chat_resp, meta, model)
         if action == "streamGenerateContent" or "alt=sse" in (self.path or ""):
             data = gemini_proto.sse_payload(out).encode("utf-8")
@@ -24109,14 +24188,30 @@ class Handler(BaseHTTPRequestHandler):
             return
         return self._json(200, out)
 
+    def _routed_gemini_error(self, code, message):
+        status = {400: "INVALID_ARGUMENT", 401: "UNAUTHENTICATED", 403: "PERMISSION_DENIED",
+                  404: "NOT_FOUND", 429: "RESOURCE_EXHAUSTED", 503: "UNAVAILABLE"}
+        return self._json(code, {"error": {"code": code, "message": message,
+                                           "status": status.get(code, "INTERNAL")}})
+
     def _call_self_chat(self, body):
-        """把转换后的 chat 请求交给本进程的 /v1/chat/completions。"""
+        """Run the converted request through the matching local Chat API."""
         port = self.server.server_address[1]
-        url = "http://127.0.0.1:%d/v1/chat/completions" % port
+        path = "/v1/chat/completions"
+        if pinned_ref():
+            path = "/u/" + urllib.parse.quote(pinned_ref(), safe="") + path
+        url = "http://127.0.0.1:%d%s" % (port, path)
         headers = {"Content-Type": "application/json"}
         auth = self.headers.get("Authorization")
         if auth:
             headers["Authorization"] = auth
+        for name in ("X-Panel-Token", "X-Session-Id", "X-Conversation-Id"):
+            value = self.headers.get(name)
+            if value:
+                headers[name] = value
+        supplied = self._supplied_key() if not auth else ""
+        if supplied:
+            headers["Authorization"] = "Bearer " + supplied
         # 让内部那一次 chat 调用并入外层调用的实时记录（见 _panel_trace）。
         outer_trace = wb_panel_events.current_id()
         if outer_trace:
@@ -24128,9 +24223,13 @@ class Handler(BaseHTTPRequestHandler):
                 return json.loads(resp.read().decode("utf-8", "replace"))
         except urllib.error.HTTPError as exc:
             try:
-                return json.loads(exc.read().decode("utf-8", "replace"))
+                result = json.loads(exc.read().decode("utf-8", "replace"))
             except Exception:
-                return {"error": {"code": exc.code, "message": "chat call failed"}}
+                result = {"error": {"code": exc.code, "message": "chat call failed"}}
+            if not isinstance(result, dict) or not result.get("error"):
+                result = {"error": {"message": "chat call failed"}}
+            result["_gateway_http_status"] = exc.code
+            return result
         except Exception as exc:
             return {"error": {"code": 502, "message": str(exc)}}
 
@@ -24342,6 +24441,33 @@ class Handler(BaseHTTPRequestHandler):
             "catalog": wb_codearts.models_meta(cfg),
         }
         return self._json(200, payload)
+
+    def _get_routed_models(self):
+        if not self._authorized():
+            return
+        if not wb_pool_scope.entry_allows(wb_pool_scope.SCOPE_TEXT):
+            return self._error(503, "this listener does not serve text models", "pool_boundary")
+        account = pinned_account()
+        blocked = self._key_account_error(account)
+        if blocked:
+            return self._error(403, blocked, "permission_error")
+        models, unavailable = MODEL_GATEWAY.catalog(
+            self.key_entry, account.realm if account else None)
+        if account is not None:
+            models = [entry for entry in models
+                      if not account.model_disabled(entry["upstream_model"])]
+        if unavailable and not models:
+            return self._error(503, "model catalogues unavailable: " + ", ".join(unavailable))
+        return self._json(200, {"object": "list", "data": models,
+                               "unavailable_routes": unavailable})
+
+    def _resolve_routed_model(self, model, operation):
+        account = pinned_account()
+        blocked = self._key_account_error(account)
+        if blocked:
+            raise wb_model_gateway.RouteError(403, "account_not_allowed", blocked)
+        return MODEL_GATEWAY.resolve(model, operation, self.key_entry,
+                                     account.realm if account else None)
 
     def _get_v1_models(self):
         if not self._authorized():
@@ -27701,6 +27827,14 @@ class Handler(BaseHTTPRequestHandler):
             api_key = "wb-local"
             warnings.append("gateway has no key configured; wrote placeholder "
                             "'wb-local' (auth is off, so any value works)")
+        aliases = wb_settings.effective_model_aliases(ACCOUNTS_DIR)
+
+        def qualify_model(name):
+            name = str(name).strip() if name is not None else None
+            return MODEL_GATEWAY.qualify(realm, aliases.get(name, name))
+
+        model = qualify_model(model)
+        cleaned_models = [dict(item, id=qualify_model(item["id"])) for item in cleaned_models]
         try:
             result = wb_agents.integrate(
                 ACCOUNTS_DIR, client_id, base_url, api_key,
@@ -29303,13 +29437,14 @@ class Handler(BaseHTTPRequestHandler):
             "encrypted_content": _encode_compaction_summary(summary),
         }
         usage = _responses_usage(chat_obj.get("usage")) or {}
+        public_model = wb_model_gateway.response_model(model)
         if not want_stream:
             obj = {
                 "id": _new_id("resp_"),
                 "object": "response",
                 "created_at": int(time.time()),
                 "status": "completed",
-                "model": model,
+                "model": public_model,
                 "output": [item],
                 "output_text": "",
                 "metadata": {},
@@ -29339,7 +29474,7 @@ class Handler(BaseHTTPRequestHandler):
             "id": resp_id,
             "object": "response",
             "created_at": int(time.time()),
-            "model": model,
+            "model": public_model,
             "output": [item],
             "output_text": "",
             "metadata": {},
@@ -29768,6 +29903,7 @@ class Handler(BaseHTTPRequestHandler):
         if not self._apply_pinned_route():
             return
         path = self.path.split("?")[0]
+        gateway_operation = wb_model_gateway.POST_OPERATIONS.get(path)
         if path == "/v1/accounts/authorize":
             started = time.time()
             if not self._external_authorized("account:auth"):
@@ -29829,7 +29965,7 @@ class Handler(BaseHTTPRequestHandler):
             # 根本不发 body，排空会一直等一个永远不会到的载荷。
             self._handle_expect_continue()
             self._discard_body()
-        if path.startswith("/v1beta/models/"):
+        if path.startswith(wb_model_gateway.GEMINI):
             # Gemini 原生入口：转成 Chat 请求后走本进程的 /v1/chat/completions，
             # 响应再转回 GenerateContentResponse（含 groundingMetadata）。
             return self._route_gemini(path)
@@ -30040,6 +30176,18 @@ class Handler(BaseHTTPRequestHandler):
         wb_panel_events.meta(
             payload.get("model") if isinstance(payload, dict) else None,
             payload.get("stream") if isinstance(payload, dict) else None)
+        if gateway_operation is not None:
+            try:
+                route = self._resolve_routed_model(payload.get("model"), gateway_operation)
+            except wb_model_gateway.RouteError as exc:
+                if is_messages_route:
+                    return self._anthropic_error(exc.status, str(exc))
+                return self._json(exc.status, {"error": {
+                    "type": "server_error" if exc.status >= 500 else "invalid_request_error",
+                    "code": exc.code, "message": str(exc)}})
+            self._client_model = route.public_model
+            return route.run(Handler._dispatch_text_request, self, path,
+                             dict(payload, model=route.model), is_messages_route, route)
         if not is_account_route and not is_media_route and not is_audio_route:
             if self._maybe_web_model(payload, is_messages_route):
                 return
@@ -30063,6 +30211,9 @@ class Handler(BaseHTTPRequestHandler):
             self._client_model = ""
         _apply_model_aliases(payload, aliases)
         _apply_background_model_alias(payload)
+        return Handler._dispatch_text_request(self, path, payload, is_messages_route)
+
+    def _dispatch_text_request(self, path, payload, is_messages_route, route=None):
         # 日 token 限量（单位 M，0/缺省 = 不限）。放在并发槽位之前判断：
         # 已经被限的 key 不该先排队等 WB_CHAT_SLOT_WAIT 秒再被拒。
         # 用量来自 _daily_usage 的 keytokens 视图（默认 15s 缓存）。
@@ -30111,6 +30262,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if is_messages_route:
                 if path.endswith("/count_tokens"):
+                    if route is not None:
+                        return route.dispatch(self, payload)
                     return self._handle_messages_count_tokens(payload)
                 if not _chat_slots.acquire(timeout=CHAT_SLOT_WAIT_SECONDS):
                     message = ("gateway is at its concurrent chat limit "
@@ -30119,6 +30272,8 @@ class Handler(BaseHTTPRequestHandler):
                                  stream=payload.get("stream"), key=self._key_id())
                     return self._anthropic_error(503, message, "overloaded_error")
                 try:
+                    if route is not None:
+                        return route.dispatch(self, payload)
                     return self._handle_messages(payload)
                 finally:
                     _chat_slots.release()
@@ -30129,6 +30284,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._error(503, "gateway is at its concurrent chat limit "
                                         "(%d in flight); retry shortly" % MAX_CONCURRENT_CHAT)
             try:
+                if route is not None:
+                    return route.dispatch(self, payload)
                 return self._dispatch_chat_post(path, payload)
             finally:
                 _chat_slots.release()
@@ -30419,7 +30576,8 @@ class Handler(BaseHTTPRequestHandler):
             # headers arrive: a stream that dies mid-body must leave a streak
             # behind (issue #522). retried means this request already had a
             # failed read; a successful retry does not erase that signal.
-            egress_on = wb_settings.egress_backoff_enabled(ACCOUNTS_DIR)
+            egress_on = (wb_model_gateway.chat_adapter() is None
+                         and wb_settings.egress_backoff_enabled(ACCOUNTS_DIR))
             egress_key = None
             if egress_on:
                 egress_key = wb_upstream_pool.egress_key(
@@ -30534,10 +30692,10 @@ class Handler(BaseHTTPRequestHandler):
                         release(leak_filter.flush())
                         if synthesized_calls or pending_finish is not None:
                             write_chunk(chat_finish_chunk(
-                                model, "tool_calls" if synthesized_calls else pending_finish, chunk_id=stream_chunk_id))
+                                echo_model, "tool_calls" if synthesized_calls else pending_finish, chunk_id=stream_chunk_id))
                         if last_usage is not None:
                             write_chunk(chat_usage_chunk(
-                                model, last_usage, chunk_id=stream_chunk_id))
+                                echo_model, last_usage, chunk_id=stream_chunk_id))
                         flush_out()
                         if not emitted:
                             err = json.dumps({"error": {
@@ -30638,7 +30796,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def _chat_nonstream_response(self, upstream, model, fp, account, t_start, effort=None,
                                  realm=None):
-        egress_on = wb_settings.egress_backoff_enabled(ACCOUNTS_DIR)
+        egress_on = (wb_model_gateway.chat_adapter() is None
+                     and wb_settings.egress_backoff_enabled(ACCOUNTS_DIR))
         egress_key = None
         if egress_on:
             egress_key = wb_upstream_pool.egress_key(

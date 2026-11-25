@@ -526,7 +526,7 @@ class HookTests(unittest.TestCase):
     def test_a_call_that_reaches_the_pool_is_traced_with_its_model(self):
         sub = bus.subscribe()
         drain(sub)
-        request = self.post("/v1/chat/completions", chat_body(),
+        request = self.post("/chat/completions", chat_body(),
                             {"X-Panel-Token": proxy.PANEL.create()})
         self.assertGreaterEqual(request.status, 400)     # no pool: it cannot succeed
         frames = drain(sub)

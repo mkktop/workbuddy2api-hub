@@ -87,7 +87,7 @@ def clamp_for(directory, model):
 def probe_model(base_url, api_key, model, max_tokens=1000000,
                 prompt=None, timeout=900, dry_run=False, urlopen=None):
     """Send one long-output request and infer the upstream's real clamp."""
-    url = str(base_url).rstrip("/") + "/v1/chat/completions"
+    url = str(base_url).rstrip("/") + "/chat/completions"
     body = {
         "model": model,
         "messages": [{"role": "user", "content": prompt or PROBE_PROMPT}],

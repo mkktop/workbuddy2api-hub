@@ -69,7 +69,8 @@ class Request(object):
     _apply_pinned_route = proxy.Handler._apply_pinned_route
     _error = proxy.Handler._error
     _get_pricing = proxy.Handler._get_pricing
-    _get_v1_models = proxy.Handler._get_v1_models
+    _key_account_error = proxy.Handler._key_account_error
+    _get_routed_models = proxy.Handler._get_routed_models
     do_GET = proxy.Handler.do_GET
     do_POST = proxy.Handler.do_POST
 
@@ -163,8 +164,8 @@ class PanelRouteBoundaryTests(unittest.TestCase):
         request = self.request("/v1/models", key=API_KEY["key"])
         request.do_GET()
         self.assertEqual(request.status, 200)
-        self.assertEqual([entry["id"] for entry in request.body["data"]],
-                         ["gpt-4o"])
+        self.assertEqual({entry["id"] for entry in request.body["data"]},
+                         {"wb-cn/gpt-4o", "wb-intl/gpt-4o"})
 
     def test_v1_models_is_not_part_of_the_panel_boundary(self):
         request = self.request("/v1/models")

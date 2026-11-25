@@ -260,7 +260,7 @@ try:
 
     print("[1] auth uses the Anthropic error envelope")
     code, headers, body = request(
-        "POST", "/v1/messages",
+        "POST", "/messages",
         {"model": "deepseek-v4.1-flash", "max_tokens": 8,
          "messages": [{"role": "user", "content": "hi"}]})
     payload = json.loads(body or b"{}")
@@ -273,7 +273,7 @@ try:
           "application/json" in (headers.get("Content-Type") or ""), headers)
 
     code, _h, body = request(
-        "POST", "/v1/messages",
+        "POST", "/messages",
         {"model": "deepseek-v4.1-flash", "max_tokens": 8,
          "messages": [{"role": "user", "content": "hi"}]},
         headers={"x-api-key": "WRONG"})
@@ -284,7 +284,7 @@ try:
           payload)
 
     code, _h, body = request(
-        "POST", "/v1/messages",
+        "POST", "/messages",
         {"model": "deepseek-v4.1-flash", "max_tokens": 8,
          "messages": [{"role": "user", "content": "hi"}]},
         headers={"Authorization": "Bearer TESTKEY"})
@@ -301,7 +301,7 @@ try:
          {"model": "deepseek-v4.1-flash",
           "messages": [{"role": "tool", "content": "s"}]}),
     ):
-        code, _h, body = request("POST", "/v1/messages", bad,
+        code, _h, body = request("POST", "/messages", bad,
                                  headers={"x-api-key": "TESTKEY"})
         payload = json.loads(body or b"{}")
         check("%s -> 400 invalid_request_error" % label,
@@ -309,7 +309,7 @@ try:
               and (payload.get("error") or {}).get("type") == "invalid_request_error",
               (code, payload))
 
-    code, _h, body = request("POST", "/v1/messages", b"{not json",
+    code, _h, body = request("POST", "/messages", b"{not json",
                              headers={"x-api-key": "TESTKEY"})
     payload = json.loads(body or b"{}")
     check("malformed JSON -> 400 native envelope",
@@ -321,7 +321,7 @@ try:
     MOCK["chunks"] = TEXT_CHUNKS
     MOCK["requests"] = []
     code, headers, body = request(
-        "POST", "/v1/messages",
+        "POST", "/messages",
         {"model": "deepseek-v4.1-flash", "max_tokens": 64,
          "system": [{"type": "text", "text": "be brief"}],
          "messages": [
@@ -357,7 +357,7 @@ try:
     MOCK["stream"] = True
     MOCK["chunks"] = TEXT_CHUNKS
     code, headers, body = request(
-        "POST", "/v1/messages",
+        "POST", "/messages",
         {"model": "deepseek-v4.1-flash", "max_tokens": 64, "stream": True,
          "messages": [{"role": "user", "content": "say hi"}]},
         headers={"x-api-key": "TESTKEY"})
@@ -389,7 +389,7 @@ try:
     MOCK["chunks"] = TOOL_CHUNKS
     MOCK["requests"] = []
     code, _h, body = request(
-        "POST", "/v1/messages",
+        "POST", "/messages",
         {"model": "deepseek-v4.1-flash", "max_tokens": 64, "stream": True,
          "tools": [{"name": "Bash", "description": "run",
                     "input_schema": {"type": "object",
@@ -416,7 +416,7 @@ try:
     print()
     print("[6] count_tokens answers the native shape")
     code, _h, body = request(
-        "POST", "/v1/messages/count_tokens",
+        "POST", "/messages/count_tokens",
         {"model": "deepseek-v4.1-flash",
          "messages": [{"role": "user", "content": "hello world"}]},
         headers={"x-api-key": "TESTKEY"})

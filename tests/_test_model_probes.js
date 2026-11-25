@@ -1,7 +1,7 @@
 /* Drive the dashboard's model table with a probed output clamp (M5 E2).
  *
  * scripts/probe_max_tokens.py writes accounts/output_probes.json; the gateway
- * annotates /v1/models entries with output_clamp; the dashboard must show the
+ * annotates /panel/model-catalog entries with output_clamp; the dashboard must show the
  * measured value with a "钳制 N×" note instead of the unprobed spec value.
  *
  * The dashboard itself is loaded from the file next to this test, so the

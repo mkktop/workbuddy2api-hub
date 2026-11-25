@@ -141,7 +141,7 @@ class DashboardWiringTests(unittest.TestCase):
         # 取消勾选 -> 落进禁用名单
         self.assertIn("const denyList = models.filter(m => !picked.has(m));", html)
         # 取该账号自己区域的清单，而不是看板当前视图那一份
-        self.assertIn("/v1/models?realm=' + encodeURIComponent(realm)", html)
+        self.assertIn("/panel/model-catalog?realm=' + encodeURIComponent(realm)", html)
         # 有全选 / 全不选
         self.assertIn("'#mdmAll'", html)
         self.assertIn("'#mdmNone'", html)

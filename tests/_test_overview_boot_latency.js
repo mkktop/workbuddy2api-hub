@@ -2,7 +2,7 @@
  *
  * 回归背景（issue #832）：startDashboard() 原先串行等待 /settings，再等待
  * /realm，随后又用 Promise.all 等模型目录、模型勾选、调度器和智能体可用性。
- * 其中设置页的额度查询目录还会再请求一次 /v1/models?realm=all；这些接口
+ * 其中设置页的额度查询目录还会再请求一次 /panel/model-catalog?realm=all；这些接口
  * 对总览首屏都不是必需的，却能把 KPI 和账号区一起拖住。
  *
  * 这里只钉启动链的结构，不重复 DOM 渲染测试：

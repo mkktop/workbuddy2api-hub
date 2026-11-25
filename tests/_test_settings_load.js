@@ -20,7 +20,7 @@ const dom = require('./_dom_stub.js');
 dom.installDom();
 const element = id => dom.byId(id);
 
-/* 三把 Key：两把跟随面板切换、一把固定国际版出口，其中一把带模型白名单。
+/* 三把 Key：两把按模型前缀路由、一把固定国际版出口，其中一把带模型白名单。
    价估算总开关故意设成关，好顺带检查它有没有被写回复选框与 body 类。 */
 const SETTINGS = {
   panel_password_is_default: false,
@@ -133,8 +133,8 @@ global.__toasts = toasts;
   for(const name of ['Cursor', 'DSH', '本地测试']){
     assert.ok(cardOf(name), '缺少 ' + name + ' 的卡片');
   }
-  // Cursor：跟随面板切换的普通 Key，掩码在它自己那张卡上，且没有固定出口徽章。
-  assert.ok(onCard('Cursor', '跟随面板切换'), 'Cursor 卡应显示「跟随面板切换」');
+  // Cursor：按模型前缀路由的 Key，掩码在它自己那张卡上。
+  assert.ok(onCard('Cursor', '按模型前缀路由'), 'Cursor 卡应显示「按模型前缀路由」');
   assert.ok(onCard('Cursor', 'wb-aaaa****1111'), 'Cursor 卡上应显示掩码 Key');
   assert.ok(!cardOf('Cursor').includes('固定国际版出口')
          && !cardOf('Cursor').includes('固定国内版出口'), 'Cursor 卡不该有固定出口徽章');

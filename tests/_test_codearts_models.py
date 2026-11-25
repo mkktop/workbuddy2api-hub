@@ -1,4 +1,4 @@
-"""`/v1/models?realm=codearts`：本地账号目录的并集、Key 过滤与种子兜底。"""
+"""`/models?realm=codearts`：本地账号目录的并集、Key 过滤与种子兜底。"""
 import json
 import os
 import sys
@@ -69,7 +69,7 @@ try:
     C.invalidate_models()
 
     # 没有账号：种子目录
-    status, payload = get(HUB + "/v1/models?realm=codearts", "hub-key-1234")
+    status, payload = get(HUB + "/models?realm=codearts", "hub-key-1234")
     check("seed status", status == 200, (status, payload))
     check("seed has GLM-5.2", any(m["id"] == "GLM-5.2" for m in payload["data"]),
           payload)
@@ -89,7 +89,7 @@ try:
     C.pool_for(ACCOUNTS).add(C.save_auth(ACCOUNTS, auth))
     C.invalidate_models()
 
-    status, payload = get(HUB + "/v1/models?realm=codearts", "hub-key-1234")
+    status, payload = get(HUB + "/models?realm=codearts", "hub-key-1234")
     check("status 200", status == 200, (status, payload))
     ids = [m["id"] for m in payload["data"]]
     check("ids", set(ids) == {"GLM-5.2", "GLM-4.7", "Qwen3-VL-235B",
@@ -133,7 +133,7 @@ try:
         "models": ["glm-*"],
     }])
     C.invalidate_models()
-    status, payload = get(HUB + "/v1/models?realm=codearts", "hub-key-1234")
+    status, payload = get(HUB + "/models?realm=codearts", "hub-key-1234")
     check("filtered status", status == 200, (status, payload))
     check("filtered ids", [m["id"] for m in payload["data"]] ==
           ["GLM-5.2", "GLM-4.7"], payload)
@@ -141,7 +141,7 @@ try:
 
     # 未启用 -> 503
     C.save_config(ACCOUNTS, {"enabled": False})
-    status, payload = get(HUB + "/v1/models?realm=codearts", "hub-key-1234")
+    status, payload = get(HUB + "/models?realm=codearts", "hub-key-1234")
     check("disabled 503", status == 503, (status, payload))
 finally:
     try:

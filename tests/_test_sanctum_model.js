@@ -70,6 +70,7 @@ ok('一条调用从开始到结束，顺序和字段都对', () => {
   assert.strictEqual(live.model, 'gpt-5');
   assert.strictEqual(live.stream, true);
   assert.strictEqual(live.account, 'acc-1');
+  assert.strictEqual(live.boundAt, T0 + 200, '记录首次分配时刻供转轨动画使用');
   assert.strictEqual(live.key, 'k1');
   assert.ok(live.phi >= 0 && live.phi < Math.PI * 2, '出生点落在刻度盘上');
 
@@ -166,10 +167,13 @@ ok('实时流和轮询送来同一条调用，序列里只有一条', () => {
 
 ok('快照：要求重置就清空重来，不要求就并入', () => {
   const m = S.createModel();
+  const shared = {at: (T0 - 400) / 1000, model: 'shared', outcome: 'completed'};
+  S.apply(m, {type: 'finish', seq: 1, id: 'shared', row: shared}, T0);
   S.apply(m, {type: 'finish', seq: 2, id: 'old', row: {at: T0 / 1000, model: 'old', outcome: 'completed'}}, T0);
   S.apply(m, {type: 'snapshot', seq: 9, t: T0 / 1000, reset: true, live: [{id: 'L1', t0: (T0 - 300) / 1000, model: 'm', account: 'acc-1'}],
-    recent: [{id: 'r1', row: {at: (T0 - 200) / 1000, model: 'r1', outcome: 'completed'}}]}, T0);
-  same(m.ledger.map((x) => x.model), ['r1'], '重置后只剩快照带来的');
+    recent: [{id: 'shared', row: shared}, {id: 'r1', row: {at: (T0 - 200) / 1000, model: 'r1', outcome: 'completed'}}]}, T0);
+  same(m.ledger.map((x) => x.model), ['r1', 'shared'], '重置后快照里重叠的调用也要统计');
+  assert.strictEqual(S.metrics(m, T0).perMin, 2);
   assert.strictEqual(m.live.size, 1);
   assert.strictEqual(m.live.get('L1').account, 'acc-1');
   assert.strictEqual(m.live.get('L1').t0, T0 - 300, '在途调用的开始时刻换算到浏览器时钟');
@@ -193,26 +197,49 @@ ok('连续三帧进度里都没有的在途调用会被收掉', () => {
 });
 
 /* ---- 6. 读数 -------------------------------------------------------- */
-ok('七项读数都来自最近一分钟的结束记录', () => {
+ok('圣轮读数区分在途、60 秒结束记录和 15 秒用量，首字时延取中位数', () => {
   const m = S.createModel();
   S.apply(m, {type: 'snapshot', seq: 1, t: T0 / 1000, reset: false, live: [], recent: []}, T0);
   let n = 0;
   const done = (msAgo, extra) => S.apply(m, {type: 'finish', seq: 2 + n++, id: 'x' + n,
     row: Object.assign({at: (T0 - msAgo) / 1000, model: 'm', outcome: 'completed', prompt_tokens: 100, completion_tokens: 50, credit: 1, ttft_ms: 400}, extra)}, T0);
   done(1000); done(2000); done(3000, {outcome: 'failed', ttft_ms: 0}); done(4000, {ttft_ms: 800});
+  done(20 * 1000, {ttft_ms: 1200});      // still counts as an outcome, outside the rate window
   done(70 * 1000);                    // too old to count
   S.apply(m, {type: 'start', seq: 99, id: 'live-1'}, T0);
   const stats = S.metrics(m, T0);
-  assert.strictEqual(stats.perMin, 4, '只数最近一分钟的');
+  assert.strictEqual(stats.perMin, 5, '只数最近一分钟的');
   assert.strictEqual(stats.live, 1);
-  assert.strictEqual(stats.okN, 3);
-  assert.strictEqual(stats.okD, 4);
+  assert.strictEqual(stats.okN, 4);
+  assert.strictEqual(stats.okD, 5);
+  assert.strictEqual(stats.tokIn, 400 / 15);
   assert.strictEqual(stats.tokOut, 200 / 15, '四次调用各输出 50 token，按十五秒窗口折算成每秒');
   assert.strictEqual(stats.creditPerSec, 4 / 15, '失败的调用同样记了积分');
-  assert.strictEqual(stats.ttft, 400, '首字取中位数');
+  assert.strictEqual(stats.ttft, 600, '偶数个样本取中间两项的平均');
   const idle = S.metrics(S.createModel(), T0);
   assert.strictEqual(idle.perMin, 0);
   assert.strictEqual(idle.okRate, 1, '还没有调用时成功率按满算');
+});
+
+ok('完成的星点绕行 60 秒，飞入中心期间不再计入最近一分钟', () => {
+  const m = S.createModel();
+  const row = {at: T0 / 1000, model: 'm', outcome: 'completed', total_tokens: 22};
+  S.apply(m, {type: 'start', id: 'orbit-request'}, T0 - 500);
+  S.apply(m, {type: 'finish', id: 'orbit-request', row}, T0);
+  assert.strictEqual(S.ingestRecent(m, [row], T0 + 100), 0, '轮询不创建重复星点');
+  assert.strictEqual(m.live.size, 0, '结束即从在途计数扣除');
+  assert.strictEqual(m.ledger.length, 1);
+  assert.strictEqual(m.recent.length, 1);
+  assert.strictEqual(m.recent[0].arrival.id, 'orbit-request');
+  assert.strictEqual(S.orbitReturnProgress(T0, T0 + 59999), 0);
+  assert.strictEqual(S.metrics(m, T0 + 59999).perMin, 1);
+  assert.strictEqual(S.orbitReturnProgress(T0, T0 + 60750), 0.5);
+  assert.strictEqual(S.metrics(m, T0 + 60750).perMin, 0);
+  assert.strictEqual(m.recent.length, 1, '飞向中心的动画仍保留星点');
+  assert.strictEqual(S.orbitReturnProgress(T0, T0 + 61500), 1);
+  S.metrics(m, T0 + 61500);
+  assert.strictEqual(m.recent.length, 0);
+  assert.strictEqual(m.ledger.length, 1);
 });
 
 ok('时钟偏差：服务器写的旧调用不会被当成刚刚发生', () => {
@@ -252,8 +279,8 @@ ok('七重环：空转时信号为零，有调用时每项都是 0 到 1 的有�
   assert.strictEqual(S.ringSignals({perMin: 0, live: 0, tokIn: 0, tokOut: 0, okRate: 1, okD: 1, ttft: 0, creditPerSec: 0})[5].value, 0);
 });
 
-/* ---- 7. 账号之眼 ---------------------------------------------------- */
-ok('账号排成眼睛：忙的在前、停用的在后，超出上限的收进溢出计数', () => {
+/* ---- 7. 账号恒星 ---------------------------------------------------- */
+ok('忙碌账号优先入图，忙闲切换时恒星的轨位保持稳定', () => {
   const m = S.createModel();
   S.apply(m, {type: 'snapshot', seq: 1, t: T0 / 1000, reset: false, live: [], recent: []}, T0);
   S.apply(m, {type: 'start', seq: 2, id: 'c1'}, T0);
@@ -266,18 +293,21 @@ ok('账号排成眼睛：忙的在前、停用的在后，超出上限的收进�
     {uid: 'busy', nickname: '忙', enabled: true},
     {uid: 'held', nickname: '留', enabled: true, reserveBlocked: true},
   ];
-  const pack = S.eyesOf(accounts, m);
-  same(pack.eyes.map((e) => [e.uid, e.state]),
-    [['busy', 'busy'], ['idle', 'ok'], ['cool', 'cool'], ['held', 'cool'], ['err', 'err'], ['off', 'off']]);
-  assert.strictEqual(pack.eyes[0].busy, 1);
+  const pack = S.accountStarsOf(accounts, m);
+  same(pack.stars.map((star) => [star.uid, star.state]),
+    [['busy', 'busy'], ['cool', 'cool'], ['err', 'err'], ['held', 'cool'], ['idle', 'ok'], ['off', 'off']]);
+  assert.strictEqual(pack.stars[0].busy, 1);
   assert.strictEqual(pack.overflow, 0);
-  const many = S.eyesOf([{uid: 'busy', enabled: true}].concat(
+  const many = S.accountStarsOf([{uid: 'busy', nickname: 'zzzz', enabled: true}].concat(
     Array.from({length: 39}, (_, i) => ({uid: 'u' + i, enabled: true}))), m);
-  assert.strictEqual(many.eyes.length, 24, '最多画 24 只眼');
+  assert.strictEqual(many.stars.length, 24, '最多画 24 颗恒星');
   assert.strictEqual(many.overflow, 16);
-  assert.strictEqual(many.eyes[0].uid, 'busy', '忙的账号一定在画出来的里面，而且排在最前');
-  assert.strictEqual(many.eyes.some((e) => e.uid === 'u38'), false, '名额留给状态更靠前的');
-  same(S.eyesOf(null, m).eyes, [], '没有账号就没有眼睛');
+  assert.ok(many.stars.some((star) => star.uid === 'busy'), '忙的账号优先入图');
+  m.live.clear();
+  const idle = S.accountStarsOf(accounts, m);
+  same(idle.stars.map((star) => star.uid), pack.stars.map((star) => star.uid));
+  assert.strictEqual(idle.stars[0].state, 'ok');
+  same(S.accountStarsOf(null, m).stars, []);
 });
 
 /* ---- 8. 调用序列的一行 ---------------------------------------------- */
@@ -326,8 +356,8 @@ ok('圣轮的小词典三种语言都齐，占位符一致', () => {
     if (/[\u4e00-\u9fff]/.test(row.en)) problems.push(key + ' 的英文里混进了中文');
   }
   same(problems, []);
-  assert.strictEqual(S.fill('en', 'eye_busy_n', {n: 3}), 'Busy · 3 in flight');
-  assert.strictEqual(S.fill('zh-Hant', 'eye_overflow', {n: 4}), '另有 4 個帳號未畫出');
+  assert.strictEqual(S.fill('en', 'star_busy_n', {n: 3}), 'Busy · 3 in flight');
+  assert.strictEqual(S.fill('zh-Hant', 'star_overflow', {n: 4}), '另有 4 個帳號未畫出');
   assert.strictEqual(S.fill('en', 'ttft', {}), 'First token ', '没有值的位置留空而不是写出花括号');
   assert.strictEqual(S.text('en', '__nope__'), '__nope__', '缺词条时回落成键名，方便发现');
   assert.strictEqual(S.compact(0), '0');
@@ -565,97 +595,78 @@ const frame = (seq, type, data) => 'id: ' + seq + '\nevent: ' + type + '\ndata: 
     return out;
   }
 
-  ok('皮肤样式的每一条选择器都限定在圣轮皮肤下', () => {
+  const skin = 'html[data-ui="next"][data-skin="sanctum"][data-main-tab="overview"]';
+  const hiddenStage = 'html:not(' + skin.slice(4) + ') #sanctumStage';
+  ok('圣轮样式随总览页签生效', () => {
     assert.strictEqual(html.indexOf('<style id="sanctumStyles">', styleAt + 1), -1, '只有一份');
-    const lists = selectorLists(css);
-    assert.ok(lists.length > 150, '选择器列表的数量: ' + lists.length);
-    const bare = [];
-    let selectors = 0;
-    for (const list of lists) {
-      assert.ok(list.trim(), '空的选择器列表');
-      for (const selector of splitSelectors(list)) {
-        selectors++;
-        if (selector.indexOf('data-skin="sanctum"') === -1) bare.push(selector.trim());
-      }
-    }
-    same(bare, [], '这些选择器没有限定皮肤，不开皮肤时也会生效');
-    assert.ok(selectors > 250, '选择器的数量: ' + selectors);
-    // 拆分本身要经得起带逗号的属性值
-    same(splitSelectors('a[style*="1,2,3"], b'), ['a[style*="1,2,3"]', 'b']);
-    const media = topRules(css).filter((rule) => rule.prelude.startsWith('@media'));
-    assert.ok(media.length >= 3, '窄屏规则要跟着皮肤一起限定: ' + media.length);
-    assert.ok(topRules(css).some((rule) => rule.prelude === '@keyframes sctRowIn'));
+    const selectors = selectorLists(css).flatMap(splitSelectors);
+    same(selectors.filter(selector => !selector.startsWith(skin) && selector !== hiddenStage), [],
+      '所有圣轮规则都要求当前页是总览');
+    assert.ok(selectors.includes(skin + ' .next-brand-mark'), '首页导航与舞台同色');
+    assert.ok(selectors.includes(skin + ' #sanctumStage #sanctumCanvas'), '舞台加载局部画布样式');
+    assert.ok(!css.includes('#consoleInsights'), '运行详情里的仪表使用普通主题');
+    const media = topRules(css).filter(rule => rule.prelude.startsWith('@media'));
+    assert.ok(media.length >= 3, '保留大屏的响应式布局');
+    assert.ok(topRules(css).some(rule => rule.prelude === '@keyframes sctRowIn'));
     assert.strictEqual(html.split('@keyframes sctRowIn').length - 1, 1, '关键帧名全页唯一');
-    assert.ok(!/https?:\/\//.test(css), '皮肤样式不引用任何外部资源');
-    assert.ok(!/@import\b/.test(css), '皮肤样式不导入外部样式表');
+    assert.ok(!/https?:\/\//.test(css), '大屏样式不引用任何外部资源');
+    assert.ok(!/@import\b/.test(css), '大屏样式不导入外部样式表');
   });
 
-  ok('令牌层：真值只写一份，页面原有的令牌名接线到它上面', () => {
-    const dark = css.match(/html\[data-ui="next"\]\[data-skin="sanctum"\]\{([\s\S]*?)\n\}/);
-    const light = css.match(/html\[data-ui="next"\]\[data-skin="sanctum"\]\[data-theme="light"\]\{([\s\S]*?)\n\}/);
+  ok('整个首页共用明暗配色', () => {
+    const rules = topRules(css);
+    const dark = rules.find(rule => rule.prelude === skin + ' body');
+    const light = rules.find(rule => rule.prelude === skin + '[data-theme="light"] body');
     assert.ok(dark && light, '墨、纸各一份取值');
-    const wired = css.match(/html\[data-ui="next"\]\[data-skin="sanctum"\] #pageAnalytics\{([\s\S]*?)\n\}/);
-    assert.ok(wired, '用量页在自己的作用域里重定义过令牌，那里要再接一次');
-    for (const name of ['--bg', '--panel', '--fg', '--dim', '--line', '--accent', '--bad', '--hm4', '--chart-bar', '--terminal-fg', '--serif']) {
-      assert.ok(wired[1].indexOf(name + ':var(--sct-') > 0, name + ' 没有接线到圣轮的取值');
-    }
-    const used = new Set(wired[1].match(/--sct-[a-z0-9-]+/g) || []);
-    assert.ok(used.size > 30, '接线用到的圣轮令牌数量: ' + used.size);
-    const defined = (block) => new Set(block.match(/--sct-[a-z0-9-]+(?=:)/g) || []);
-    const inDark = defined(dark[1]), inLight = defined(light[1]);
-    for (const name of used) assert.ok(inDark.has(name), '墨里缺 ' + name);
-    // 纸只覆盖随明暗变化的取值；字阶、间距、字体这些不随明暗变的继承墨里那一份
-    for (const name of inLight) assert.ok(inDark.has(name), '纸里定义了墨里没有的 ' + name + '（拼错了就永远不会生效）');
-    // 不随明暗变化的（字体）只在墨里定义一份，纸继承
-    for (const name of ['--sct-mono', '--sct-serif']) {
-      assert.ok(inDark.has(name) && !inLight.has(name), name + ' 应当只在基础块里定义一份');
-    }
-    assert.ok(inDark.size > 40 && inLight.size > 40, '墨 ' + inDark.size + ' 个令牌，纸覆盖 ' + inLight.size + ' 个');
     const value = (block, name) => (block.match(new RegExp(name + ':(#[0-9a-fA-F]{6})')) || [])[1];
-    for (const name of ['--sct-bg', '--sct-fg', '--sct-ink', '--sct-paper', '--sct-panel', '--sct-hm4']) {
-      assert.ok(inLight.has(name), '纸要覆盖 ' + name);
-      assert.ok(value(light[1], name) && value(dark[1], name) && value(light[1], name) !== value(dark[1], name),
-        '纸的 ' + name + '（' + value(light[1], name) + '）不该和墨（' + value(dark[1], name) + '）一样');
+    const luma = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)).reduce((a, b) => a + b, 0);
+    for (const name of ['--fg', '--dim', '--panel', '--sct-paper']) {
+      assert.ok(value(dark.body, name) && value(light.body, name), '两种配色都要定义 ' + name);
     }
-    // 墨在上、纸在下：纸的墨色亮，墨的墨色暗
-    const luma = (hex6) => [0, 2, 4].map((k) => parseInt(hex6.slice(k + 1, k + 3), 16)).reduce((a, b) => a + b, 0);
-    assert.ok(luma(value(light[1], '--sct-fg')) < luma(value(light[1], '--sct-bg')), '纸：黑字白底');
-    assert.ok(luma(value(dark[1], '--sct-fg')) > luma(value(dark[1], '--sct-bg')), '墨：白字黑底');
-    // 墨和纸都是纯中性灰：页面上「还有没有彩色」才能机器判定
-    const triples = (dark[1] + light[1]).match(/#([0-9a-fA-F]{6})\b|rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/g) || [];
-    assert.ok(triples.length > 60, '取值数量: ' + triples.length);
-    for (const t of triples) {
-      const [r, g, b] = t.charAt(0) === '#'
-        ? [1, 3, 5].map((k) => parseInt(t.slice(k, k + 2), 16))
-        : t.replace(/[^\d,]/g, '').split(',').map(Number);
-      assert.ok(Math.max(r, g, b) - Math.min(r, g, b) <= 2, t + ' 不是中性灰');
+    assert.ok(luma(value(light.body, '--fg')) < luma(value(light.body, '--sct-paper')), '纸：黑字白底');
+    assert.ok(luma(value(dark.body, '--fg')) > luma(value(dark.body, '--sct-paper')), '墨：白字黑底');
+    for (const hex of (dark.body + light.body).match(/#[0-9a-fA-F]{6}\b/g)) {
+      const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+      assert.strictEqual(Math.max(r, g, b), Math.min(r, g, b), hex + ' 不是中性灰');
     }
-    assert.ok(!/047857|b54708|b42318|79,\s*70,\s*229|124,\s*58,\s*237|18,\s*183,\s*106/i.test(wired[1]), '旧配色的硬编码值不许出现在接线里');
+    assert.ok(dark.body.includes('--sct-mono:') && !light.body.includes('--sct-mono:'));
   });
 
-  ok('舞台标记：在总览页里、不是第一个子元素、不用表格、不进大词典', () => {
+  ok('总览只包含圣轮舞台，原有内容保留在运行详情', () => {
     const stage = html.indexOf('<section id="sanctumStage" data-no-i18n');
     assert.ok(stage > 0);
     const overview = html.lastIndexOf('<div id="pageOverview"', stage);
     const end = html.indexOf('<!-- /pageOverview -->', stage);
     assert.ok(overview > 0 && end > stage, '舞台要在总览页里');
-    assert.ok(html.slice(overview, stage).indexOf('<div id="gatewayPageHead"') > 0,
-      '旧标题块必须仍是总览页的第一个 div——新导航靠它隐藏那个标题');
-    const block = html.slice(stage, html.indexOf('</section>', stage));
+    const stageEnd = html.indexOf('</section>', stage) + '</section>'.length;
+    const block = html.slice(stage, stageEnd);
+    const overviewContent = html.slice(html.indexOf('>', overview) + 1, html.lastIndexOf('</div>', end));
+    assert.strictEqual(overviewContent.replace(/<!--[\s\S]*?-->/g, '').trim(), block);
+    const runtime = html.slice(html.indexOf('<div id="pageRuntime"'), html.indexOf('<!-- /pageRuntime -->'));
+    for(const marker of ['realm-cards-grid', 'consoleInsights', 'recentRequestsSection']){
+      assert.ok(runtime.includes(marker), marker + ' 应保留在运行详情');
+    }
     assert.ok(!/<t(able|head|body)[\s>]/.test(block), '不能用表格：有套件靠文件里第一个 <thead> 定位');
     for (const id of ['sanctumStage', 'sanctumScene', 'sanctumCanvas', 'sanctumLedger', 'sanctumFeed', 'sanctumLegend',
-      'sanctumTooltip', 'sanctumPauseBtn', 'sanctumResetBtn', 'sanctumFallback', 'sanctumMotto']) {
+      'sanctumTooltip', 'sanctumPauseBtn', 'sanctumResetBtn', 'sanctumFullscreenBtn', 'sanctumActiveFlow',
+      'sanctumFallback', 'sanctumViewport']) {
       assert.strictEqual(html.split('id="' + id + '"').length - 1, 1, id + ' 应当恰好出现一次');
     }
     assert.ok(/<canvas id="sanctumCanvas" role="img" aria-label=/.test(block), '画布要能被读屏软件认出来');
+    assert.ok(/id="sanctumScene">\s*<div class="sct-viewport"/.test(block), '画布从左侧舞台顶部开始');
+    assert.ok(!/id="sanctum(?:Title|Motto)"/.test(block), '标题栏的空间留给画布');
+    assert.ok(/id="sanctumResetBtn"[^<]*<\/button>\s*<button[^>]+id="sanctumFullscreenBtn"/.test(block),
+      '全屏按钮紧挨复位视角');
     assert.ok(/<button type="button" class="sct-btn" id="sanctum(Pause|Reset)Btn"/.test(block.split('id="sanctumPauseBtn"').length > 1 ? block : ''),
       '操作按钮是真正的按钮，键盘也能用');
-    assert.ok(css.indexOf('html:not([data-ui="next"][data-skin="sanctum"]) #sanctumStage{display:none!important}') > -1,
+    assert.ok(css.includes(hiddenStage + '{display:none!important}'),
       '不开皮肤时舞台必须隐藏');
+    assert.ok(/id="sanctumFullscreenBtn" aria-controls="pageOverview" aria-pressed="false"/.test(block),
+      '全屏按钮作用于整个总览，并暴露开关状态');
   });
 
   ok('首帧判定：皮肤什么时候写上 data-skin', () => {
-    const start = html.indexOf('/* 圣轮皮肤：黑白线框 + 首页实时舞台。');
+    const start = html.indexOf('/* 圣轮大屏：新导航的首页主题，随当前页签启用。');
     assert.ok(start > 0 && start < html.indexOf('</head>'), '判定要在 <head> 里，晚一步会闪一下旧皮肤');
     const src = html.slice(start, html.indexOf('</script>', start));
     assert.ok(!/wb-panel-session/.test(src), '这一段不能碰面板令牌的键名');
@@ -680,7 +691,7 @@ const frame = (seq, type, data) => 'id: ' + seq + '\nevent: ' + type + '\ndata: 
     assert.strictEqual(run('', null, true, true).skin, null, '读不到存储时按没开处理，不抛异常');
   });
 
-  ok('菜单开关：记在浏览器本地，然后回到默认页签', () => {
+  ok('菜单开关：记在浏览器本地，开启时直达总览', () => {
     assert.ok(/id="sanctumSkinOption" onclick="toggleSanctumSkin\(\)" role="menuitemcheckbox"/.test(html), '主题菜单里有这一项');
     assert.ok(/^function toggleSanctumSkin\(\)\{/m.test(html), '内联处理函数要有顶层定义');
     assert.strictEqual(html.split('function toggleSanctumSkin(').length - 1, 1, '顶层函数名全页唯一');
@@ -693,23 +704,25 @@ const frame = (seq, type, data) => 'id: ' + seq + '\nevent: ' + type + '\ndata: 
     setSkin(false);
     go('http://127.0.0.1:8788/?ui=classic&skin=off&tab=settings');
     page.toggleSanctumSkin();
-    assert.strictEqual(target, 'http://127.0.0.1:8788/', '开皮肤：回到新导航的总览，试穿参数拿掉');
+    assert.strictEqual(target, 'http://127.0.0.1:8788/?tab=overview', '开启时显式选择首页总览');
     assert.strictEqual(store.get('wb-skin'), 'sanctum');
     assert.strictEqual(store.has('wb-ui-mode'), false, '皮肤叠在新导航上，一并回到新导航');
     setSkin(true);
-    store.set('wb-ui-mode', 'classic');
-    go('http://127.0.0.1:8788/?ui=classic&tab=overview');
+    go('http://127.0.0.1:8788/?skin=sanctum&tab=settings');
     page.toggleSanctumSkin();
-    assert.strictEqual(target, 'http://127.0.0.1:8788/?ui=classic', '关皮肤：导航方式不动，只去掉页签');
+    assert.strictEqual(target, 'http://127.0.0.1:8788/?tab=settings', '关闭大屏时留在当前页面');
     assert.strictEqual(store.has('wb-skin'), false);
+    go('http://127.0.0.1:8788/?skin=sanctum&tab=overview');
+    page.toggleSanctumSkin();
+    assert.strictEqual(target, 'http://127.0.0.1:8788/?tab=runtime', '关闭大屏时改看运行详情');
     setSkin(false);                                   // leave the sandbox as it was found
   });
 
   ok('菜单文案进了大词典：英文和繁体都有', () => {
-    assert.strictEqual(page.WB_I18N.translate('圣轮界面'), 'Wheel interface');
-    assert.strictEqual(page.WB_I18N.translate('关闭圣轮界面'), 'Turn off the wheel interface');
-    assert.strictEqual(page.WB_I18N.translateHant('圣轮界面'), '聖輪介面');
-    assert.strictEqual(page.WB_I18N.translateHant('关闭圣轮界面'), '關閉聖輪介面');
+    assert.strictEqual(page.WB_I18N.translate('圣轮大屏'), 'Sanctum dashboard');
+    assert.strictEqual(page.WB_I18N.translate('关闭圣轮大屏'), 'Turn off the Sanctum dashboard');
+    assert.strictEqual(page.WB_I18N.translateHant('圣轮大屏'), '聖輪大螢幕');
+    assert.strictEqual(page.WB_I18N.translateHant('关闭圣轮大屏'), '關閉聖輪大螢幕');
   });
 
   ok('圣轮脚本：经典脚本、不引外部资源、不用 EventSource', () => {

@@ -4,7 +4,7 @@
  * from the upstream catalogue), not from a runtime 11158: the scheduler
  * refuses a gated model before any upstream request, so a "learned from
  * 11158" channel would never fire. The dashboard only renders what
- * /v1/models carries. No label means no claim - it never says a model is
+ * /panel/model-catalog carries. No label means no claim - it never says a model is
  * available.
  *
  *   node tests/_test_entitlement_badge.js

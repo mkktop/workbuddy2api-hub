@@ -19,8 +19,8 @@ check(/id="btnNavApi"[^>]*onclick="switchMainTab\('api'\)"/.test(html),
 const nextNav = html.slice(html.indexOf('<nav class="next-nav"'), html.indexOf('</nav>', html.indexOf('<nav class="next-nav"')));
 const nextNavTabs = [...nextNav.matchAll(/data-next-tab="([^"]+)"/g)].map(m => m[1]);
 check(JSON.stringify(nextNavTabs) === JSON.stringify([
-  'overview', 'gateway', 'accounts', 'api', 'analytics', 'tasks', 'agents', 'media', 'settings', 'logs'
-]), '新导航顺序应为总览、网关、账号、接口、用量、自动化任务、智能体、媒体、设置、日志');
+  'overview', 'runtime', 'gateway', 'accounts', 'api', 'analytics', 'tasks', 'agents', 'media', 'settings', 'logs'
+]), '新导航中运行详情紧跟总览');
 check(/data-next-tab="tasks"[\s\S]*?<span>自动化任务<\/span>/.test(nextNav),
   '侧栏任务页签应显示「自动化任务」');
 check(/data-next-tab="api"[\s\S]*?<span>接口<\/span>/.test(nextNav),
@@ -32,7 +32,7 @@ check(/id="btnNavTasks"[^>]*>[\s\S]*?自动化任务/.test(html),
   '兼容导航任务按钮应显示「自动化任务」');
 check(/data-next-tab="api"[\s\S]*?<span>接口<\/span>/.test(moreSheet),
   '移动端更多菜单应使用两字菜单名「接口」');
-check(nextNavTabs.indexOf('api') === 3, '新导航中接口应紧跟账号');
+check(nextNavTabs.indexOf('api') === nextNavTabs.indexOf('accounts') + 1, '新导航中接口应紧跟账号');
 check(/id="btnNavApi"[^>]*>[\s\S]*?接口/.test(html),
   '兼容导航应使用两字菜单名「接口」');
 check(/id="pageApi" class="main-page/.test(html),

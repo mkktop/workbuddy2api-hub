@@ -1,7 +1,7 @@
 /* The multiplier the panel shows must be the one the gateway fetched.
 
    renderAvailableModels() used to force "限时免费 0.00x" for three hardcoded ids
-   (hy3, hy4-preview-f, intl deepseek-v4.1-flash) no matter what /v1/models
+   (hy3, hy4-preview-f, intl deepseek-v4.1-flash) no matter what /panel/model-catalog
    reported for their credits, and to print a hardcoded 0.79x when a cn model
    carried none - so the panel could keep advertising a price the catalogue no
    longer had. The badge now follows the credits value alone: 0.00 is the free

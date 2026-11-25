@@ -110,8 +110,22 @@ try:
     chat = {"model": "GLM-5.2",
             "messages": [{"role": "user", "content": "hi"}]}
 
+    print("== unified model API ==")
+    req = urllib.request.Request(HUB + "/v1/models",
+                                 headers={"Authorization": "Bearer hub-key-1234"})
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        routed_models = json.load(resp)["data"]
+    check("CodeArts route in shared catalogue",
+          any(row["id"] == "codearts/GLM-5.2" for row in routed_models), routed_models)
+    status, raw = post("/v1/chat/completions",
+                       dict(chat, model="codearts/GLM-5.2"), "hub-key-1234")
+    check("unified chat reached signed CodeArts upstream",
+          status == 200 and json.loads(raw)["model"] == "codearts/GLM-5.2", raw[:240])
+    check("CodeArts received upstream model ID",
+          (state.last_body or {}).get("model") == "GLM-5.2", state.last_body)
+
     print("== chat stream ==")
-    status, raw = post("/v1/chat/completions", dict(chat, stream=True),
+    status, raw = post("/chat/completions", dict(chat, stream=True),
                        "hub-key-1234")
     check("stream status", status == 200, (status, raw[:300]))
     events = sse_objects(raw)
@@ -129,7 +143,7 @@ try:
               "SDK-HMAC-SHA256"), state.last_headers)
 
     print("== chat nonstream ==")
-    status, raw = post("/v1/chat/completions", dict(chat, stream=False),
+    status, raw = post("/chat/completions", dict(chat, stream=False),
                        "hub-key-1234")
     check("nonstream status", status == 200, (status, raw[:300]))
     obj = json.loads(raw)
@@ -137,14 +151,14 @@ try:
           obj)
 
     state.chat_mode = "text"
-    status, raw = post("/v1/chat/completions", dict(chat, stream=False), "hub-key-1234")
+    status, raw = post("/chat/completions", dict(chat, stream=False), "hub-key-1234")
     check("first snapshot survives aggregation", status == 200 and
           json.loads(raw)["choices"][0]["message"]["content"] == "你好", (status, raw))
     state.chat_mode = "delta"
 
     print("== benefit header ==")
     state.require_benefit_header = True
-    status, raw = post("/v1/chat/completions",
+    status, raw = post("/chat/completions",
                        dict(chat, model="deepseek-v4-pro-0813", stream=False),
                        "hub-key-1234")
     check("benefit status", status == 200, (status, raw[:300]))
@@ -163,11 +177,11 @@ try:
                    "content": [{"type": "input_text", "text": "hi"}]}],
         "stream": False,
     }
-    status, raw = post("/v1/responses", responses_req, "hub-key-1234")
+    status, raw = post("/responses", responses_req, "hub-key-1234")
     check("responses status", status == 200, (status, raw[:300]))
     check("responses text", "你好" in raw, raw[:300])
 
-    status, raw = post("/v1/responses",
+    status, raw = post("/responses",
                        dict(responses_req, stream=True), "hub-key-1234")
     check("responses stream status", status == 200, (status, raw[:300]))
     check("responses stream completed", "response.completed" in raw, raw[:300])
@@ -177,11 +191,11 @@ try:
         "model": "GLM-5.2", "max_tokens": 64,
         "messages": [{"role": "user", "content": "hi"}], "stream": False,
     }
-    status, raw = post("/v1/messages", messages_req, "hub-key-1234")
+    status, raw = post("/messages", messages_req, "hub-key-1234")
     check("messages status", status == 200, (status, raw[:300]))
     check("messages text", "你好" in raw, raw[:300])
 
-    status, raw = post("/v1/messages",
+    status, raw = post("/messages",
                        dict(messages_req, stream=True), "hub-key-1234")
     check("messages stream status", status == 200, (status, raw[:300]))
     check("messages stream text", "你好" in raw, raw[:300])
@@ -214,7 +228,7 @@ try:
 
     print("== credit sampling failure ==")
     state.credit_error = True
-    status, raw = post("/v1/chat/completions", dict(chat, stream=False),
+    status, raw = post("/chat/completions", dict(chat, stream=False),
                        "hub-key-1234")
     check("chat survives credit sampling failure", status == 200,
           (status, raw[:300]))
@@ -240,7 +254,7 @@ try:
         {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc"}}]}])
     before = len([r for r in state.requests
                   if r.get("path") == "/api/v2/chat/completions"])
-    status, raw = post("/v1/chat/completions", image_chat, "hub-key-1234")
+    status, raw = post("/chat/completions", image_chat, "hub-key-1234")
     check("image forwarded to upstream", status == 200
           and len([r for r in state.requests
                    if r.get("path") == "/api/v2/chat/completions"]) == before + 1,
@@ -258,32 +272,32 @@ try:
     ])
     before = len([r for r in state.requests
                   if r.get("path") == "/api/v2/chat/completions"])
-    status, raw = post("/v1/chat/completions", chat, "model-limit")
+    status, raw = post("/chat/completions", chat, "model-limit")
     check("model restriction enforced", status == 400
           and len([r for r in state.requests
                    if r.get("path") == "/api/v2/chat/completions"]) == before,
           (status, raw))
-    status, raw = post("/v1/chat/completions", chat, "account-limit")
+    status, raw = post("/chat/completions", chat, "account-limit")
     check("account restriction enforced", status != 200
           and len([r for r in state.requests
                    if r.get("path") == "/api/v2/chat/completions"]) == before,
           (status, raw))
-    status, raw = post("/v1/chat/completions", chat, "allowed-account")
+    status, raw = post("/chat/completions", chat, "allowed-account")
     check("allowed account works", status == 200, (status, raw[:300]))
 
     print("== errors ==")
     state.chat_error = (400, {"error_msg": "bad request"})
-    status, raw = post("/v1/chat/completions", chat, "hub-key-1234")
+    status, raw = post("/chat/completions", chat, "hub-key-1234")
     check("400 passthrough", status == 400, (status, raw[:300]))
     check("400 message", "bad request" in raw, raw[:300])
 
     state.chat_error = (500, {"error_msg": "boom"})
-    status, raw = post("/v1/chat/completions", chat, "hub-key-1234")
+    status, raw = post("/chat/completions", chat, "hub-key-1234")
     check("500 -> 502", status == 502, (status, raw[:300]))
 
     state.chat_error = None
     C.SNAP_HOST = "http://127.0.0.1:1"
-    status, raw = post("/v1/chat/completions", chat, "hub-key-1234")
+    status, raw = post("/chat/completions", chat, "hub-key-1234")
     check("unreachable -> 502", status == 502, (status, raw[:300]))
     check("unreachable message", "CodeArts" in raw or "华为云" in raw, raw[:300])
 finally:

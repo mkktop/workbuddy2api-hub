@@ -208,20 +208,20 @@ def main():
 
     # ---- 超限：403，且不落到上游 ----
     before = len(MOCK["requests"])
-    code, _h, body = request("POST", "/v1/chat/completions",
+    code, _h, body = request("POST", "/chat/completions",
                              {"model": "deepseek-v4.1-flash",
                               "messages": [{"role": "user", "content": "hi"}]}, AUTH)
-    check("超额时 /v1/chat/completions 返回 403", code == 403, "code=%s body=%r" % (code, body[:160]))
+    check("超额时 /chat/completions 返回 403", code == 403, "code=%s body=%r" % (code, body[:160]))
     check("403 文案点明日限量", b"Daily token quota exhausted" in body, repr(body[:200]))
     check("超额请求不会打到上游", len(MOCK["requests"]) == before,
           "upstream calls=%d" % (len(MOCK["requests"]) - before))
 
-    code, _h, body = request("POST", "/v1/messages",
+    code, _h, body = request("POST", "/messages",
                              {"model": "deepseek-v4.1-flash", "max_tokens": 16,
                               "messages": [{"role": "user", "content": "hi"}]},
                              dict(AUTH, **{"anthropic-version": "2023-06-01",
                                            "x-api-key": KEY_VALUE}))
-    check("/v1/messages 超额时也用 Anthropic 错误信封", code == 403 and b"permission_error" in body,
+    check("/messages 超额时也用 Anthropic 错误信封", code == 403 and b"permission_error" in body,
           "code=%s body=%r" % (code, body[:200]))
 
     # ---- 保存保留：请求体不带 daily_token_limit 时沿用已存值 ----
@@ -251,7 +251,7 @@ def main():
               for item in (json.loads(body).get("api_keys") or [])]
     code, _h, body = request("POST", "/settings/save", {"api_keys": raised}, headers=panel)
     check("把日限量改回 0 保存成功", code == 200, "code=%s" % code)
-    code, _h, body = request("POST", "/v1/chat/completions",
+    code, _h, body = request("POST", "/chat/completions",
                              {"model": "deepseek-v4.1-flash",
                               "messages": [{"role": "user", "content": "hi"}]}, AUTH)
     check("限量放开后同一 Key 恢复正常", code == 200, "code=%s body=%r" % (code, body[:160]))
