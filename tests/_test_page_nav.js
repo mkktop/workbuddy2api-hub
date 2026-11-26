@@ -139,10 +139,11 @@ function matches(el, sel){
 }
 
 const root = new El('html');
-// 吸顶 header：导航跳转要按它的实测高度让位
-const header = new El('header');
-header.offsetHeight = 40;
-root.appendChild(header);
+// 吸顶的壳顶栏：导航跳转要按它的实测高度让位（旧顶栏 <header> 已随旧界面删除）
+const topbar = new El('div');
+topbar.id = 'nextTopbar';
+topbar.offsetHeight = 68;
+root.appendChild(topbar);
 const byId = new Map();
 const detached = id => {
   if(!byId.has(id)) byId.set(id, Object.assign(new El('div', true), { id: id }));
@@ -237,9 +238,10 @@ assert.ok(/@media \(min-width:861px\)[\s\S]{0,600}?\.page-nav-collapsed\.active\
   '收起后的窄列要限定在宽屏生效');
 assert.ok(/@media \(max-width:860px\)[\s\S]{0,900}?\.page-sidebar-head\{display:none\}/.test(html),
   '窄屏没有可收的余地，收起按钮应一并藏掉');
-// header 与 main 的左右留白共用一个变量，两处各写一个值会慢慢漂开对不齐
-assert.ok(/--page-pad:clamp\(/.test(html), '缺少统一的页面左右留白变量');
-assert.ok(/header\{padding:16px var\(--page-pad\)/.test(html), 'header 应使用页面留白变量');
+// 吸顶的是壳顶栏：锚点跳转按它的实测高度让位。脚本按 id 找它，不再按 <header> 标签找。
+assert.ok(/html\[data-ui="next"\] #nextTopbar\{[^}]*position:sticky/.test(html), '壳顶栏应吸顶');
+assert.ok(/getElementById\('nextTopbar'\)/.test(script) && !/querySelector\('header'\)/.test(script),
+  '锚点让位应按壳顶栏 #nextTopbar 的高度算');
 assert.ok(/main\{padding:20px var\(--page-pad\)/.test(html), 'main 应使用页面留白变量');
 
 // 各页面区块数：导航就是照这些区块生成的，每个主页面都要有多个区块才有侧栏可跳。
@@ -363,7 +365,7 @@ api.initPageNav(shrink);
 assert.strictEqual(shrink.querySelector('.page-sidebar'), null, '掉到一项要撤掉侧栏');
 assert.ok(!shrink.classList.contains('page-nav-on'), '掉到一项要取消两栏');
 
-/* ---- 7. 滚动高亮：以「越过吸顶 header 的最后一个区块」为准 ---- */
+/* ---- 7. 滚动高亮：以「越过吸顶顶栏的最后一个区块」为准 ---- */
 const spyPage = attach(pageEl('pageSpy', [sectionEl('甲'), sectionEl('乙')]));
 spyPage.classList.add('active');
 gateway.classList.remove('active');
@@ -396,13 +398,13 @@ api.restorePageNavHash();
 assert.strictEqual(global.__scroll, null, '被隐藏的区块不能当锚点落点');
 spySections[1].style.display = '';
 
-// 点导航项：写 hash、加描边、按实测 header 高度让位
+// 点导航项：写 hash、加描边、按实测顶栏高度让位
 window.location.hash = '';
 global.__scroll = null;
 navItems(spyPage)[1].listeners.click[0]();
 assert.strictEqual(global.__url, 'http://panel/#' + spySections[1].id, '点击导航项要把锚点写进 URL');
-assert.ok(global.__scroll && global.__scroll.top === spySections[1].rectTop - (header.offsetHeight + 14),
-  '要让开吸顶 header 的高度，实际 ' + (global.__scroll && global.__scroll.top));
+assert.ok(global.__scroll && global.__scroll.top === spySections[1].rectTop - (topbar.offsetHeight + 14),
+  '要让开吸顶顶栏的高度，实际 ' + (global.__scroll && global.__scroll.top));
 
 /* ---- 9. 切标签页时按该页的区块重建 ---- */
 const btnGateway = new El('button'); btnGateway.id = 'btnNavGateway';

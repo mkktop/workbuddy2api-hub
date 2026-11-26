@@ -231,13 +231,8 @@ def login(page):
 
 
 def goto_tab(page, tab):
-    btn = {
-        "gateway": "#btnNavGateway",
-        "analytics": "#btnNavAnalytics",
-        "logs": "#btnNavLogs",
-        "settings": "#btnNavSettings",
-    }[tab]
-    page.click(btn)
+    # 2026-11 起只剩一套外壳（圣轮/工作台），页面切换统一走 nextGo()。
+    page.evaluate("(name) => window.nextGo(name)", tab)
     page.wait_for_timeout(900)
 
 
@@ -247,7 +242,16 @@ def run_checks(filter_name):
     os.makedirs(SHOTS, exist_ok=True)
 
     with sync_playwright() as p:
-        browser = p.firefox.launch(headless=True)
+        # 本机通常没有 Playwright 自带的 Firefox / Chromium：优先用系统 Edge / Chrome。
+        browser = None
+        for channel in ("msedge", "chrome"):
+            try:
+                browser = p.chromium.launch(channel=channel, headless=True)
+                break
+            except Exception:
+                pass
+        if browser is None:
+            browser = p.firefox.launch(headless=True)
 
         # ---------- phone viewport ----------
         page = browser.new_page(viewport={"width": 390, "height": 844})
@@ -255,81 +259,29 @@ def run_checks(filter_name):
         page.screenshot(path=os.path.join(SHOTS, "phone-gateway.png"), full_page=True)
 
         if "nav" in filter_name or filter_name == "":
-            # Tab 数由页面自己决定：智能体配置在服务端 / 远程看板形态下会被整个
-            # 撤掉（issue #246），所以这里一个数量都不写死。要钉的是几何性质：
-            # 标签不被截断、行内容不顶出导航条（摆不下就横向滚动，做法与
-            # .page-nav 一致）、按钮填满整行不留空档。4 个 Tab 放得下时「等宽」
-            # 是这三条的自然结果（issue #150 的属性仍在覆盖范围内）。
+            # 2026-11 起只有一套外壳：手机上底部导航（#nextBottomNav），桌面上左侧栏。
+            # 这里钉几何性质：导航条留在视口内、标签不被截断、不出现横向溢出。
             nav = page.evaluate(
                 """
                 (() => {
-                  const nav = document.querySelector('.main-nav');
-                  const btns = Array.from(document.querySelectorAll('.main-nav-btn'));
-                  const r = nav.getBoundingClientRect();
-                  const hr = document.querySelector('header').getBoundingClientRect();
+                  const bar = document.getElementById('nextBottomNav');
+                  if(!bar) return {ok: false, why: 'missing #nextBottomNav'};
+                  const items = Array.from(bar.querySelectorAll('.next-bottom-item'));
+                  const r = bar.getBoundingClientRect();
                   return {
-                    count: btns.length,
-                    widths: btns.map(b => Math.round(b.getBoundingClientRect().width)),
-                    overflow: Math.round(nav.scrollWidth - nav.clientWidth),
-                    scrollable: getComputedStyle(nav).overflowX !== 'visible',
-                    right: Math.round(r.right),
-                    headerRight: Math.round(hr.right),
-                    clipped: btns.some(b => b.scrollWidth > b.clientWidth + 1),
-                    filled: nav.scrollWidth >= nav.clientWidth - 2,
+                    ok: true,
+                    count: items.length,
+                    inViewport: r.left >= -1 && r.right <= window.innerWidth + 1 && r.bottom <= window.innerHeight + 1,
+                    clipped: items.filter(b => b.scrollWidth > b.clientWidth + 1).length,
+                    overflow: Math.round(bar.scrollWidth - bar.clientWidth),
                   };
                 })()
                 """
             )
-            widths = nav["widths"]
-            check(
-                "nav-labels-not-clipped",
-                not nav["clipped"],
-                nav,
-            )
-            check(
-                "nav-stays-inside-the-header",
-                nav["right"] <= nav["headerRight"] + 1,
-                nav,
-            )
-            check(
-                "nav-scrolls-instead-of-overflowing",
-                nav["overflow"] <= 1 or nav["scrollable"],
-                nav,
-            )
-            check(
-                "nav-buttons-fill-the-bar",
-                nav["filled"],
-                (widths, nav["overflow"]),
-            )
-            nav_w = page.evaluate(
-                "document.querySelector('.main-nav').getBoundingClientRect().width"
-            )
-            hdr_w = page.evaluate(
-                "document.querySelector('header').getBoundingClientRect().width"
-            )
-            check("header-nav-full", nav_w >= hdr_w - 29, (nav_w, hdr_w))
-            # The upstream GitHub link must share the title row and stay
-            # inside the header box instead of wrapping onto its own line.
-            gh = page.evaluate(
-                """
-                (() => {
-                  const a = document.querySelector('.gh-link');
-                  const h = document.querySelector('header');
-                  const t = document.querySelector('header h1');
-                  if(!a || !h || !t) return {ok: false, why: 'missing'};
-                  const ar = a.getBoundingClientRect();
-                  const hr = h.getBoundingClientRect();
-                  const tr = t.getBoundingClientRect();
-                  const sameRow = Math.abs(ar.top - tr.top) < 24;
-                  return {
-                    ok: ar.right <= hr.right + 1 && ar.left >= hr.left - 1 && sameRow,
-                    right: Math.round(ar.right), hdrRight: Math.round(hr.right),
-                    sameRow: sameRow,
-                  };
-                })()
-                """
-            )
-            check("gh-link-header-row", gh["ok"], gh)
+            check("bottom-nav-present", nav.get("ok") and nav.get("count", 0) >= 4, nav)
+            check("bottom-nav-in-viewport", bool(nav.get("inViewport")), nav)
+            check("bottom-nav-labels-not-clipped", nav.get("clipped") == 0, nav)
+            check("bottom-nav-no-h-overflow", nav.get("overflow", 1) <= 1, nav)
 
         if "models" in filter_name or filter_name == "":
             disp = page.evaluate(
@@ -361,6 +313,9 @@ def run_checks(filter_name):
             check("growth-cards", disp == "grid", disp)
 
         if "account" in filter_name or filter_name == "":
+            # 账号列表自 2026-11 起是独立一页（以前挂在「网关与账号」页里）。
+            goto_tab(page, "accounts")
+            page.wait_for_timeout(800)
             disp = page.evaluate(
                 "getComputedStyle(document.querySelector('#accounts table')).display"
             )
@@ -372,37 +327,30 @@ def run_checks(filter_name):
                 disp == "block" and row_disp == "grid",
                 (disp, row_disp),
             )
-            tops = page.evaluate(
+            # 窄屏卡片：三个用量数字（请求 / Token / 缓存，都是 td.num）并排一行。
+            stats = page.evaluate(
                 """
                 (() => {
                   const tr = document.querySelector('#accounts tbody tr');
-                  const tds = tr ? tr.querySelectorAll('td') : [];
-                  if(tds.length < 8) return [];
-                  return [6,7,8].map(i => Math.round(tds[i-1].getBoundingClientRect().top));
+                  const tds = tr ? Array.from(tr.querySelectorAll('td.num')) : [];
+                  const rects = tds.map(td => td.getBoundingClientRect());
+                  return {
+                    grid: tr ? getComputedStyle(tr).display === 'grid' : false,
+                    tops: rects.map(r => Math.round(r.top)),
+                    widths: rects.map(r => Math.round(r.width)),
+                  };
                 })()
                 """
             )
-            stat_w = page.evaluate(
-                """
-                (() => {
-                  const tr = document.querySelector('#accounts tbody tr');
-                  const tds = tr ? tr.querySelectorAll('td') : [];
-                  if(tds.length < 8) return [];
-                  return [6,7,8].map(i => Math.round(tds[i-1].getBoundingClientRect().width));
-                })()
-                """
-            )
-            row_grid = page.evaluate(
-                "getComputedStyle(document.querySelector('#accounts tbody tr')).display == 'grid'"
-            )
+            tops, stat_w = stats["tops"], stats["widths"]
             check(
                 "stats-row",
-                row_grid
+                stats["grid"]
                 and len(tops) == 3
                 and max(tops) - min(tops) <= 2
                 and len(stat_w) == 3
                 and min(stat_w) >= 60,
-                (tops, stat_w, row_grid),
+                (tops, stat_w, stats["grid"]),
             )
             heights = page.evaluate(
                 "Array.from(document.querySelectorAll('#accounts button')).filter(b => b.offsetParent).map(b => Math.round(b.getBoundingClientRect().height))"
@@ -427,14 +375,14 @@ def run_checks(filter_name):
             kpi = page.evaluate(
                 """
                 (() => {
-                  const cards = Array.from(document.querySelectorAll('#analyticsKpiCards > .card'));
+                  const cards = Array.from(document.querySelectorAll('#pageAnalytics .kpis .kpi'));
                   if(!cards.length) return {rows: 0, minW: 0, clipped: []};
                   const tops = cards.map(c => Math.round(c.getBoundingClientRect().top));
                   const widths = cards.map(c => Math.round(c.getBoundingClientRect().width));
                   const clipped = cards.filter(c => {
-                    const k = c.querySelector('.k'), s = c.querySelector('.s');
+                    const k = c.querySelector('.k'), v = c.querySelector('.v');
                     return (k && k.scrollWidth > k.clientWidth + 2)
-                        || (s && s.scrollWidth > s.clientWidth + 2);
+                        || (v && v.scrollWidth > v.clientWidth + 2);
                   }).length;
                   return {rows: new Set(tops).size, minW: Math.min.apply(null, widths), clipped: clipped};
                 })()
@@ -442,29 +390,23 @@ def run_checks(filter_name):
             )
             check(
                 "analytics-kpi-wrap",
-                kpi["rows"] >= 3 and kpi["minW"] >= 130 and kpi["clipped"] == 0,
+                kpi["rows"] >= 3 and kpi["minW"] >= 120 and kpi["clipped"] == 0,
                 kpi,
             )
-            # The performance matrix moved to its own renderer upstream; it
-            # must still turn into labelled cards on phones.
-            matrix = page.evaluate(
+            # 用量明细表（#dimTable）在手机上保持表格 + 外层横向滚动：
+            # 列多且每格带小条，拆成卡片反而更难读。
+            dim = page.evaluate(
                 """
                 (() => {
-                  const tr = document.querySelector('#perfMatrix tbody tr');
-                  if(!tr) return {cards: false, rows: 0, labelled: 0};
-                  return {
-                    cards: getComputedStyle(tr).display === 'grid',
-                    rows: document.querySelectorAll('#perfMatrix tbody tr').length,
-                    labelled: tr.querySelectorAll('td[data-label]').length,
-                  };
+                  const t = document.getElementById('dimTable');
+                  const wrap = t ? t.closest('.pbody') : null;
+                  if(!t) return {ok: false, why: 'missing #dimTable'};
+                  return {ok: true, display: getComputedStyle(t).display,
+                          scrollable: wrap ? getComputedStyle(wrap).overflowX !== 'visible' : false};
                 })()
                 """
             )
-            check(
-                "analytics-matrix-cards",
-                matrix["cards"] and matrix["rows"] >= 1 and matrix["labelled"] >= 10,
-                matrix,
-            )
+            check("analytics-dim-table-scrolls", dim.get("ok") and dim.get("display") == "table" and dim.get("scrollable"), dim)
             page.screenshot(
                 path=os.path.join(SHOTS, "phone-analytics.png"), full_page=True
             )

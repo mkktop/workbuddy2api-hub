@@ -51,21 +51,29 @@ const paid = row({tier: {paid: true, package: 'Pro', checked_at: NOW, source: 'b
 check('付费号显示包名', paid.includes('>Pro<'), paid);
 check('付费号胶囊带 ok 高亮', paid.includes('class="badge mini ok"'), paid);
 
-/* ---- 2. 胶囊的位置：版本格里、区域徽章下方 ------------------------------- */
+/* ---- 2. 胶囊的位置：账号格第一行、紧跟昵称 --------------------------------- */
 
-const realmTdIdx = freeIntl.indexOf('data-label="版本"');
-const acctTdIdx = freeIntl.indexOf('data-label="账号"');
+// 工作台重排（2026-11）：表里不再有独立的「版本」列（一个视图只有一个版本，行里的
+// 区域徽章是冗余的），档位胶囊挪到账号格的第一行、昵称右侧，与第二行的次要信息
+// （UID · 到期 · 备注 / 分组）分开。
+const acctTdIdx = freeIntl.indexOf('<td class="acct-main" data-label="账号">');
+const nameRowIdx = freeIntl.indexOf('<div class="acct-name-row">', acctTdIdx);
+const subIdx = freeIntl.indexOf('<div class="acct-sub">', acctTdIdx);
+const activityTdIdx = freeIntl.indexOf('<td class="acct-activity"');
 const tierIdx = freeIntl.indexOf('>Free<');
-check('胶囊落在版本格', tierIdx > realmTdIdx && tierIdx < acctTdIdx, freeIntl);
-check('胶囊排在区域徽章后面', tierIdx > freeIntl.indexOf('国际版'), freeIntl);
-check('胶囊在「禁用模型」那行之前（不挤在账号格底部）',
-  tierIdx < freeIntl.indexOf('+ 禁用模型'), freeIntl);
+check('胶囊落在账号格', tierIdx > acctTdIdx && tierIdx < activityTdIdx, freeIntl);
+check('胶囊在昵称行里、排在昵称后面', tierIdx > nameRowIdx && tierIdx < subIdx, freeIntl);
+check('胶囊在次要信息行之前（不挤在账号格底部）', tierIdx < subIdx, freeIntl);
 
 const creditCell = freeIntl.slice(freeIntl.indexOf('data-label="积分"'), freeIntl.indexOf('data-label="请求"'));
 check('积分格里不再出现档位胶囊', !creditCell.includes('Free'), creditCell);
 
-const mobileGroup = (freeIntl.match(/<span class="acct-mobile-badges">[\s\S]*?<\/span><\/div>/) || [''])[0];
-check('窄屏卡片视图也带上档位（移动端徽章组）', mobileGroup.includes('Free'), mobileGroup);
+// 窄屏：昵称行在任何宽度都显示（窄屏只是多显示一枚状态徽章），所以档位不需要第二份
+// 副本。钉住「只有一份、且在昵称行里」，窄屏才不会丢档位、也不会出现两个。
+const mobileGroup = (freeIntl.match(/<span class="acct-mobile-badges">[\s\S]*?<\/span><\/span>/) || [''])[0];
+check('档位胶囊整行只渲染一份', (freeIntl.match(/>Free</g) || []).length === 1, freeIntl);
+check('窄屏徽章组里不重复档位胶囊', mobileGroup && !mobileGroup.includes('Free'), mobileGroup);
+check('窄屏徽章组带的是状态徽章', /badge ok st">可用</.test(mobileGroup), mobileGroup);
 
 const noCredits = api.accountRow({
   uid: 'acct-0002', nickname: '未查询号', realm: 'intl', enabled: true,

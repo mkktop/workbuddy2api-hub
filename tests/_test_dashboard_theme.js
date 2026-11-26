@@ -15,6 +15,9 @@
  *   3. 选一档能落地（data-theme / data-theme-pref / localStorage）并收起菜单；
  *   4. 首次绘制前就按存储的偏好定好主题（防白闪），跟随系统时读 prefers-color-scheme。
  *
+ * 主题只有明暗两套（浅色 / 深色 / 跟随系统）。旧的 Claude / Alibaba / Material /
+ * MiuiX 风格预设只作用于已删除的传统布局，随它一并删除，不再在这里的覆盖范围内。
+ *
  * Run with Node: node tests/_test_dashboard_theme.js
  */
 const assert = require('assert');
@@ -22,22 +25,6 @@ const fs = require('fs');
 const path = require('path');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'dashboard.html'), 'utf8');
-
-// 首帧布局默认控制台；显式经典偏好与新导航始终优先。
-const layoutSource = html.match(/<script>\s*(var defaultConsoleLayout[\s\S]*?)<\/script>/);
-assert.ok(layoutSource, '缺少首帧布局初始化');
-function firstLayout(saved, next, blocked) {
-  const attrs = {}, sheets = {'wb-alibaba-console': {}, 'wb-console-v2': {}};
-  const document = {documentElement: {setAttribute: (k,v) => { attrs[k] = v; }}, getElementById: id => sheets[id]};
-  const localStorage = {getItem: () => { if(blocked) throw Error('disabled'); return saved; }};
-  new Function('window', 'document', 'localStorage', layoutSource[1])({__NEXT_UI__: next}, document, localStorage);
-  return attrs['data-console-layout'] || '';
-}
-assert.equal(firstLayout(null, false, false), 'on', '首次访问默认控制台');
-assert.equal(firstLayout('0', false, false), '', '保留经典布局偏好');
-assert.equal(firstLayout('1', false, false), 'on', '保留控制台偏好');
-assert.equal(firstLayout(null, false, true), 'on', '存储不可读时仍使用默认布局');
-assert.equal(firstLayout('1', true, false), '', '新导航不叠加控制台布局');
 
 const START = "var THEME_KEY = 'wb-theme';";
 const END = '// 3. Tab 初始化';
@@ -85,20 +72,13 @@ function makeElement(id) {
 function makeHarness(seed) {
   const elements = new Map();
   for (const id of ['themeToggleIcon', 'themeToggleBtn', 'themeDropdown', 'themeDropdownWrap',
-                    'themeOptLight', 'themeOptDark', 'themeOptSystem', 'themeOptClaude', 'themeOptAlibaba', 'themeOptMaterial', 'themeOptMiuix']) {
+                    'themeOptLight', 'themeOptDark', 'themeOptSystem']) {
     elements.set(id, makeElement(id));
   }
-  const styleOpts = ['claude','alibaba','material','miuix'].map(x => {
-    const e = elements.get('themeOpt' + (x==='miuix'?'Miuix':x[0].toUpperCase()+x.slice(1)));
-    e.getAttribute = k => k === 'data-theme-style-option' ? x : undefined;
-    return e;
-  });
-  elements.get('themeDropdown').querySelectorAll = sel => sel === '[data-theme-style-option]' ? styleOpts : [];
   const docListeners = {};
   const mediaListeners = [];
   const media = { matches: !!seed.systemDark, addEventListener(type, fn) { mediaListeners.push(fn); } };
   const store = new Map(seed.stored === undefined ? [] : [['wb-theme', seed.stored]]);
-  if(seed.styleStored !== undefined) store.set('wb-theme-style', seed.styleStored);
 
   const documentElement = makeElement('html');
   documentElement.style = { setProperty() {}, getPropertyValue() { return ""; } };
@@ -107,7 +87,6 @@ function makeHarness(seed) {
   const doc = {
     documentElement,
     getElementById: (id) => elements.get(id) || null,
-    querySelectorAll: (sel) => sel === '[data-theme-style-option]' ? ['claude','alibaba','material','miuix'].map(x => { const e=elements.get('themeOpt'+x[0].toUpperCase()+x.slice(1)); e.getAttribute = k => k === 'data-theme-style-option' ? x : undefined; return e; }) : [],
     addEventListener: (type, fn) => { (docListeners[type] = docListeners[type] || []).push(fn); },
   };
   const storage = {
@@ -137,7 +116,7 @@ const mentioned = new Set([
 const mustBeGlobal = [...mentioned].filter((name) => handlers.has(name)).sort();
 
 // 这一条同时防止「提取坏了」：主题块就该导出这两个处理器
-assert.deepStrictEqual(mustBeGlobal, ['selectStyle', 'selectTheme', 'toggleThemeMenu'],
+assert.deepStrictEqual(mustBeGlobal, ['selectTheme', 'toggleThemeMenu'],
   `主题块里被内联属性引用的处理器应当恰好是 selectTheme / toggleThemeMenu，实得 ${mustBeGlobal.join(', ')}`);
 
 const h = makeHarness({});
@@ -212,21 +191,14 @@ inside.fire('click', { target: inside.el('themeOptDark') });
 assert.strictEqual(inside.el('themeDropdown').classList.contains('open'), true,
   '点菜单自己身上不该收起菜单');
 
-
-// 风格维度：五套预设均应可选择、持久化，且不影响旧的明暗偏好。
-for (const style of ['claude','alibaba','material','miuix']) {
-  const t = makeHarness({stored:'light'});
-  t.win.selectStyle(style, evt());
-  assert.strictEqual(t.documentElement.getAttribute('data-theme-style'), style, style + ' 应写入 data-theme-style');
-  assert.strictEqual(t.store.get('wb-theme-style'), style, style + ' 应持久化');
-  t.win.selectTheme('dark', evt());
-  assert.strictEqual(t.documentElement.getAttribute('data-theme'), 'dark', style + ' dark 应生效');
-  assert.strictEqual(t.documentElement.getAttribute('data-theme-style'), style, style + ' 不应被明暗切换覆盖');
-}
-const styleDefault = makeHarness({stored:'light'});
-assert.strictEqual(styleDefault.documentElement.getAttribute('data-theme-style'), 'alibaba', '缺少 style 偏好时默认 Alibaba');
-const styleExisting = makeHarness({stored:'light', styleStored:'claude'});
-assert.strictEqual(styleExisting.documentElement.getAttribute('data-theme-style'), 'claude', '已有主题偏好应得到保留');
+// ---- 6. 菜单里只有明暗三档；风格预设随传统布局删除 ----------------------
+const menuMarkup = html.slice(html.indexOf('<div class="theme-dropdown" id="themeDropdown"'));
+const options = [...menuMarkup.slice(0, menuMarkup.indexOf('</div>\n          </div>'))
+  .matchAll(/<button type="button" class="theme-option" id="(themeOpt\w+)"/g)].map(m => m[1]);
+assert.deepStrictEqual(options, ['themeOptLight', 'themeOptDark', 'themeOptSystem'],
+  '主题菜单应恰好是浅色 / 深色 / 跟随系统三档，实得 ' + options.join(', '));
+assert.ok(!/selectStyle|THEME_STYLES|data-theme-style|wb-theme-style/.test(html),
+  '主题风格预设（Claude / Alibaba / Material / MiuiX）只作用于已删除的传统布局，不应残留');
 
 console.log('dashboard theme assertions passed '
   + `(${mustBeGlobal.length} exported handlers, ${handlers.size} inline handlers swept)`);

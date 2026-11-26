@@ -21,8 +21,13 @@ const script = dashboardScript();
 
 /* ---- 1. 结构：账号表有「权重」列，改动走 /accounts/set -------------- */
 
-assert.ok(/<th style="text-align:center;width:58px">权重<\/th>/.test(html),
-  '账号表应有 58px 宽的「权重」表头（够放自绘下拉的值 + 箭头，且不留空白）');
+// 工作台重排（2026-11）：表头由 renderAccounts() 用字符串拼出，不再带内联样式；列宽
+// 写在 #workbenchStyles 的 ≥641px 块里。56px 是实测定的：减去 2px + 2px 内边距后
+// 有 52px，放得下自绘下拉（最小 44px），也不多占账号列的宽度。
+assert.ok(/<th class="acct-weight">权重<\/th>/.test(script),
+  '账号表应有「权重」表头');
+assert.ok(/table\.account-cards th\.acct-weight\{width:56px\}/.test(html),
+  '「权重」列应为 56px（够放自绘下拉的值 + 箭头，且不留空白）');
 /* 回归：64px 的列减去 td 内边距只剩 40px，通用触发器的 padding/gap/箭头
    吃掉 37px，权重数字被挤成 1px（界面上只剩一个箭头）。这里钉住该列的
    紧凑触发器与放宽后的列宽。 */

@@ -25,8 +25,9 @@ const script = dashboardScript();
 
 /* ---- 1. 结构：账号有了自己的主菜单 ---------------------------------- */
 
-assert.ok(/id="btnNavAccounts"[^>]*onclick="switchMainTab\('accounts'\)"/.test(html),
-  '顶部导航应有「账号」菜单，并指向 switchMainTab(\'accounts\')');
+// 侧栏的「账号」入口走 nextGo()（切页 + 同步壳的高亮），最终落到 switchMainTab('accounts')。
+assert.ok(/data-next-tab="accounts" onclick="nextGo\('accounts'\)"/.test(html),
+  '侧栏应有「账号」入口，并指向 nextGo(\'accounts\')');
 assert.ok(/<div id="pageAccounts" class="main-page">/.test(html),
   '缺少账号页容器 #pageAccounts.main-page');
 
@@ -101,32 +102,15 @@ for(const [zh, en] of [['签到与活跃记录', 'Check-in & activity log'],
     'DICT 里缺少「' + zh + '」的英文词条');
 }
 
-/* ---- 1b. 开关：账号是不是独立成一个页签 ----------------------------- */
+/* ---- 1b. 账号固定是独立的一页（旧的页签合并模式已删除） ------------------ */
 
-// 开关本体：勾选框 + 保存按钮
-assert.ok(/<input id="setAccountsSeparate" type="checkbox"/.test(html),
-  '设置页缺少「账号单独一页」勾选框 #setAccountsSeparate');
-assert.ok(/onclick="saveAccountsSeparateTab\(this\)"/.test(html),
-  '开关的保存按钮应接上 saveAccountsSeparateTab(this)');
-// 合并模式下三个区块要插回网关页的这个位置——拆分前它们就在这里
-assert.ok(/<span id="accountsSectionsAnchor" hidden><\/span>/.test(html),
-  '网关页缺少账号区块的合并锚点 #accountsSectionsAnchor');
-// 拆开时区块要回到账号页页头之后
-assert.ok(/<span id="accountsHomeAnchor" hidden><\/span>/.test(html),
-  '账号页缺少区块的回家锚点 #accountsHomeAnchor');
-// 页签文字要被改写，所以得有个能定位的节点，不能只留一段裸文本
-assert.ok(/<span id="navGatewayLabel">网关<\/span>/.test(html),
-  '网关页签的文字节点缺少 id，合并时改不成「网关与账号」');
-
-// 字段名必须与 wb_settings / wb_proxy 一致：写错一个字母就是「开关存了，
-// 下次打开又是老样子」这种最安静的坏法。
-assert.ok(/data\.accounts_separate_tab === true/.test(script),
-  'loadSettings 应按 accounts_separate_tab === true 判定，缺省即合并');
-assert.ok(/postJSON\('\/settings\/save', \{accounts_separate_tab: value\}\)/.test(script),
-  '保存应只 patch accounts_separate_tab 一个键');
-// 合并之后「账号」的书签不能停在内容已经不在了的空页上
-assert.ok(/if\(tab === 'accounts' && !_accountsSeparateTab\) tab = window\.__NEXT_UI__ \? 'runtime' : 'gateway';/.test(script),
-  '合并模式下 ?tab=accounts 应退回「运行详情」或传统网关页');
+// 「账号独立成一个页签」开关连同它那套搬家逻辑一起删除：服务端字段
+// accounts_separate_tab 仍保留，但面板不再读它，账号区块也不会再被搬去别的页。
+for(const gone of ['setAccountsSeparate', 'saveAccountsSeparateTab', 'accountsSectionsAnchor',
+                   'accountsHomeAnchor', 'applyAccountsTabLayout', '_accountsSeparateTab',
+                   'navGatewayLabel', 'accounts_separate_tab']){
+  assert.ok(!html.includes(gone), '旧的页签合并模式应已删除：' + gone);
+}
 
 /* ---- 1c. 一键切换所有出站身份 --------------------------------------- */
 
@@ -192,8 +176,7 @@ try {
       refreshActivityBoardOnTasks: refreshActivityBoardOnTasks,
       renderActivityAccounts: renderActivityAccounts,
       switchMainTab: switchMainTab,
-      applyAccountsTabLayout: applyAccountsTabLayout,
-      accountsSeparateTab: accountsSeparateTab,
+      currentTab: function(){ return currentMainTab; },
       updateProductAllButton: updateProductAllButton,
       cycleAllProducts: cycleAllProducts,
       accountErrorCode: accountErrorCode,
@@ -508,76 +491,14 @@ function check(label, ok, detail){
   check('不在自动化页时不触发活动记录刷新',
     !REQUESTS.some(u => u.indexOf('/activity/history') === 0), JSON.stringify(REQUESTS));
 
-  // 2j. 开关：区块在两页之间搬家，页签名与「账号」页签的显隐跟着走。
-  // 此段验证用户显式选择经典布局时的文案；默认控制台另行验证。
-  document.documentElement.removeAttribute('data-console-layout');
-  // 假 DOM 不把 HTML 解析成树（getElementById 是惰性建元素），所以这里按**运行时**
-  // 的真实结构自己搭最小场景——initPageNav() 会把页面内容整体包进 .page-nav-body，
-  // 两个锚点因此都不是页面 div 的直接子节点。踩过的坑：直接对页面 div 调
-  // insertBefore 会抛 NotFoundError，而 loadSettings 的 try/catch 把它吞掉，
-  // 现场表现只是「开关点了一点反应都没有」。
-  const pageGateway = el('pageGateway');
-  const pageAccounts = el('pageAccounts');
-  const kids = node => Array.from(node.children);
-  const bodyOf = node => kids(node).find(n => n.classList && n.classList.contains('page-nav-body'));
-
-  const accountsBody = document.createElement('div');
-  accountsBody.classList.add('page-nav-body');
-  pageAccounts.appendChild(accountsBody);
-  const accountsHeader = document.createElement('div');
-  accountsBody.appendChild(accountsHeader);
-  const home = el('accountsHomeAnchor');
-  accountsBody.appendChild(home);
-  const moved = [0, 1, 2].map(() => document.createElement('section'));
-  moved.forEach(s => accountsBody.appendChild(s));
-
-  const gatewayBody = document.createElement('div');
-  gatewayBody.classList.add('page-nav-body');
-  pageGateway.appendChild(gatewayBody);
-  const anchor = el('accountsSectionsAnchor');
-  gatewayBody.appendChild(anchor);
-
-  const sectionsOfAccounts = () => {
-    const body = bodyOf(pageAccounts);
-    return body ? kids(body).filter(n => n.tagName === 'SECTION') : [];
-  };
-
-  check('场景就位：账号页（含包裹层）里有三个区块', sectionsOfAccounts().length === 3,
-    String(sectionsOfAccounts().length));
-  check('合并锚点不在页面 div 直下，而在 .page-nav-body 里',
-    kids(pageGateway).indexOf(anchor) === -1 && kids(gatewayBody).indexOf(anchor) >= 0);
-
-  api.applyAccountsTabLayout(false);
-  check('合并后账号页不再有区块', sectionsOfAccounts().length === 0,
-    String(sectionsOfAccounts().length));
-  check('合并后三个区块都挂在网关页的包裹层里',
-    moved.every(s => kids(gatewayBody).includes(s)));
-  check('合并后区块排在锚点之前',
-    moved.every(s => kids(gatewayBody).indexOf(s) < kids(gatewayBody).indexOf(anchor)));
-  check('合并后「账号」页签被藏起来', el('btnNavAccounts').style.display === 'none',
-    el('btnNavAccounts').style.display);
-  check('合并后网关页签改名「网关与账号」', el('navGatewayLabel').textContent === '网关与账号',
-    el('navGatewayLabel').textContent);
-  check('合并后开关读回来是关', api.accountsSeparateTab() === false);
-
-  // 再调一次必须还是同一个结果：每次进设置页 loadSettings 都会调
-  api.applyAccountsTabLayout(false);
-  check('重复应用合并是幂等的',
-    moved.every(s => kids(gatewayBody).includes(s)) && sectionsOfAccounts().length === 0);
-
-  api.applyAccountsTabLayout(true);
-  check('拆开后三个区块回到账号页', sectionsOfAccounts().length === 3,
-    String(sectionsOfAccounts().length));
-  check('拆开后顺序不变', sectionsOfAccounts().join('|') === moved.join('|'));
-  check('拆开后网关页签改回「网关」', el('navGatewayLabel').textContent === '网关',
-    el('navGatewayLabel').textContent);
-  check('拆开后开关读回来是开', api.accountsSeparateTab() === true);
-
-  document.documentElement.setAttribute('data-console-layout', 'on');
-  api.applyAccountsTabLayout(false);
-  check('控制台布局保持运行概览文案', el('navGatewayLabel').textContent === '运行概览');
-  check('控制台布局仍将账号区合并到网关页', moved.every(s => kids(gatewayBody).includes(s)));
-
+  // 2j. 账号是固定的一页：切过去就停在账号页。旧的合并模式会把 ?tab=accounts
+  //     改道去别的页，那套改道随开关一起删除了。
+  api.switchMainTab('accounts');
+  check('切到账号页签就停在账号页', api.currentTab() === 'accounts', api.currentTab());
+  check('账号页容器被点亮', el('pageAccounts').classList.contains('active'));
+  api.switchMainTab('gateway');
+  check('网关页与账号页是两个页面', api.currentTab() === 'gateway'
+    && el('pageGateway').classList.contains('active') && !el('pageAccounts').classList.contains('active'));
 
   // 2k. 一键切换所有出站身份：按钮显示当前身分，点一下切到下一个并提交全量
   window.ACCOUNTS = [{uid: 'u1', product: 'workbuddy'}, {uid: 'u2', product: 'workbuddy'}];

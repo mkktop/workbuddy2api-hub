@@ -5,7 +5,7 @@
  * 分组下拉连同整条筛选条一起消失，默认界面里没有任何「按分组看」的入口。
  *
  * 这里钉住四件事：
- *   1. 筛选条在默认布局下可见且有基线样式（不依赖 console 样式表）；
+ *   1. 筛选条有自己的基线样式，且没有任何规则按布局把它藏起来；
  *   2. 「按分组查看」开关存在、状态写进 localStorage、切换时接管排序开关；
  *   3. 分组渲染：组标题带计数与动作，未分组收在最后一节，折叠只隐藏本组行；
  *   4. 分组动作走服务端的 group 作用域，未分组不发请求。
@@ -30,15 +30,15 @@ function ok(name, fn) {
 
 /* ── 1. 静态契约 ─────────────────────────────────────────────── */
 
-ok('筛选条在默认布局下可见，且不依赖 console 样式表', () => {
-  const rule = html.match(/html:not\(\[data-console-layout="on"\]\):not\(\[data-ui="next"\]\) \.console-filterbar[^{]*\{([^}]*)\}/);
-  assert.ok(rule, 'missing the console-layout hiding rule');
-  assert.ok(/:not\(\.acct-filterbar\)/.test(rule[0]),
-    '账号筛选条必须被排除在隐藏规则之外');
+ok('筛选条有自己的基线样式，没有任何规则把它藏起来', () => {
   const baseline = html.match(/:is\(\.acct-filterbar,\s*\.recent-filterbar\)\{([^}]*)\}/);
   assert.ok(baseline, 'missing the shared filterbar baseline styles');
   assert.ok(/display:flex/.test(baseline[1]), 'baseline must lay the bar out as flex');
   assert.ok(/var\(--panel2\)/.test(baseline[1]), 'baseline must use theme variables');
+  // 旧布局靠一条按 data-console-layout 的规则藏筛选条、再给账号 / 请求两条豁免。
+  // 那套布局连同样式表一起删除了：现在不许再有任何规则把筛选条藏起来。
+  assert.ok(!/\.console-filterbar[^{]*\{display:none/.test(html),
+    'no rule may hide a filter bar by layout');
 });
 
 ok('账号页筛选条同时挂 console-filterbar 与 acct-filterbar', () => {

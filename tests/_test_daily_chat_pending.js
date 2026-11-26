@@ -37,10 +37,11 @@ check('新按钮必须在「每日活跃打卡 (国际版)」右边', pendingBtn
 check('两个按钮之间不能隔着别的按钮', pendingBtn > chatBtn && !/<button/.test(html.slice(
   html.indexOf('</button>', chatBtn), html.lastIndexOf('<button', pendingBtn))),
   html.slice(html.indexOf('</button>', chatBtn), html.lastIndexOf('<button', pendingBtn)).slice(0, 120));
-check('新按钮的样式与现有按钮一致（primary）',
-  /<button class="primary" id="btnPageDailyChatPending"[^>]*onclick="doDailyChatPending\(this\)"/.test(html));
+// 2026-11：区块里只有总入口是 .primary，两个单项打卡按钮都是次级按钮（.sec）。
+check('新按钮与「一键国际版签到」同级（.sec，同一组次级按钮）',
+  /<button class="sec" id="btnPageDailyChatPending"[^>]*onclick="doDailyChatPending\(this\)"/.test(html));
 check('状态卡片有可挂 title 的容器 #cardIntlTodayActive',
-  /<div class="card accent2" id="cardIntlTodayActive">[\s\S]{0,200}?id="intlTodayActiveState"/.test(html));
+  /<div class="card" id="cardIntlTodayActive">[\s\S]{0,200}?id="intlTodayActiveState"/.test(html));
 check('DICT 里有按钮文案的英文词条',
   /'未活跃打卡一键打卡':\s*'[^']+'/.test(html), 'DICT 里缺少「未活跃打卡一键打卡」的英文词条');
 

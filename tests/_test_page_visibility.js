@@ -32,11 +32,13 @@ check(/<h2>顶部页签显示 <em id="setPagesState"><\/em><\/h2>/.test(html),
   'dashboard.html 里找不到「顶部页签显示」区块标题');
 check(/<div id="setPagesList"[^>]*><\/div>/.test(html),
   '清单容器 #setPagesList 必须是设置页里的空容器：选项由脚本现场生成');
-// 页签按钮的 display 来自 .main-nav-btn（inline-flex），页面的来自 .main-page.active
-// （block / grid）——都是作者样式，都压过 [hidden] 的 UA 样式。少了这条规则，
-// 隐藏只会在 DOM 里生效，屏幕上看不出来。
-check(/\.main-nav-btn\[hidden\],\.main-page\[hidden\]\{display:none!important\}/.test(html),
-  '缺少 [hidden] 的 display 规则：作者样式会盖掉它，隐藏不生效');
+// 页面的 display 来自 .main-page.active（block / grid），侧栏入口的来自 .next-nav-item
+// （flex）——都是作者样式，都压过 [hidden] 的 UA 样式。少了这两条规则，隐藏只会在
+// DOM 里生效，屏幕上看不出来。
+check(/\.main-page\[hidden\]\{display:none!important\}/.test(html),
+  '缺少页面的 [hidden] display 规则：作者样式会盖掉它，隐藏不生效');
+check(/html\[data-ui="next"\] \[data-next-tab\]\[hidden\]\s*\{display:none!important\}/.test(html),
+  '缺少侧栏入口的 [hidden] display 规则：入口是 flex，隐藏不生效');
 
 const start = script.indexOf('顶部页签显示开始');
 const end = script.indexOf('顶部页签显示结束');
@@ -56,35 +58,18 @@ check('页签显示块不得自己写一份页表',
 
 /* ---- 2. 行为：把整段 dashboard 脚本配假 DOM 跑起来 -------------------- */
 
-/* 顶部页签：六个按钮，id 与文案都照 dashboard.html 里那份抄。
-   __wbSrc 是 i18n 留在文本节点上的原文（界面切到英文时文案被换成译文，原文还在），
-   这里给「设置」带上它，用来断言清单读的是原文而不是译文。 */
-function textNode(text, source) {
-  const node = {nodeType: 3, data: text, textContent: text};
-  if (source !== undefined) node.__wbSrc = source;
-  return node;
-}
+/* 侧栏导航：六个入口，data-next-tab 与 dashboard.html 里那份一致。 */
+const PAGES = ['gateway', 'tasks', 'analytics', 'agents', 'settings', 'logs'];
 
-const PAGES = [
-  ['btnNavGateway', '网关与账号'],
-  ['btnNavTasks', '任务与福利'],
-  ['btnNavAnalytics', '数据看板'],
-  ['btnNavAgents', '智能体配置'],
-  ['btnNavSettings', 'Settings', '设置'],
-  ['btnNavLogs', '运行日志'],
-];
-
-const BUTTONS = PAGES.map(([id, text, source]) => {
+const BUTTONS = PAGES.map(key => {
   const btn = dom.createElement('button');
-  btn.id = id;
-  btn.className = 'main-nav-btn';
-  btn.appendChild(textNode(' ' + text + ' ', source));
-  btn.textContent = ' ' + text + ' ';
+  btn.className = 'next-nav-item';
+  btn.setAttribute('data-next-tab', key);
   return btn;
 });
 
-const nav = dom.makeElement('nav', {querySelectorAll: {'.main-nav-btn': BUTTONS}});
-nav.className = 'main-nav';
+const nav = dom.makeElement('nav', {querySelectorAll: {'[data-next-tab]': BUTTONS}});
+nav.id = 'nextNav';
 
 let SETTINGS = {};
 let SAVE_STATUS = 200;
@@ -98,7 +83,7 @@ const json = (status, payload) => Promise.resolve({
 });
 
 dom.installDom({
-  querySelector: {'.main-nav': nav},
+  querySelector: {'#nextNav': nav},
   fetch: (url, options) => {
     calls.push({url: url, body: options && options.body});
     if (url === '/settings') return json(200, SETTINGS);
@@ -142,7 +127,7 @@ const element = id => document.getElementById(id);
 const list = () => element('setPagesList');
 const boxes = () => Array.from(list().children).map(item => item.firstElementChild);
 const boxFor = key => boxes().filter(box => box.dataset.pageKey === key)[0];
-const navButton = key => BUTTONS.filter(btn => btn.id === 'btnNav' + key.charAt(0).toUpperCase() + key.slice(1))[0];
+const navButton = key => BUTTONS.filter(btn => btn.getAttribute('data-next-tab') === key)[0];
 const pageFor = key => element('page' + key.charAt(0).toUpperCase() + key.slice(1));
 const saves = () => calls.filter(c => c.url === '/settings/save');
 
@@ -155,20 +140,20 @@ const saves = () => calls.filter(c => c.url === '/settings/save');
     '渲染了 ' + list().children.length + ' 行');
   check('缺省时所有勾选框都勾上', boxes().every(box => box.checked === true));
   check('缺省时页签按钮都可见', BUTTONS.every(btn => !btn.hidden));
-  check('缺省时页面容器都可见', PAGES.every(([id]) => !pageFor(id.slice(6).toLowerCase()).hidden));
+  check('缺省时页面容器都可见', PAGES.every(key => !pageFor(key).hidden));
   check('缺省时状态文案是「全部显示」',
     element('setPagesState').textContent === '(全部显示)',
     element('setPagesState').textContent);
 
-  // 清单的标签来自页签按钮；带 __wbSrc 的读原文（中文），不能把译文抄进来。
+  // 清单的标签按页签 key 查表，与侧栏入口的文案一一对应。
   const labels = Array.from(list().children).map(item => item.children[1].textContent);
   assert.deepStrictEqual(labels, ['网关', '自动化任务', '用量', '智能体', '设置', '日志'],
-    '清单标签必须与页签文案一一对应，且带 __wbSrc 的取原文: ' + JSON.stringify(labels));
+    '清单标签必须与侧栏入口一一对应: ' + JSON.stringify(labels));
 
   // 2b. 「设置」固定保留：它是这个开关自己的入口。
   check('「设置」的勾选框 disabled', boxFor('settings').disabled === true);
-  check('其余页面的勾选框可用', PAGES.filter(([id]) => id !== 'btnNavSettings')
-    .every(([id]) => boxFor(id.slice(6).toLowerCase()).disabled === false));
+  check('其余页面的勾选框可用', PAGES.filter(key => key !== 'settings')
+    .every(key => boxFor(key).disabled === false));
 
   // 2c. 存过一份清单：恢复，页签与页面一起收起。
   SETTINGS = {hidden_pages: ['tasks', 'logs']};
@@ -260,17 +245,18 @@ const saves = () => calls.filter(c => c.url === '/settings/save');
   check('当前页被收起后退回可见页', api.currentTab() === 'gateway', api.currentTab());
   api.applyHiddenPages([]);
 
-  // 2j. 清单是现场读页签的：上游加一个页面，这里自动多一行，不用改这份代码。
+  // 2j. 清单是现场读侧栏入口的：上游加一个页面，这里自动多一行，不用改这份代码。
+  //     表里没有的 key 用 key 本身当标签，不会渲染成空行。
   const added = dom.createElement('button');
-  added.id = 'btnNavScratch';
-  added.className = 'main-nav-btn';
-  added.appendChild(textNode('临时页面'));
-  added.textContent = '临时页面';
+  added.className = 'next-nav-item';
+  added.setAttribute('data-next-tab', 'scratch');
   BUTTONS.push(added);
   api.renderPageVisibility();
   check('新页签自动进清单', list().children.length === PAGES.length + 1,
     '渲染了 ' + list().children.length + ' 行');
   check('新页签也参与隐藏', boxFor('scratch') !== undefined);
+  check('表里没有的页签用 key 当标签',
+    Array.from(list().children).some(item => item.children[1].textContent === 'scratch'));
   api.applyHiddenPages(['scratch']);
   check('新页签能收起', element('pageScratch').hidden === true && added.hidden === true);
   api.applyHiddenPages([]);
@@ -285,7 +271,7 @@ const saves = () => calls.filter(c => c.url === '/settings/save');
     '渲染了 ' + list().children.length + ' 行');
 
   console.log = realLog;
-  console.log('顶部页签显示断言通过（结构 7 项 + 行为 41 项）');
+  console.log('顶部页签显示断言通过（结构 8 项 + 行为 42 项）');
 })().catch(e => {
   console.log = realLog;
   console.error(e && e.stack || e);

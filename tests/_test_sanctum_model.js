@@ -1,9 +1,11 @@
-/* 圣轮首页（?skin=sanctum）：场景模型、流客户端与结构约束。
+/* 圣轮首页（总览）：场景模型、流客户端与结构约束。
  *
  * 首页把每一次模型调用画成一颗星。画面要成立，三件事各管各的：
  *   · 场景模型——纯函数，不碰 DOM：事件怎么变成在途调用、调用序列和指标。
  *   · 流客户端——fetch 流式读取 /usage/events 并手解 SSE。
- *   · 结构——皮肤样式全部限定在 data-skin 下，不开皮肤时一条也不生效。
+ *   · 结构——皮肤样式全部限定在 data-skin="sanctum" + 总览页签下，其余页签一条也不生效。
+ *
+ * 圣轮是这个壳唯一的首页：data-skin 直接写在 <html> 上，没有开关，也没有 ?skin= 参数。
  *
  * 这个套件在 Node 里把整页脚本装进沙箱跑（假 DOM 没有 canvas，舞台不会启动），
  * 然后直接驱动导出的纯函数。钉住的都是实际出过的问题：
@@ -233,11 +235,11 @@ ok('完成的星点绕行 60 秒，飞入中心期间不再计入最近一分钟
   assert.strictEqual(m.recent[0].arrival.id, 'orbit-request');
   assert.strictEqual(S.orbitReturnProgress(T0, T0 + 59999), 0);
   assert.strictEqual(S.metrics(m, T0 + 59999).perMin, 1);
-  assert.strictEqual(S.orbitReturnProgress(T0, T0 + 60750), 0.5);
-  assert.strictEqual(S.metrics(m, T0 + 60750).perMin, 0);
+  assert.strictEqual(S.orbitReturnProgress(T0, T0 + 62000), 0.5);
+  assert.strictEqual(S.metrics(m, T0 + 62000).perMin, 0);
   assert.strictEqual(m.recent.length, 1, '飞向中心的动画仍保留星点');
-  assert.strictEqual(S.orbitReturnProgress(T0, T0 + 61500), 1);
-  S.metrics(m, T0 + 61500);
+  assert.strictEqual(S.orbitReturnProgress(T0, T0 + 64000), 1);
+  S.metrics(m, T0 + 64000);
   assert.strictEqual(m.recent.length, 0);
   assert.strictEqual(m.ledger.length, 1);
 });
@@ -665,67 +667,23 @@ const frame = (seq, type, data) => 'id: ' + seq + '\nevent: ' + type + '\ndata: 
       '全屏按钮作用于整个总览，并暴露开关状态');
   });
 
-  ok('首帧判定：皮肤什么时候写上 data-skin', () => {
-    const start = html.indexOf('/* 圣轮大屏：新导航的首页主题，随当前页签启用。');
-    assert.ok(start > 0 && start < html.indexOf('</head>'), '判定要在 <head> 里，晚一步会闪一下旧皮肤');
-    const src = html.slice(start, html.indexOf('</script>', start));
-    assert.ok(!/wb-panel-session/.test(src), '这一段不能碰面板令牌的键名');
-    const run = (search, stored, next, broken) => {
-      const store = new Map(stored ? [['wb-skin', stored]] : []);
-      const attrs = {};
-      const win = {__NEXT_UI__: next};
-      const document = {documentElement: {setAttribute: (k, v) => { attrs[k] = v; }}};
-      const localStorage = broken
-        ? {getItem(){ throw new Error('blocked'); }, setItem(){ throw new Error('blocked'); }, removeItem(){ throw new Error('blocked'); }}
-        : {getItem: (k) => store.get(k) || null, setItem: (k, v) => store.set(k, v), removeItem: (k) => store.delete(k)};
-      new Function('window', 'document', 'location', 'localStorage', 'URLSearchParams', src)(win, document, {search}, localStorage, URLSearchParams);
-      return {skin: attrs['data-skin'] || null, flag: win.__SANCTUM_SKIN__, stored: store.get('wb-skin') || null};
-    };
-    same(run('', null, true), {skin: null, flag: false, stored: null}, '默认关闭：什么都没选就是原有外观');
-    same(run('?skin=sanctum', null, true), {skin: 'sanctum', flag: true, stored: 'sanctum'}, '?skin=sanctum 试一次就记住');
-    same(run('', 'sanctum', true), {skin: 'sanctum', flag: true, stored: 'sanctum'}, '记住之后不带参数也生效');
-    same(run('?skin=off', 'sanctum', true), {skin: null, flag: false, stored: null}, '?skin=off 关掉并忘掉');
-    same(run('', 'sanctum', false), {skin: null, flag: true, stored: 'sanctum'}, '皮肤叠在新导航上：传统导航下不写 data-skin');
-    same(run('', 'other', true), {skin: null, flag: false, stored: 'other'});
-    same(run('?skin=sanctum', null, true, true), {skin: 'sanctum', flag: true, stored: null}, '存不下来也不影响这一次生效');
-    assert.strictEqual(run('', null, true, true).skin, null, '读不到存储时按没开处理，不抛异常');
+  ok('皮肤是静态的：写在 <html> 上，没有开关也没有 URL 参数', () => {
+    // 以前皮肤由 <head> 里一段首帧脚本按 ?skin= / wb-skin 决定，主题菜单里还有开关。
+    // 面板只剩这一套壳之后，皮肤是静态属性：首帧就是圣轮，不存在「闪一下旧皮肤」。
+    const root = html.match(/<html\s+([^>]*)>/);
+    assert.ok(root, '找不到 <html> 标签');
+    assert.match(root[1], /\bdata-ui="next"/, '<html> 要静态带上唯一的壳');
+    assert.match(root[1], /\bdata-skin="sanctum"/, '<html> 要静态带上圣轮皮肤');
+    // （词典里「圣轮大屏 / 关闭圣轮大屏」两个词条留在原地：这次只删界面，不清理旧词条。）
+    for (const gone of ['wb-skin', 'wb-ui-mode', '?skin=', 'toggleSanctumSkin', '__SANCTUM_SKIN__',
+                        '__NEXT_UI__', 'sanctumSkinOption']) {
+      assert.ok(!html.includes(gone), '旧的皮肤开关不应残留：' + gone);
+    }
+    // 舞台脚本仍按这个属性判断，别写成常量 true：样式那边同样挂在 data-skin 上。
+    assert.ok(/getAttribute\('data-skin'\) === SKIN/.test(html), '舞台脚本要按 data-skin 属性判断');
   });
 
-  ok('菜单开关：记在浏览器本地，开启时直达总览', () => {
-    assert.ok(/id="sanctumSkinOption" onclick="toggleSanctumSkin\(\)" role="menuitemcheckbox"/.test(html), '主题菜单里有这一项');
-    assert.ok(/^function toggleSanctumSkin\(\)\{/m.test(html), '内联处理函数要有顶层定义');
-    assert.strictEqual(html.split('function toggleSanctumSkin(').length - 1, 1, '顶层函数名全页唯一');
-    const store = page.localStorage._store;
-    const setSkin = (on) => page.document.documentElement.setAttribute('data-skin', on ? 'sanctum' : '');
-    let target = null;
-    const go = (href) => { target = null; page.location = {href, assign: (u) => { target = u; }}; };
-    store.clear();
-    store.set('wb-ui-mode', 'classic');
-    setSkin(false);
-    go('http://127.0.0.1:8788/?ui=classic&skin=off&tab=settings');
-    page.toggleSanctumSkin();
-    assert.strictEqual(target, 'http://127.0.0.1:8788/?tab=overview', '开启时显式选择首页总览');
-    assert.strictEqual(store.get('wb-skin'), 'sanctum');
-    assert.strictEqual(store.has('wb-ui-mode'), false, '皮肤叠在新导航上，一并回到新导航');
-    setSkin(true);
-    go('http://127.0.0.1:8788/?skin=sanctum&tab=settings');
-    page.toggleSanctumSkin();
-    assert.strictEqual(target, 'http://127.0.0.1:8788/?tab=settings', '关闭大屏时留在当前页面');
-    assert.strictEqual(store.has('wb-skin'), false);
-    go('http://127.0.0.1:8788/?skin=sanctum&tab=overview');
-    page.toggleSanctumSkin();
-    assert.strictEqual(target, 'http://127.0.0.1:8788/?tab=runtime', '关闭大屏时改看运行详情');
-    setSkin(false);                                   // leave the sandbox as it was found
-  });
-
-  ok('菜单文案进了大词典：英文和繁体都有', () => {
-    assert.strictEqual(page.WB_I18N.translate('圣轮大屏'), 'Sanctum dashboard');
-    assert.strictEqual(page.WB_I18N.translate('关闭圣轮大屏'), 'Turn off the Sanctum dashboard');
-    assert.strictEqual(page.WB_I18N.translateHant('圣轮大屏'), '聖輪大螢幕');
-    assert.strictEqual(page.WB_I18N.translateHant('关闭圣轮大屏'), '關閉聖輪大螢幕');
-  });
-
-  ok('圣轮脚本：经典脚本、不引外部资源、不用 EventSource', () => {
+  ok('舞台脚本：经典脚本、不引外部资源、不用 EventSource', () => {
     const start = html.lastIndexOf('/* ---- 圣轮（Sanctum）：圣轮皮肤下的首页舞台 ----');
     assert.ok(start > 0);
     const src = html.slice(start, html.indexOf('</script>', start));
@@ -742,8 +700,7 @@ const frame = (seq, type, data) => 'id: ' + seq + '\nevent: ' + type + '\ndata: 
   ok('舞台没启动时什么都不做', () => {
     assert.strictEqual(S.model(), null, '没启动就没有模型');
     assert.strictEqual(S.feedState(), 'paused', '没启动时不是「连接中」');
-    assert.ok(!page.document.documentElement.getAttribute('data-skin'), '沙箱里没开皮肤，舞台不会启动');
-    assert.strictEqual(typeof page.toggleSanctumSkin, 'function');
+    assert.ok(!page.document.documentElement.getAttribute('data-skin'), '沙箱里没有皮肤属性，舞台不会启动');
   });
 
   console.log('sanctum model suite ok (' + passed + ' checks)');

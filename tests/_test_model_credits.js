@@ -122,7 +122,7 @@ cell = creditsCell({id: 'gpt-6-astra', credits: 'x6.67',
                     entitlement: {source: 'catalog', required: 'standard', at: 1}});
 check('the catalogue tier label is rendered', cell.includes('Pro Only'), cell);
 check('the multiplier is still rendered', cell.includes('6.67x'), cell);
-check('the cell allows wrapping', /class="rate-cell"/.test(tbody.innerHTML),
+check('the cell allows wrapping', /rate-cell/.test(tbody.innerHTML),
       tbody.innerHTML);
 check('the catalogue tooltip names its source', cell.includes('上游目录声明'), cell);
 cell = creditsCell({id: 'gpt-6-astra', credits: 'x6.67',

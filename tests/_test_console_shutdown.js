@@ -1,6 +1,6 @@
-/* 顶栏两个按钮的行为（#426 / #427）。
+/* 侧栏脚部两个按钮的行为（#426 / #427）。
 
-   1. 眼睛按钮不再请求 /console/toggle，也不再让服务端 spawn 进程：它直接
+   1. 「运行日志窗口」按钮不再请求 /console/toggle，也不再让服务端 spawn 进程：它直接
       在新窗口打开 ?tab=logs，Windows / macOS / 容器同一条路。
    2. 关闭服务不能凭一次 postJSON 的成败宣布成功：容器或守护进程会把进程
       重新拉起，所以必须用 /health 复核；仍在运行时要如实提示。
@@ -9,16 +9,19 @@
 */
 'use strict';
 const assert = require('assert');
-const {dashboardHtml} = require('./_dashboard_source.js');
+const {dashboardHtml, dashboardScript} = require('./_dashboard_source.js');
 const {loadDashboard} = require('./_dashboard_sandbox.js');
 
 const html = dashboardHtml();
 
 /* ---- 1. 结构：按钮接的是新窗口，不是服务端进程 ------------------------- */
 
-assert.ok(/id="btnConsoleToggle"/.test(html), '顶栏要有日志窗口按钮');
-assert.ok(/title="在新窗口打开运行日志"/.test(html),
-  '按钮文案要说明它是打开窗口，不是开关一个进程');
+assert.ok(/id="btnConsoleToggle"[^>]*onclick="toggleConsoleWindow\(\)"/.test(html),
+  '侧栏要有日志窗口按钮，并接上 toggleConsoleWindow()');
+assert.ok(/id="btnConsoleToggle"[^>]*title="在新窗口打开运行日志"/.test(html),
+  '按钮提示要说明它是打开窗口，不是开关一个进程');
+assert.ok(/id="btnGatewayShutdown"[^>]*onclick="shutdownGateway\(\)"/.test(html),
+  '侧栏要有关闭网关按钮，并接上 shutdownGateway()');
 assert.ok(/window\.open\('\/dashboard\?tab=logs'/.test(html),
   '眼睛按钮要直接 window.open 运行日志页');
 assert.ok(!/postJSON\('\/console\/toggle'/.test(html),
@@ -78,6 +81,11 @@ assert.strictEqual(toasts.pop().kind, 'bad', '弹窗被拦截要明确报错');
     'health 不再应答才算关闭成功');
   assert.strictEqual(shutdownButton().disabled, true,
     '确认关闭后按钮应禁用');
+  // 侧栏脚上的状态灯转红：旧顶栏的 #statusDot 随旧壳删除，灯现在在这里。
+  assert.ok(page.document.getElementById('nextStatusDot').classList.contains('err'),
+    '确认关闭后状态灯应转红');
+  assert.ok(!html.includes('id="statusDot"') && !/getElementById\('statusDot'\)/.test(dashboardScript()),
+    '旧顶栏的状态灯 #statusDot 已删除，脚本不应再引用它');
 
   console.log('console/shutdown suite ok');
 })().catch((err) => {

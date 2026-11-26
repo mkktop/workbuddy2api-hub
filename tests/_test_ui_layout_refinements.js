@@ -5,26 +5,22 @@ const {dashboardHtml, dashboardScript} = require('./_dashboard_source.js');
 const html = dashboardHtml();
 const script = dashboardScript();
 
-assert.ok(/\.cool-list\{display:flex;flex-direction:column/.test(html), '账号告警应纵向排列');
-assert.ok(/table\.account-cards td\[data-label="账号"\] \.cool-pill\{display:block;width:100%/.test(html), '告警 pill 应在账号列内收敛');
-assert.ok(/\.acct-actions-row\{flex-wrap:nowrap;max-width:none\}/.test(html), '桌面操作区应保持原来的两行紧凑布局');
-// 表格宽度跟随容器（width:100%），只有窄到放不下才横向滚动；列宽按内容定，
-// 不再写死一个大 min-width 让右侧被裁掉。
-assert.ok(/table\.account-cards\{table-layout:fixed;width:100%;min-width:1096px\}/.test(html),
+// 2026-11 工作台重排：告警胶囊不再挤在账号格里，而是紧跟账号行的独立整行（cool-row），
+// 多个胶囊横排、放不下就换行（文案完整性见 _test_model_limit_tip.js）。
+assert.ok(/\.cool-list\{display:flex;flex-direction:row;flex-wrap:wrap/.test(html), '账号告警应横向排列、放不下时换行');
+assert.ok(!/td\[data-label="账号"\] \.cool-pill\{/.test(html), '告警胶囊不该再写回账号列（那一列放不下，会被省略号切掉）');
+// 行尾操作收进「⋯」菜单，行里只有一行按钮（.acct-actions-col）；旧的两行容器没了。
+assert.ok(!/\.acct-actions-row\{/.test(html), '旧的两行操作容器应已删除');
+// 表格宽度跟随容器（width:100%），只有窄到放不下才横向滚动；列宽在 ≥641px 的
+// 样式块里逐列写死（table-layout:fixed），账号列吃掉余量。
+assert.ok(/table\.account-cards\{table-layout:fixed;width:100%;min-width:1080px\}/.test(html),
   '桌面账号表应跟随容器宽度，min-width 只作横向滚动的兜底');
-// 勾选列始终渲染，所以「勾选 / 版本 / 账号」三列常驻吸附，偏移固定为 0 / 32 / 100。
-assert.ok(/table\.account-cards th:nth-child\(1\),\s*table\.account-cards tbody tr:not\(\.cool-row\) td:nth-child\(1\)\{[^}]*position:sticky;left:0/.test(html),
+// 勾选列始终渲染，与操作列一起常驻吸附在左右两端（横向滚动时也看得见）。
+// 吸附的底色、悬停跟随、窄屏取消吸附，由 _test_mobile_account_layout.js 逐条钉住。
+assert.ok(/table\.account-cards :is\(td,th\)\.acct-check\{[^}]*position:sticky;left:0/.test(html),
   '勾选列应固定在左侧');
-assert.ok(/table\.account-cards th:nth-child\(2\),\s*table\.account-cards tbody tr:not\(\.cool-row\) td:nth-child\(2\)\{[^}]*position:sticky;left:32px/.test(html),
-  '版本列应固定在勾选列右侧');
-assert.ok(/table\.account-cards th:nth-child\(3\),\s*table\.account-cards tbody tr:not\(\.cool-row\) td:nth-child\(3\)\{[^}]*position:sticky;left:100px/.test(html),
-  '账号列应固定在版本列右侧');
-assert.ok(/table\.account-cards tbody tr:not\(\.cool-row\):hover td:nth-child\(1\),\s*table\.account-cards tbody tr:not\(\.cool-row\):hover td:nth-child\(2\),\s*table\.account-cards tbody tr:not\(\.cool-row\):hover td:nth-child\(3\)\{background:var\(--panel2\)\}/.test(html),
-  '左侧固定列悬停时应跟随行背景，不能露出白块');
-assert.ok(/td\.acct-actions\{white-space:normal;min-width:252px;width:252px;position:sticky/.test(html), '操作列应固定在可视区域右侧');
-assert.ok(/@media \(max-width:640px\)[\s\S]*?td\.acct-actions\{position:static/.test(html), '移动端应取消操作列 sticky');
-assert.ok(/@media \(max-width:640px\)[\s\S]*?table\.account-cards td:nth-child\(1\),\s*table\.account-cards td:nth-child\(2\)\{position:static;left:auto/.test(html),
-  '移动端卡片布局应取消左侧固定列');
+assert.ok(/table\.account-cards :is\(td,th\)\.acct-actions\{[^}]*position:sticky;right:0/.test(html),
+  '操作列应固定在可视区域右侧');
 // 勾选：最左侧独立复选框列 + 表头全选框（全选只在表头，没有独立按钮）。
 // 表头与行都由 renderAccounts() 用字符串拼出，所以查 script 而不是 html。
 assert.ok(/class="acct-check"/.test(script)
@@ -34,7 +30,16 @@ assert.ok(/<td class="acct-check"[^>]*>/.test(script), '账号行缺少勾选列
 assert.ok(!/id="btnSelectFiltered"/.test(html),
   '「全选筛选结果」独立按钮应已移除（全选只在表头复选框）');
 assert.ok(/\.acct-name-row\{[^}]*flex-wrap:wrap/.test(html), '账号名行应允许徽章换行，不能把昵称挤成 0 宽');
-assert.ok(/\.acct-name\{[^}]*flex:1 1 80px;[^}]*min-width:72px/.test(html), '昵称应保留最小可见宽度，不能被备注/分组徽章压没');
+// 备注 / 分组 / 号池 / 任务标签都在账号格的第二行，昵称行里没有会抢宽度的东西；
+// 昵称自己可收缩、不超出格子，超出格宽的部分用省略号（全名在 title 上）。
+assert.ok(/\.acct-name\{flex:0 1 auto;min-width:0;max-width:100%;[^}]*overflow:hidden;text-overflow:ellipsis/.test(html),
+  '昵称应可收缩且不超出格子，长昵称用省略号');
+{
+  const nameRowAt = script.indexOf('class="acct-name-row"');
+  const subRowAt = script.indexOf('class="acct-sub"', nameRowAt);
+  assert.ok(nameRowAt > 0 && subRowAt > nameRowAt && !/note-chip/.test(script.slice(nameRowAt, subRowAt)),
+    '备注 / 分组标签应在账号格第二行，不能挤在昵称行里');
+}
 
 assert.ok(html.includes('class="credit-stack"'), '积分应使用分层容器');
 assert.ok(html.includes('class="credit-main"'), '积分主值应单独一行');

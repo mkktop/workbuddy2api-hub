@@ -1,8 +1,9 @@
 /* Per-account task participation toggle (issue #521).
  *
- * The account row carries a "任务开/关" chip; toggling it must PATCH only
- * `tasksEnabled` so API dispatch (`enabled`) stays untouched. The task cards
- * and pending-daily-chat list must filter on `tasksEnabled`, not `enabled`.
+ * The account row carries a "任务开" chip while tasks are on; the switch itself
+ * lives in the row's "⋯" menu (a "任务" item showing 开 / 关). Toggling it must
+ * PATCH only `tasksEnabled` so API dispatch (`enabled`) stays untouched. The task
+ * cards and pending-daily-chat list must filter on `tasksEnabled`, not `enabled`.
  *
  * Run with Node: node tests/_test_task_toggle.js
  */
@@ -34,8 +35,13 @@ const toggle = factory(postJSON, loadAccounts, toast);
   assert.deepStrictEqual(calls[1],
     ['/accounts/set', { uid: 'uid-1', tasksEnabled: false }]);
 
-  assert.ok(html.includes("a.tasksEnabled ? 'ok' : 'off'"),
-    '账号行应显示任务开关状态');
+  // 工作台重排（2026-11）：行内只在任务开着时画一枚「任务开」标签；开关本身在行尾
+  // 「⋯」菜单里，菜单项直接以「任务开 / 任务关」标出当前状态，点击取反
+  // （接线见 _test_account_menu.js）。
+  assert.ok(html.includes("(!a.apiKey && a.tasksEnabled") && html.includes('>任务开</span>'),
+    '账号行应在任务开着时显示「任务开」标签');
+  assert.ok(html.includes("item(a.tasksEnabled ? '任务开' : '任务关', 'toggleAccountTasks("),
+    '「⋯」菜单应以「任务开 / 任务关」标出任务开关的当前状态');
   assert.ok(html.includes('已停用 · 任务中'),
     '停用但参与任务的账号应有明确状态');
   for (const needle of [

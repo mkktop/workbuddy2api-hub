@@ -43,12 +43,14 @@ const check = (label, cond, extra) => {
 
 // ---- 来源横幅 ----
 const line = document.getElementById('modelsSourceLine');
+// 2026-11 工作台重做：横幅的色调从内联 cssText 改成 #workbenchStyles 里的
+// .source-line.is-ok / .is-warn / .is-unknown 三个类，这里改读 className。
 const renderLine = meta => {
   line.innerHTML = '';
   line.title = '';
-  line.style.cssText = '';
+  line.className = '';
   api.renderModelsSourceLine(meta);
-  return {html: line.innerHTML, style: line.style.cssText, title: line.title};
+  return {html: line.innerHTML, cls: line.className, title: line.title};
 };
 
 const stamp = '\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}';
@@ -62,7 +64,7 @@ check('api banner shows the refresh time',
 check('api banner carries the ok marker', out.html.includes('✓'), out.html);
 check('api banner never warns about stale data',
       !out.html.includes('可能不一致') && !out.html.includes('项目默认'), out.html);
-check('api banner is the green tone', out.style.includes('--accent2-soft'), out.style);
+check('api banner is the green tone', out.cls.includes('is-ok'), out.cls);
 
 // 2. 配置文件：黄色警示「当前为项目默认模型信息」「模型、倍率数据可能不一致」，
 //    出处小字保留文件写入/读取时间。
@@ -80,7 +82,7 @@ check('config-file banner shows the gateway read time',
       new RegExp('网关读取于 ' + stamp).test(out.html), out.html);
 check('config-file banner never claims API freshness',
       !out.html.includes('通过 API 获取的最新数据'), out.html);
-check('config-file banner is the warning tone', out.style.includes('--warn-soft'), out.style);
+check('config-file banner is the warning tone', out.cls.includes('is-warn'), out.cls);
 
 // legacy 是同一种文件、同一句警示。
 out = renderLine({source: 'legacy', fetched_at: 1700000000, file_mtime: null});

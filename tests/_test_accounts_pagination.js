@@ -223,13 +223,9 @@ const tick = () => new Promise(r => setImmediate(r));
   assert.deepStrictEqual(reads, ['no-store', 'no-store'], '/accounts 一律 no-store: ' + reads);
 
   /* ---- 5. 页签门控 ---------------------------------------------------- */
-  for(const t of ['gateway', 'accounts', 'tasks']) assert.ok(api.accountsTabActive(t), t + ' 要轮询账号');
-  for(const t of ['analytics', 'logs', 'settings', 'agents']) assert.ok(!api.accountsTabActive(t), t + ' 不轮询账号');
-  window.__NEXT_UI__ = false;
-  assert.ok(!api.accountsTabActive('overview'), '旧布局没有总览页，不轮询');
-  window.__NEXT_UI__ = true;
-  assert.ok(api.accountsTabActive('overview'), '新导航总览页有账号健康卡，要轮询');
-  window.__NEXT_UI__ = false;
+  // 圣轮读取账号状态画节点，运行详情读取账号健康与出口余额，这两页也要轮询。
+  for(const t of ['gateway', 'accounts', 'tasks', 'overview', 'runtime']) assert.ok(api.accountsTabActive(t), t + ' 要轮询账号');
+  for(const t of ['analytics', 'logs', 'settings', 'agents', 'api', 'media']) assert.ok(!api.accountsTabActive(t), t + ' 不轮询账号');
 
   /* ---- 6. 改筛选回到第 1 页 ------------------------------------------- */
   window.ACCOUNTS = makeAccounts(120, true);

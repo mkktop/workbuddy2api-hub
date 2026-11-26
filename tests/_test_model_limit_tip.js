@@ -55,21 +55,23 @@ const fmtAt = e => { const d = new Date(e * 1000);
 // （整页有 35 个 th，会把别的表一起算进来）。
 const theadSrc = script.match(/table class="data-cards account-cards"><thead><tr>'([\s\S]*?)<\/tr><\/thead>/);
 check('抓到账号表的表头源码', !!theadSrc, 'renderAccounts 的表头条目变了？');
+// 工作台重排（2026-11）：表头从 12 列减到 11 列——「版本」列并进账号格（一个视图
+// 只有一个版本），「今日用量」的三个小列保持独立。续行的 colspan 跟着表头走。
 const thCount = theadSrc ? (theadSrc[1].match(/<th /g) || []).length : -1;
-check('COOL_ROW_COLS 与表头列数一致（12）', api.COOL_ROW_COLS === 12, api.COOL_ROW_COLS);
-check('账号表确有 12 个 th', thCount === 12, thCount);
+check('COOL_ROW_COLS 与表头列数一致（11）', api.COOL_ROW_COLS === 11, api.COOL_ROW_COLS);
+check('账号表确有 11 个 th', thCount === 11, thCount);
 
 const coolHtml = api.coolRow({modelCooldowns: [
   {model: MODEL, expiresAt: until, cappedAt: capped},
 ]});
-check('冷却胶囊渲染成独立的一整行', /^<tr class="cool-row"><td colspan="12">/.test(coolHtml), coolHtml);
+check('冷却胶囊渲染成独立的一整行', /^<tr class="cool-row"><td colspan="11">/.test(coolHtml), coolHtml);
 check('这一行只装胶囊、不再带 data-label 装饰', !/data-label/.test(coolHtml), coolHtml);
 
 const limitHtml = api.limitRow({
   modelDailyTokenLimit: 200000000,
   modelDailyTokens: {[MODEL]: 201000000},
 });
-check('达限胶囊也渲染成独立的一整行', /^<tr class="cool-row"><td colspan="12">/.test(limitHtml), limitHtml);
+check('达限胶囊也渲染成独立的一整行', /^<tr class="cool-row"><td colspan="11">/.test(limitHtml), limitHtml);
 
 /* ---- 2. 可见文本本身完整（不再靠 title 兜底） ------------------------- */
 
@@ -156,11 +158,12 @@ const rowHtml = api.accountRow(Object.assign({}, acctBase, {
   modelDailyTokenLimit: 200000000,
   modelDailyTokens: {[MODEL]: 201000000},
 }));
-const accountCell = rowHtml.match(/<td style="text-align:left" data-label="账号">([\s\S]*?)<\/td>\s*<td style="text-align:center" data-label="状态">/);
+// 账号格是第 3 格（勾选、状态在前），后面紧跟「今日活动」格。
+const accountCell = rowHtml.match(/<td class="acct-main" data-label="账号">([\s\S]*?)<\/td>\s*<td class="acct-activity"/);
 check('账号列里已无胶囊', accountCell && !/cool-pill/.test(accountCell[1]),
   accountCell && accountCell[1].slice(-120));
 check('账号行仍以 </tr> 收尾，新行紧跟其后',
-  /<\/td><\/tr><tr class="cool-row"><td colspan="12">/.test(rowHtml), rowHtml.slice(-260));
+  /<\/td><\/tr><tr class="cool-row"><td colspan="11">/.test(rowHtml), rowHtml.slice(-260));
 check('整段渲染只多出两行（冷却 + 达限），账号行本身仍是一行',
   (rowHtml.match(/<tr/g) || []).length === 3, (rowHtml.match(/<tr/g) || []).length);
 
@@ -197,6 +200,8 @@ check('无续行时账号行不带多余 class',
 
 const seamStyle = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)]
   .map(m => m[1]).join('\n');
+// 取某个选择器的声明体（按「选择器 + {」精确定位，前缀更长的作用域选择器也算）。
+// 这三条规则住在 #workbenchStyles 里，选择器前面带着作用域前缀。
 function seamDecl(selector){
   const at = seamStyle.indexOf(selector + '{');
   return at < 0 ? '' : seamStyle.slice(at + selector.length + 1, seamStyle.indexOf('}', at));
@@ -334,10 +339,9 @@ const posLeft = cssStyle.indexOf('table.account-cards tr.cool-row td{justify-con
 check('窄屏整行左对齐规则存在', posLeft > 0);
 check('左对齐写在 td[colspan] 居中之后（次序对才生效）',
       posCenter > 0 && posLeft > posCenter, 'center=' + posCenter + ' left=' + posLeft);
-// 账号列那列的 ellipsis 要留着：那一列确实放不下，别被顺手动坏
-const acctPillAt = cssStyle.indexOf('table.account-cards td[data-label="账号"] .cool-pill{');
-check('账号列胶囊仍保留 ellipsis（该列确实放不下）',
-      acctPillAt >= 0 && /text-overflow\s*:\s*ellipsis/.test(
-        cssStyle.slice(acctPillAt, cssStyle.indexOf('}', acctPillAt))));
+// 账号格里已经不再渲染胶囊（第 4 节钉住），旧的那条「账号列胶囊用省略号」规则
+// 没有对象了，连同旧表格样式一起删除；别让它回来——它只会把昵称行挤坏。
+check('账号列不再有胶囊的省略号规则（胶囊只在整行续行里）',
+  cssStyle.indexOf('td[data-label="账号"] .cool-pill{') < 0);
 
 console.log('model limit row assertions passed');

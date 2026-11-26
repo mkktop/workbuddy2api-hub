@@ -129,7 +129,10 @@ const stubCreate = document.createElement.bind(document);
 document.getElementById = id => id === 'accounts' ? box : stubGet(id);
 document.createElement = tag => tag === 'div' ? new El('div') : stubCreate(tag);
 
-const REQ_COL = 8;   // 「请求」列：fmt(usage.requests)，纯数字
+// 「请求」列：fmt(usage.requests)，纯数字。
+// 工作台重排（2026-11）：「版本」列并进账号格，后面的列各前移一位——
+// 勾选 0、状态 1、账号 2、今日活动 3、出口 4、权重 5、积分 6、请求 7。
+const REQ_COL = 7;
 const N = 120;
 // 请求数与服务端顺序打乱（i*37 mod 120 是 0..119 的一个排列），默认排序（同权重
 // 保持服务端顺序）与按请求数排序完全不同。

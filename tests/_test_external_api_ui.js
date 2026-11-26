@@ -14,7 +14,7 @@ try { new Function(script); }
 catch (error) { throw new Error('dashboard inline script must parse: ' + error.message); }
 checks += 1;
 
-check(/id="btnNavApi"[^>]*onclick="switchMainTab\('api'\)"/.test(html),
+check(/data-next-tab="api" onclick="nextGo\('api'\)"/.test(html),
   '侧栏应提供独立的 API 接入入口');
 const nextNav = html.slice(html.indexOf('<nav class="next-nav"'), html.indexOf('</nav>', html.indexOf('<nav class="next-nav"')));
 const nextNavTabs = [...nextNav.matchAll(/data-next-tab="([^"]+)"/g)].map(m => m[1]);
@@ -28,13 +28,9 @@ check(/data-next-tab="api"[\s\S]*?<span>接口<\/span>/.test(nextNav),
 const moreSheet = html.slice(html.indexOf('<div id="nextMoreSheet"'), html.indexOf('<div class="modal-mask"', html.indexOf('<div id="nextMoreSheet"')));
 check(/data-next-tab="tasks"[\s\S]*?<span>自动化任务<\/span>/.test(moreSheet),
   '移动端更多菜单任务页签应显示「自动化任务」');
-check(/id="btnNavTasks"[^>]*>[\s\S]*?自动化任务/.test(html),
-  '兼容导航任务按钮应显示「自动化任务」');
 check(/data-next-tab="api"[\s\S]*?<span>接口<\/span>/.test(moreSheet),
   '移动端更多菜单应使用两字菜单名「接口」');
 check(nextNavTabs.indexOf('api') === nextNavTabs.indexOf('accounts') + 1, '新导航中接口应紧跟账号');
-check(/id="btnNavApi"[^>]*>[\s\S]*?接口/.test(html),
-  '兼容导航应使用两字菜单名「接口」');
 check(/id="pageApi" class="main-page/.test(html),
   '应有独立的 API 接入页面容器');
 check(html.includes('id="apiKeyTab"') && html.includes('id="apiDocsTab"'),
@@ -87,8 +83,8 @@ check(/externalApiRecordPagination/.test(script) && /function\s+gotoExternalApiR
 check(/externalApiRecordRequestSeq/.test(script) &&
       /requestSeq\s*!==\s*externalApiRecordRequestSeq/.test(script),
   '调用记录应忽略乱序返回的旧分页响应');
-check(/\['api',\s*btnApi,\s*pageApi\]/.test(script),
-  '主页面切换数组应注册 API 接入页');
+check(/const pageByKey = \{[\s\S]*?api: document\.getElementById\('pageApi'\)/.test(script),
+  '主页面切换表应注册 API 接入页');
 
 for(const [zh, en] of [
   ['API 接入', 'API access'],
@@ -112,9 +108,5 @@ for(const [zh, en] of [
   ['创建授权请求时返回的请求标识。', 'Request identifier returned when the authorization request was created.'],
   ['cn / intl；筛选账号版本。', 'cn or intl; filters the account version.'],
 ]) check(html.includes("'" + zh + "': '" + en + "'"), '英文词典缺少：' + zh);
-
-check(html.indexOf('id="btnNavAccounts"') < html.indexOf('id="btnNavApi"') &&
-      html.indexOf('id="btnNavApi"') < html.indexOf('id="btnNavModels"'),
-  '兼容导航中接口应紧跟账号并位于模型入口之前');
 
 console.log('OK ' + checks + ' checks');

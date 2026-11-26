@@ -54,8 +54,11 @@ check(/Authorization: Bearer/.test(html), 'cURL 示例应展示 Bearer 鉴权');
 // 4. 账号行
 check(html.includes("a.apiKey"), '账号行应读 a.apiKey');
 check(html.includes('a.credentialMask'), '悬停提示应显示脱敏凭证');
-check(/a\.apiKey \? ''[\s\S]{0,200}toggleAccountTasks/.test(html),
-      'API Key 账号不应渲染「任务开/关」开关（没有个人成长体系）');
+// 工作台重排（2026-11）：任务开关不在行内，收进行尾「⋯」菜单；API Key 账号两处都不给。
+check(/!a\.apiKey && a\.tasksEnabled[\s\S]{0,200}toggleAccountTasks/.test(html),
+      '账号行的「任务开」标签：API Key 账号不渲染（没有个人成长体系）');
+check(/isKey \? '' : item\(a\.tasksEnabled \? '任务开' : '任务关', 'toggleAccountTasks\(/.test(html),
+      '「⋯」菜单里 API Key 账号不应出现任务开关项');
 
 // 5. 三语文案
 const EN = {

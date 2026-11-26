@@ -158,7 +158,10 @@ assert.ok(!cn.markup.includes('剩余积分低于保留线'), '积分限额 is n
 //    two copies are what drift apart.
 const filters = script.match(/\.filter\(a => !a\.realm \|\| a\.realm ===/g) || [];
 assert.equal(filters.length, 1, 'the realm filter must exist exactly once in the page');
-assert.ok(/function renderAccounts\(\)[\s\S]{0,400}?accountsInView\(\)/.test(script),
+// 工作台重排（2026-11）：renderAccounts 开头多了两行（重画前关掉账号行的「⋯」菜单），
+// 到 accountsInView() 的距离超过原来的 400 字符；放宽窗口，钉的仍是「主列表用同一份
+// 区域过滤」。
+assert.ok(/function renderAccounts\(\)[\s\S]{0,600}?accountsInView\(\)/.test(script),
           'the account cards must use the shared realm filter');
 assert.ok(/function disabledRows\(\)[\s\S]*?accountsInView\(\)/.test(script),
           'the disabled summary must use the shared realm filter');

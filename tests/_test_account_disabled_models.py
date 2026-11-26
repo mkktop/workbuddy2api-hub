@@ -129,8 +129,11 @@ class DashboardWiringTests(unittest.TestCase):
             html = fh.read()
         self.assertIn("editAccountDisabledModels", html)
         self.assertIn("{uid: uid, disabledModels: denyList}", html)
-        self.assertIn("+ 禁用模型", html)
-        self.assertIn("禁用的模型: ", html)
+        # 工作台重排（2026-11）：账号行不再画「+ 禁用模型」占位按钮，入口收进行尾的
+        # 「⋯」菜单；名单有值时行里仍显示「禁用的模型: …」标签，点它同样能编辑。
+        self.assertIn("item('禁用模型', 'editAccountDisabledModels(' + q(uidAttr) + ')'", html)
+        self.assertIn("""onclick="editAccountDisabledModels(&quot;' + uidAttr + '&quot;)">禁用的模型: '""", html)
+        self.assertNotIn("+ 禁用模型", html)
 
     def test_dashboard_uses_a_checkbox_picker_not_a_prompt(self):
         """面板用「启用的模型」复选框列表：默认全选，取消勾选 = 禁用。"""

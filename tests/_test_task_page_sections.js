@@ -43,19 +43,21 @@ const accountsPageEnd = html.indexOf('</div><!-- /pageAccounts -->', accountsPag
 assert.ok(accountsPageStart >= 0 && accountsPageEnd > accountsPageStart, '缺少 #pageAccounts 容器');
 const accountsPage = html.slice(accountsPageStart, accountsPageEnd);
 
+// 2026-11 工作台重排：区块标题不再带内联样式，样式统一在 #workbenchStyles。
 check('每日任务区块标题是「每日任务」',
-  /<h2 style="margin:0">每日任务<\/h2>/.test(daily));
+  /<h2>每日任务<\/h2>/.test(daily));
 check('每日任务区块有总入口',
   /<button class="primary" id="btnRunAllDailyTasks" onclick="runAllDailyTasks\(this\)">一键执行每日任务<\/button>/.test(daily));
+// 2026-11：一个区块只留一个 .primary（总入口「一键执行每日任务」），单项动作是次级按钮。
 check('国际版签到仍在每日任务区块',
-  /<button class="primary" id="btnPageDailyChat" onclick="doDailyChat\(this\)">一键国际版签到<\/button>/.test(daily) &&
+  /<button class="sec" id="btnPageDailyChat" onclick="doDailyChat\(this\)">一键国际版签到<\/button>/.test(daily) &&
   /id="btnPageDailyChatPending"[^>]*onclick="doDailyChatPending\(this\)"/.test(daily));
 check('优先 Flash 开关位于国际版每日签到区块',
   /id="taskDailyChatPreferFlash"[^>]*checked[^>]*onchange="saveDailyChatPreferFlash\(this\)"/.test(daily));
 check('设置页不再重复显示优先 Flash 开关',
   !html.includes('id="setDailyChatPreferFlash"'));
 check('国内版签到仍在每日任务区块',
-  /<button class="primary" id="btnPageCheckin" onclick="triggerBuddyCheckin\(this\)">一键国内版签到<\/button>/.test(daily));
+  /<button class="sec" id="btnPageCheckin" onclick="triggerBuddyCheckin\(this\)">一键国内版签到<\/button>/.test(daily));
 check('猫猫旅行是每日任务单项入口',
   /<button id="btnCatTravel" onclick="triggerCatTravel\(this\)">猫猫旅行<\/button>/.test(daily));
 check('连登管家是每日任务单项入口',
@@ -74,7 +76,8 @@ check('每日任务区块豁免 win-capped 限高并取消内部滚动与吸顶�
 check('每日任务区块拍平嵌套边框容器',
   !daily.includes('border:1px solid var(--line);border-radius:12px') &&
   !daily.includes('border:1px solid var(--line);border-radius:10px') &&
-  daily.includes('border-top:1px solid var(--line);padding-top:16px'));
+  /class="task-realm-panel"/.test(daily) &&
+  /\.task-realm-panel\{border-top:1px solid var\(--line\);padding-top:16px\}/.test(html));
 check('国内版账号选择器收进「国内版每日福利」标题栏内',
   daily.indexOf('国内版每日福利') > 0 &&
   daily.indexOf('id="cnCheckinAcctPicker"') > daily.indexOf('国内版每日福利') &&
@@ -84,8 +87,9 @@ check('「签到与活跃记录」已移入自动化页底部',
   tasksPage.indexOf('id="workbuddyActivitySection"') > tasksPage.indexOf('id="sectionGrowthTasks"') &&
   !accountsPage.includes('id="workbuddyActivitySection"'));
 
+// 2026-11 工作台重排：区块标题不再带内联样式。
 check('一次性区块标题是「一次性 / 活动福利」',
-  /<h2 style="margin:0">一次性 \/ 活动福利<\/h2>/.test(growth));
+  /<h2>一次性 \/ 活动福利<\/h2>/.test(growth));
 check('一次性区块只有一个总入口',
   /<button class="primary" id="btnRunTasks" onclick="runGrowthTasks\(this\)">一键完成一次性任务<\/button>/.test(growth));
 check('一次性区块不包含每日单项按钮',

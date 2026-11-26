@@ -1,11 +1,10 @@
-/* 控制台骨架与筛选的契约：新导航结构、筛选语义与既有行为的边界。
+/* 面板壳与筛选的契约：导航结构、筛选语义与既有行为的边界。
  *
- * 这一轮把界面从「顶部页签」改成「左侧分组菜单」，动的是导航的呈现层，
- * 所以这里钉住三件事：
+ * 面板只剩一套壳（侧栏 + 顶栏 + 手机底栏）：旧的「顶部页签」「控制台布局」
+ * 两套连同样式表一起删除了，所以这里钉住三件事：
  *
- *   1. 骨架：左侧菜单里的既有按钮保持原顺序，并包含新增的 API 接入入口；
- *      书签与首屏选页的那份清单也必须同步；「模型管理 / 请求记录」
- *      是内容入口，不是新页面，所以不进入页面清单，也改不了 ?tab=。
+ *   1. 骨架：侧栏入口的顺序与页面清单一致，书签与首屏选页用的是同一份清单；
+ *      每个入口都走 nextGo()（切页 + 同步壳的高亮）。旧壳的节点不许回来。
  *   2. 筛选：账号、模型、最近请求三处筛选只改显示，不改批量操作的原始范围；
  *      模型被筛掉时勾选状态不能丢——全选/反选必须仍按整份目录算。
  *   3. 概览：健康度与 Token 分布只用已经加载过的数据，不发新请求，也不把
@@ -27,72 +26,38 @@ function check(ok, label, extra) {
   checks += 1;
 }
 
-/* ---- 1. 结构：导航被搬进左侧菜单，既有入口保持顺序并新增 API 接入 -------- */
+/* ---- 1. 结构：一套壳，侧栏入口与页面清单同序 ------------------------------ */
 
-check(/class="console-sidebar" id="consoleSidebar"/.test(html),
-  '缺少左侧控制台菜单容器 #consoleSidebar');
-check(/class="console-shell"/.test(html), '缺少控制台外层 .console-shell');
-check(/class="console-contextbar"/.test(html), '缺少内容区上下文条 .console-contextbar');
+// 旧壳（控制台侧栏、上下文条、遮罩、顶部页签按钮）连同样式表一起删除。
+// 它们靠 html 上的 data-console-layout 属性开关，残留一条就可能把内容区藏起来。
+check(!/(console-shell|console-sidebar|console-contextbar|console-scrim|main-nav-btn)/.test(html),
+  '旧壳的节点与按钮不应残留');
+check(!/data-console-layout|wb-console-layout|wb-alibaba-console|wb-console-v2/.test(html),
+  '旧布局的开关、样式表 id 不应残留');
 
-// 主菜单按钮：既有 id 与页面指向保持不变，API 接入作为独立入口加入。
-const NAV = [
-  ['btnNavGateway', 'gateway', 'switchMainTab(\'gateway\')'],
-  ['btnNavAccounts', 'accounts', 'switchMainTab(\'accounts\')'],
-  ['btnNavTasks', 'tasks', 'switchMainTab(\'tasks\')'],
-  ['btnNavTasks', 'tasks', null],
-];
-const navButtons = [...html.matchAll(/<button class="main-nav-btn[^"]*" id="(btnNav\w+)"[^>]*>/g)].map(m => m[1]);
-const EXPECTED = ['btnNavGateway', 'btnNavAccounts', 'btnNavApi', 'btnNavTasks', 'btnNavMedia', 'btnNavAnalytics',
-                  'btnNavLogs', 'btnNavAgents', 'btnNavSettings'];
-check(JSON.stringify(navButtons) === JSON.stringify(EXPECTED),
-  '左侧菜单主导航顺序或入口不符合预期，实得 ' + navButtons.join(','));
+// 侧栏入口：每个页面一个，走 nextGo()（切页 + 同步壳的高亮）；
+// 顺序在下面与页面清单比对。
+const navAt = html.indexOf('<nav class="next-nav"');
+const navBlock = html.slice(navAt, html.indexOf('</nav>', navAt));
+const navEntries = [...navBlock.matchAll(/<button type="button" class="next-nav-item" data-next-tab="([^"]+)" onclick="nextGo\('\1'\)">/g)]
+  .map(m => m[1]);
+check(/if\(typeof switchMainTab === 'function'\) switchMainTab\(tab\);\s*nextSyncChrome\(nextCurrentTab\(\) \|\| tab\);/.test(script),
+  'nextGo 应切页并同步壳的高亮');
 
-// 每个按钮仍指向原来的页面。
-['gateway', 'accounts', 'tasks', 'media', 'analytics', 'agents', 'api', 'settings', 'logs'].forEach(key => {
-  const id = 'btnNav' + key.charAt(0).toUpperCase() + key.slice(1);
-  check(new RegExp('id="' + id + '"[^>]*onclick="switchMainTab\\(\'' + key + '\'\\)"').test(html),
-    id + ' 应当仍然切到 ' + key + ' 页');
-});
-
-// 新增的两个入口是内容入口，不是新页面：不进页面清单，也不带 btnNav 前缀
-// （页面清单按 id 前缀推导，带上前缀就会被当成可隐藏/可切换的页面）。
-check(!/class="main-nav-btn[^\"]*" id="btnNav(?:Models|Requests)"/.test(html),
-  '模型管理 / 请求记录不应被当成主页面');
-check(/id="btnNavModels"[^>]*onclick="openModelCatalog\(\)"/.test(html),
-  '模型管理应当是跳到模型清单的内容入口');
-check(/id="btnNavRequests"[^>]*onclick="openRecentRequests\(\)"/.test(html),
-  '请求记录应当是跳到最近请求的内容入口');
+// 模型目录与请求记录各是独立页面，各有稳定锚点。
 check(html.includes('id="gatewayModelsSection"') && html.includes('id="recentRequestsSection"'),
-  '两个内容入口需要稳定锚点');
+  '模型目录与请求记录需要稳定锚点');
+check(!/applyConsoleView|console-view-hidden|setConsoleNavActive|syncConsoleContext/.test(script + html),
+  '页内视图切换随控制台导航一并删除');
 
-// 内容入口是独立「页面」而不只是滚动定位：切到模型管理 / 请求记录时，网关页里
-// 其它区块要整块收起，左侧也只保留一个选中态。
-check(/function applyConsoleView\(view\)/.test(script), '缺少内容入口的视图切换');
-const view = script.slice(script.indexOf('function setConsoleNavActive('),
-                          script.indexOf('function openModelCatalog('));
-check(/console-view-hidden/.test(view), '切换视图要把非当前区块收起');
-// 选中内容入口时要先清掉父级主导航的选中态。断言的是「清」这个动作，不是某个
-// 具体选择器：原先这里匹配 `.console-sidebar .main-nav-btn.active`，而那条选择器
-// 会连带命中侧栏里的设置/日志等一级按钮，网关视图每重算一次就把它们的高亮摘掉
-// （详见 _test_nav_aria_current.js）。现在收窄成三个视图入口的 id，语义没变。
-check(/(?:main-nav-btn|#btnNav(?:Gateway|Models|Requests))[\s\S]{0,200}classList\.remove\('active'\)/.test(view),
-  '选中内容入口时必须先清掉父级主导航的选中态');
-check(/classList\.toggle\('active', on\)/.test(view), '内容入口之间应当互斥，只保留一个选中');
-check(/openModelCatalog\(\)\{[\s\S]{0,200}applyConsoleView\('models'\)/.test(script),
-  '模型管理要切到自己的视图');
-check(/openRecentRequests\(\)\{[\s\S]{0,200}applyConsoleView\('requests'\)/.test(script),
-  '请求记录要切到自己的视图');
-check(/if\(!window\.__NEXT_UI__ && tab === 'gateway'\) applyConsoleView\('overview'\)/.test(script),
-  '从左侧菜单回到网关页时应回到概览视图');
-check(/\.console-view-hidden\{display:none!important\}/.test(html),
-  '缺少视图收起的样式');
-
-// 书签与首屏选页共用主导航的页面顺序。
+// 书签、首屏选页与侧栏入口共用同一份页面顺序。
 const headTabs = html.match(/var TABS = \[([^\]]*)\];/);
 const mainTabs = html.match(/const MAIN_TABS = \[([^\]]*)\];/);
 const names = s => s.split(',').map(x => x.trim().replace(/['"]/g, '')).filter(Boolean);
 check(headTabs && mainTabs && JSON.stringify(names(headTabs[1])) === JSON.stringify(names(mainTabs[1])),
   'head 的 TABS 与主脚本的 MAIN_TABS 必须一致');
+check(JSON.stringify(navEntries) === JSON.stringify(names(mainTabs[1])),
+  '侧栏入口应与页面清单同序、各一个，实得 ' + navEntries.join(','));
 check(names(mainTabs[1]).length === 11 && names(mainTabs[1]).includes('runtime') &&
       names(mainTabs[1]).includes('media') && names(mainTabs[1]).includes('api') &&
       !names(mainTabs[1]).includes('models'),
@@ -101,10 +66,11 @@ check(JSON.stringify(names(mainTabs[1])) === JSON.stringify([
   'overview', 'runtime', 'gateway', 'accounts', 'api', 'analytics', 'tasks', 'agents', 'media', 'settings', 'logs'
 ]), '主页面清单顺序应与工作台菜单一致');
 
-// 侧栏折叠与手机抽屉的入口都在。
-check(/function toggleConsoleCollapse\(\)/.test(script), '缺少侧栏折叠');
-check(/function setConsoleNavOpen\(open\)/.test(script), '缺少手机端抽屉开关');
-check(/onclick="toggleConsoleNav\(\)"/.test(html), '手机端缺少功能菜单按钮');
+// 手机端的抽屉与「更多」面板：开关函数与入口都在。
+check(/function nextOpenMore\(open\)/.test(script) && /function nextOpenSidebar\(open\)/.test(script),
+  '缺少手机端抽屉 / 「更多」面板的开关');
+check(/id="nextMenuBtn"[^>]*onclick="nextOpenSidebar\(\)"/.test(html), '手机端缺少导航按钮');
+check(/id="nextMoreBtn"/.test(html), '手机端缺少「更多」按钮');
 
 // ---- 2. 筛选：只改显示，不改批量操作的原始范围 -----------------------
 
@@ -186,12 +152,13 @@ check(/function clearRecentFilters\(\)/.test(script), '缺少请求列表筛选�
  'modelCatalogFilter'].forEach(id => {
   check(html.includes('id="' + id + '"'), '缺少筛选控件 #' + id);
 });
-// 新导航没有 data-console-layout=on；旧布局的隐藏规则不能连带藏掉筛选栏，
-// 否则控件不可见但 ACCOUNT_FILTERS 等状态仍会把列表筛空（issue #850）。
-check(/html:not\(\[data-console-layout="on"\]\):not\(\[data-ui="next"\]\) \.console-filterbar/.test(html),
-  '新导航下筛选栏必须保持可见');
-check(!/html:not\(\[data-console-layout="on"\]\) \.console-filterbar\s*\{display:none!important\}/.test(html),
-  '旧布局的筛选栏隐藏规则不应误伤新导航');
+// 筛选栏必须保持可见：控件不可见但 ACCOUNT_FILTERS 等状态仍会把列表筛空
+// （issue #850 的根因是旧布局那条按 data-console-layout 藏筛选条的规则）。
+// 旧布局删除后，不许再有任何规则把筛选栏藏起来。
+check(!/\.console-filterbar[^{]*\{display:none/.test(html),
+  '筛选栏不得被任何规则隐藏');
+check(/:is\(\.acct-filterbar,\s*\.recent-filterbar\)\{display:flex/.test(html),
+  '筛选栏要有不依赖其它样式表的布局');
 
 // 批量作用范围不再跟号池隔离开关走：勾选本身就是明确的选择，没有勾选时按
 // 当前筛选结果，两者都与「隔离是否开启」无关。
@@ -249,7 +216,8 @@ const health = script.slice(script.indexOf('function renderConsoleAccountHealth(
 check(/realmAccounts\.filter\(accountIsHealthy\)/.test(health), '健康度应复用 accountIsHealthy()');
 check(/console-health-unconfigured[^\n]*未接入/.test(health), '未接入账号的出口要与账号不可用区分');
 
-const sharedStyles = html.slice(html.indexOf('<style>\n:root'), html.indexOf('<style id="wb-alibaba-console"'));
+// 基础样式表：从 :root 起到它自己的 </style> 为止（控制台样式表已删除）。
+const sharedStyles = html.slice(html.indexOf('<style>\n:root'), html.indexOf('</style>', html.indexOf('<style>\n:root')));
 check(/\.console-insights\{display:grid/.test(sharedStyles) && /\.console-insight\{[^}]*background:var\(--panel\)/.test(sharedStyles),
   '运行详情卡片的布局与边框必须在常规导航下生效');
 check(/#consoleUsageChart\[hidden\]\{display:none\}/.test(sharedStyles), '无用量时隐藏坐标图');

@@ -1,23 +1,26 @@
-/* 手机端账号区的三处布局回归（都只在 ≤640px 生效，桌面不受影响）。
+/* 账号页在窄屏（≤640px）下的结构契约。
  *
- * 1) 批量操作那一组有 6 个按钮，一行摆不下时每个按钮被压成竖排文字
- *    （「一 / 键 / 分 / 配 / 代 / 理」）。窄屏改成两列网格 → 3 行 2 列，
- *    按钮文字保持横排可读。
- * 2) 账号卡片第一行塞了昵称、备注、分组、任务开关、版本、状态、账户类型，
- *    长昵称时整行顶出卡片宽度（超屏）。现在第一行是「勾选 + 昵称 + 版本 /
- *    状态 / 账户类型」，第二行是「号池 + 任务开关 + 备注 + 分组」。
- * 3) 操作区两层 flex 容器各自换行时，出站身份那组会整块另起一行、中间空出
- *    一段。两行容器拆平（display:contents），按钮按 DOM 顺序自然流动。
+ * 1) 工具栏：批量操作组两列网格、号池组三列网格，按钮文字不被压成竖排；
+ * 1b) 号池下拉的自定义包装层拉满格宽，触发器与按钮同高；
+ * 2) 账号卡：每个单元格按自己的类名排进六列网格，不再按 nth-child 序号排——
+ *    2026-11 的工作台重排把账号表从 12 列改成 11 列（「版本」列并进账号格，
+ *    行尾操作收进「⋯」菜单），按序号排的规则一改列数就错位，所以改成按类名；
+ * 3) 窄屏不再给同一份信息渲染两个副本（旧的 .acct-pool-mobile / .acct-task-mobile /
+ *    .acct-exp-meta / .acct-state-mobile 各一份，靠断点二选一显示）。现在每一份信息
+ *    只渲染一次：只有状态徽章在窄屏另有副本（状态列在窄屏隐藏），昵称、档位、
+ *    标签在两种宽度下用的是同一份 DOM；
+ * 4) 桌面（≥641px）：11 列的紧凑单行，两端吸附，操作列不折行。
  *
- * 桌面布局：任务开关 / 备注 / 分组同排一行（.acct-chip-row），号池标签仍在
- * 昵称前面；两行操作容器在桌面上仍是两行。
+ * 这里的样式断言查的是 #workbenchStyles（工作台样式块，只作用于总览以外的页签）。
+ * 基础样式里只留了卡片模式的通用规则（tr 变网格、td 带 ::before 列标签）。
  *
  * Run with Node: node tests/_test_mobile_account_layout.js
  */
 'use strict';
 const assert = require('assert');
-const {dashboardHtml} = require('./_dashboard_source.js');
+const {dashboardHtml, dashboardScript} = require('./_dashboard_source.js');
 const html = dashboardHtml();
+const script = dashboardScript();
 
 /* ---- 1. 批量操作组：两列网格，文字不竖排 ---------------------------- */
 
@@ -58,112 +61,142 @@ assert.ok(/#accountsBody \.toolbar \.tb-pool \.cs-trigger\{height:36px/.test(htm
 assert.ok(/#accountsBody \.toolbar \.tb-pool button\.sec\{[^}]*white-space:nowrap/.test(html),
   '号池按钮必须 white-space:nowrap，窄屏下不能被压成竖排文字');
 
-/* ---- 2. 账号卡两行：昵称行 / chip 行 -------------------------------- */
+/* ---- 工作台样式块 ------------------------------------------------------ */
 
-assert.ok(html.includes('<div class="acct-chip-row">'),
-  '账号卡缺少 .acct-chip-row 容器，任务开关与备注分组无法同排');
-assert.ok(/<span class="acct-mobile-badges">/.test(html),
-  '账号卡缺少移动端徽章组（版本 / 状态 / 类型）');
-// 桌面：chip 行是一整行 flex，任务开关 / 备注 / 分组同排。
-assert.ok(/\.acct-chip-row\{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px\}/
-    .test(html),
-  '桌面 chip 行应是一行可换行的 flex（任务开关 / 备注 / 分组同排）');
-// 窄屏：徽章组与昵称同一行，chip 行整行独占。
-assert.ok(/table\.account-cards td:nth-child\(3\) \.acct-name-row\{flex-wrap:wrap\}/.test(html),
-  '窄屏账号名那行要允许换行，徽章组才能落到下面');
-// 只允许换行还不够：这一格的直接子项默认 min-width:auto（= 内容宽），长昵称
-// 仍会把整格撑到卡片之外（390px 视口实测单元格 271px、名字行 434px，右侧被
-// 裁掉且没有省略号）。必须钉住 min-width:0 + max-width:100%。
-assert.ok(/table\.account-cards td:nth-child\(3\) > \*\{min-width:0;max-width:100%\}/.test(html),
-  '账号名那格的直接子项要钉 min-width:0 + max-width:100%，否则长昵称会撑出卡片');
+const wbAt = html.indexOf('<style id="workbenchStyles">');
+assert.ok(wbAt >= 0, '找不到 #workbenchStyles（工作台样式块）');
+const wbCss = html.slice(wbAt + '<style id="workbenchStyles">'.length,
+                         html.indexOf('</style>', wbAt));
+// 工作台里的规则都带同一段作用域前缀；断言只写选择器的尾巴。
+const P = 'html[data-ui="next"]:not([data-main-tab="overview"]) ';
+// 取「包含指定片段」的那个 @media 块（同一个断点在文件里有好几块）。
+function mediaBlock(query, mustContain){
+  let from = 0;
+  for(;;){
+    const at = wbCss.indexOf(query, from);
+    if(at < 0) return null;
+    const open = wbCss.indexOf('{', at);
+    let depth = 1, i = open + 1;
+    while(i < wbCss.length && depth > 0){
+      if(wbCss[i] === '{') depth++;
+      else if(wbCss[i] === '}') depth--;
+      i++;
+    }
+    const block = wbCss.slice(open + 1, i - 1);
+    if(block.includes(mustContain)) return block;
+    from = i;
+  }
+}
+// 某个选择器在给定范围里的全部声明体（同一个选择器可以写好几条）。
+function decls(scope, selector){
+  const out = [];
+  const re = new RegExp(P.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') +
+                        selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?=\\s*[{,])', 'g');
+  let m;
+  while((m = re.exec(scope))){
+    const open = scope.indexOf('{', m.index);
+    out.push(scope.slice(open + 1, scope.indexOf('}', open)));
+  }
+  return out;
+}
+function has(scope, selector, pattern, why){
+  const found = decls(scope, selector);
+  assert.ok(found.some(d => pattern.test(d)), why + '  -> ' + (found.join(' | ') || '（没有这条规则）'));
+}
+const narrow = mediaBlock('@media (max-width:640px)', 'table.account-cards td.acct-check');
+assert.ok(narrow, '工作台样式里找不到账号卡的窄屏块（≤640px）');
+const wide = mediaBlock('@media (min-width:641px)', 'table.account-cards{table-layout:fixed');
+assert.ok(wide, '工作台样式里找不到账号表的桌面块（≥641px）');
 
-// 号池标签两处各渲染一份，按断点只显示其中一份：桌面在昵称前，窄屏在 chip 行。
-assert.ok(/function poolChip\(cls, a, uidAttr\)\{/.test(html),
-  '号池标签应由 poolChip() 统一生成，避免两处文案漂移');
-assert.ok(/poolChip\('acct-pool-inline', a, uidAttr\)/.test(html),
-  '桌面那份号池标签缺失');
-assert.ok(/poolChip\('acct-pool-mobile', a, uidAttr\)/.test(html),
-  '窄屏那份号池标签缺失');
-assert.ok(/\.acct-pool-mobile\{display:none\}/.test(html),
-  '桌面必须隐藏窄屏那份号池标签，否则同一行出现两个');
-assert.ok(/\.acct-pool-inline\{display:none\}/.test(html),
-  '窄屏必须隐藏桌面那份号池标签，否则卡片里出现两个号池标签');
-assert.ok(/\.acct-pool-mobile\{display:inline-block\}/.test(html),
-  '窄屏要显式放回窄屏那份号池标签');
+/* ---- 2. 窄屏账号卡：按类名排进六列网格 ------------------------------- */
 
-// 任务开关：桌面在 chip 行，窄屏挪到「今日活动」行；两处共用 taskChip。
-assert.ok(/const taskChip = \(a\.apiKey \? ''/.test(html),
-  '任务开关应由 taskChip 统一生成，桌面与窄屏共用一份');
-assert.ok(/class="acct-task-inline"/.test(html) && /class="acct-task-mobile"/.test(html),
-  '任务开关需要桌面 / 窄屏两个挂载点');
-assert.ok(/\.acct-task-mobile\{display:none\}/.test(html),
-  '桌面必须隐藏窄屏那份任务开关');
-assert.ok(/\.acct-task-inline\{display:none\}/.test(html),
-  '窄屏必须隐藏桌面那份任务开关');
-assert.ok(/class="acct-task-mobile"/.test(html)
-      && html.indexOf('class="acct-task-mobile"') > html.indexOf('activityStatusChip(a)'),
-  '窄屏任务开关要挂在「今日活动」那一格');
+// 勾选框贴左上角，昵称行占满第一行其余宽度（两者同一行）。
+has(narrow, 'table.account-cards td.acct-check', /grid-column:1;grid-row:1/, '窄屏勾选格应在第 1 行最左');
+has(narrow, 'table.account-cards td.acct-main', /grid-column:2\/-1;grid-row:1/, '窄屏账号格应占满第 1 行其余宽度');
+has(narrow, 'table.account-cards td.acct-main::before', /content:none/, '窄屏卡片里不该再出现「账号」这个列标签');
 
-// 昵称右侧只留版本 + 账户类型，可用挪到 chip 行。
-assert.ok(/\.acct-state-mobile\{display:none\}/.test(html)
-      && /\.acct-state-mobile\{display:inline-flex\}/.test(html),
-  '状态徽章需要「桌面隐藏 / 窄屏显示」两条规则');
-assert.ok(/class="acct-state-mobile"/.test(html),
-  '状态徽章缺少窄屏挂载点');
+// 状态列在窄屏隐藏，状态徽章的另一份副本（.acct-mobile-badges）顶上。
+has(narrow, 'table.account-cards td.acct-state', /display:none/, '窄屏应隐藏状态列');
+has(narrow, '.acct-mobile-badges', /display:inline-flex/, '窄屏要显示昵称旁的状态徽章副本');
+// 桌面反之：副本隐藏，状态有自己的列。
+// （工作台样式块里还有别的 @media 块排在账号表之前，按「第一个 @media 之前」切片的
+//  写法会切错位置——直接找那条声明本身。）
+has(wbCss, '.acct-mobile-badges', /^display:none$/, '桌面必须隐藏状态徽章副本，否则状态显示两遍');
+assert.ok(script.includes('\'<span class="acct-mobile-badges">\' + state + \'</span>\''),
+  '账号行里缺少窄屏状态徽章的挂载点');
+assert.ok(script.includes('\'<td class="acct-state" data-label="状态">\' + state'),
+  '账号行里缺少状态列');
 
-// 到期：桌面在「版本」格第三行，窄屏回到次要信息行。
-assert.ok(/class="acct-exp acct-exp-inline"/.test(html),
-  '桌面「版本」格缺少到期行');
-assert.ok(/\.acct-exp-meta\{display:none\}/.test(html)
-      && /\.acct-exp-meta\{display:inline\}/.test(html),
-  '到期在窄屏要有独立副本（桌面隐藏 / 窄屏显示）');
+// 昵称：手机上没有悬停，看不全的昵称没处读——允许折行、完整显示。
+has(narrow, '.acct-name', /white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere/,
+  '手机上昵称要能折行完整显示，不能省略号裁掉');
+// 标签（媒体号池 / 任务 / 备注 / 分组 / 禁用模型）同理。
+has(narrow, '.note-chip', /max-width:100%;white-space:normal/, '手机上标签不得超出卡片，长备注要能折行');
 
-// 勾选格与账号格同一行：两格都 span 整行、都在 grid 第 1 行，账号格靠
-// 30px 左内边距给勾选框让位（勾选框只占第一行最左边一小块）。
-assert.ok(/table\.account-cards td:nth-child\(1\)\{order:0;grid-column:1\/-1;grid-row:1;/.test(html),
-  '窄屏勾选格应与账号格同处第 1 行、贴左占位');
-assert.ok(/table\.account-cards td:nth-child\(3\)\{order:0;grid-column:1\/-1;grid-row:1;/.test(html),
-  '窄屏账号格应与勾选格同一行，并用左内边距让出勾选框');
-assert.ok(/table\.account-cards td:nth-child\(3\)::before\{content:none\}/.test(html),
-  '窄屏卡片里不该再出现「账号」这个列标签');
+// 数据格：活动 / 出口 / 权重 / 积分各占半行，三个用量数字并排一行，操作独占整行。
+for (const col of ['acct-activity', 'acct-slot', 'acct-weight', 'acct-credit']) {
+  has(narrow, 'table.account-cards td.' + col, /grid-column:span 3/, '窄屏「' + col + '」格应占半行');
+}
+has(narrow, 'table.account-cards td.num', /grid-column:span 2/, '窄屏请求 / Token / 缓存应并排三列');
+has(narrow, 'table.account-cards td.acct-actions', /grid-column:span 6/, '窄屏操作格应独占整行');
+has(narrow, '.acct-actions-col', /flex-wrap:wrap/, '窄屏操作按钮要允许折行');
+has(narrow, 'table.account-cards .acct-actions button.mini', /min-height:32px/, '窄屏操作按钮要有 32px 的触控高度');
+// 下拉在卡片里拉满格宽，不按内容宽排在行首。
+has(narrow, 'table.account-cards td.acct-slot .cs-wrap', /display:block;flex:1 1 0;min-width:0;max-width:100%/,
+  '窄屏出口下拉要拉满格宽');
 
-// 总 token 与缓存并排两列。
-assert.ok(/table\.account-cards td:nth-child\(10\),\s*table\.account-cards td:nth-child\(11\)\{order:6;grid-column:span 3;/
-    .test(html),
-  '窄屏下总 token 与缓存应各占半行并排');
+// 冷却 / 达限续行跟在卡片下面，左对齐（桌面那条左内边距是给勾选列让位的）。
+has(narrow, 'table.account-cards tr.cool-row td', /justify-content:flex-start;text-align:left!important/,
+  '窄屏续行应左对齐');
 
-// 顺序契约：昵称行先渲染，chip 行在它之后。
-const nameRowAt = html.indexOf('class="acct-name-row"');
-const chipRowAt = html.indexOf('class="acct-chip-row"');
-assert.ok(nameRowAt > 0 && chipRowAt > nameRowAt,
-  'chip 行必须排在账号名那一行之后');
+/* ---- 3. 每份信息只渲染一次 ------------------------------------------- */
 
-/* ---- 3. 操作区拆平：没有中间空块 ------------------------------------ */
+// 旧结构给号池 / 任务 / 到期 / 状态各渲染两份，靠断点二选一显示；两份文案会漂移，
+// 忘了其中一份就只在某个宽度下丢信息。现在这些类名不该再出现（词典里的旧词条
+// 不算，这里只查样式与脚本）。
+for (const cls of ['acct-pool-mobile', 'acct-pool-inline', 'acct-task-mobile', 'acct-task-inline',
+                   'acct-exp-meta', 'acct-exp-inline', 'acct-state-mobile', 'acct-chip-row',
+                   'acct-actions-row']) {
+  assert.ok(!wbCss.includes(cls) && !script.includes(cls), '旧的双副本结构不该回来：.' + cls);
+}
+const rowFrom = script.indexOf('function accountRow(a){');
+const rowTo = script.indexOf('let ACCT_MENU = null');
+assert.ok(rowFrom > 0 && rowTo > rowFrom, '找不到 accountRow');
+const rowSrc = script.slice(rowFrom, rowTo);
+assert.ok(/function poolChip\(a, uidAttr\)\{/.test(script), '号池标签应由 poolChip() 统一生成');
+assert.strictEqual((rowSrc.match(/poolChip\(a, uidAttr\)/g) || []).length, 1,
+  '号池标签只渲染一份（在账号格的次要信息行）');
+// 任务开着的账号画一枚「任务开」标签；开关本身在「⋯」菜单里（见 _test_account_menu.js）。
+assert.ok(/const chips = \[\s*poolChip\(a, uidAttr\),\s*\(!a\.apiKey && a\.tasksEnabled\s*\? '<span class="note-chip has"[^\n]*>任务开<\/span>/.test(rowSrc),
+  '账号格次要信息行应依次挂号池标签与「任务开」标签');
 
-assert.ok(/table\.account-cards \.acct-actions-row\{display:contents\}/.test(html),
-  '窄屏下操作区的两行容器应拆平，避免出站身份整块另起一行留出空段');
+// 顺序契约：昵称行先渲染，次要信息行在它之后。
+const nameRowAt = rowSrc.indexOf('class="acct-name-row"');
+const subRowAt = rowSrc.indexOf('class="acct-sub"');
+assert.ok(nameRowAt > 0 && subRowAt > nameRowAt,
+  '次要信息行必须排在账号名那一行之后');
 
-// 按钮顺序：导出紧跟同步昵称，删除排在出站身份之后。
-const syncAt = html.indexOf('>同步昵称<');
-const exportAt = html.indexOf('>导出<', syncAt);
-const idGroupAt = html.indexOf('id-btn-group', syncAt);
-const deleteAt = html.indexOf('>删除<', idGroupAt);
-assert.ok(syncAt > 0 && exportAt > syncAt,
-  '「导出」应排在「同步昵称」之后（同一行按钮流里紧挨着）');
-assert.ok(idGroupAt > exportAt,
-  '出站身份组应排在「导出」之后');
-assert.ok(deleteAt > idGroupAt,
-  '「删除」应排在出站身份组之后');
+/* ---- 4. 桌面布局（≥641px） -------------------------------------------- */
 
-/* ---- 4. 桌面布局没被改动 -------------------------------------------- */
-
-// 桌面（≥641px）两行操作容器保持原样：.acct-actions-row 仍是 flex。
-assert.ok(/table\.account-cards \.acct-actions-row\{flex-wrap:wrap;gap:3px\}/.test(html),
-  '桌面操作区的两行紧凑布局被改掉了');
-assert.ok(/table\.account-cards \.acct-actions-col\{min-width:max-content;max-width:none\}/.test(html),
-  '桌面操作列宽度规则被改掉了');
-// 移动端徽章组在桌面上仍隐藏（版本/状态有自己的两列）。
-assert.ok(/\.acct-mobile-badges\{display:none\}/.test(html),
-  '桌面必须隐藏移动端徽章组，否则版本/状态会重复显示');
+// 11 列的紧凑单行：表宽跟随容器，min-width 只作横向滚动的兜底。
+has(wide, 'table.account-cards', /table-layout:fixed;width:100%;min-width:1080px/,
+  '桌面账号表应固定布局、跟随容器宽度，min-width 只作兜底');
+// 勾选列固定在最左、操作列固定在最右（横向滚动时两端始终可见）。
+has(wide, 'table.account-cards :is(td,th).acct-check', /position:sticky;left:0/, '勾选列应固定在左侧');
+has(wide, 'table.account-cards :is(td,th).acct-actions', /position:sticky;right:0/, '操作列应固定在右侧');
+// 固定列要有底色，滚动时才不会透出下面的内容；悬停时跟随行背景，不然露出一块。
+has(wide, 'table.account-cards :is(td,th).acct-check', /position:sticky;left:0;z-index:\d+;background:var\(--panel\)/,
+  '勾选列吸附时要有底色');
+has(wide, 'table.account-cards :is(td,th).acct-actions', /position:sticky;right:0;z-index:\d+;background:var\(--panel\)/,
+  '操作列吸附时要有底色');
+has(wide, 'table.account-cards tbody tr:not(.cool-row):hover :is(td.acct-check,td.acct-actions)',
+  /background:var\(--row-hover\)/, '固定列悬停时应跟随行背景，不能露出色块');
+// 窄屏没有吸附：吸附规则只写在 ≥641px 的块里，窄屏块里不该出现 sticky。
+assert.ok(!/position:sticky/.test(narrow), '窄屏卡片布局里不该有吸附列（吸附只在 ≥641px）');
+// 操作区一行放得下，不折行（按钮自己也不折行）。
+has(wbCss, '.acct-actions-col', /^display:flex;align-items:center;justify-content:flex-end;gap:4px;flex-wrap:nowrap$/,
+  '桌面操作区应是一行不折行的 flex');
+has(wbCss, '.acct-actions-col > button', /white-space:nowrap;flex-shrink:0/,
+  '行内按钮不折行、不收缩（「重新登录」不能被压成两行）');
 
 console.log('_test_mobile_account_layout.js: all assertions passed');

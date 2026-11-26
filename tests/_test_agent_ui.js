@@ -482,8 +482,10 @@ const check = (label, cond, extra) => {
   check('an unknown client is a no-op, not a crash',
         requests.filter(r => r.url.indexOf('/agents/apply') !== -1).length === 0);
 
-  // 服务端形态（看板不在网关本机）时入口整个撤掉（issue #246）：
-  // /agents/available 回 enabled:false → Tab 隐藏，?tab=agents 的书签退回网关页。
+  // 服务端形态（看板不在网关本机）时入口不可用（issue #246）：/agents/available 回
+  // enabled:false → 侧栏的「智能体」入口标成不可用并说明原因，?tab=agents 的书签
+  // 退回网关页。旧顶栏的做法是藏起页签按钮（#btnNavAgents）；那套顶栏已删除，
+  // 壳的入口一直是「标灰 + 说明」而不是藏，这里按壳的真实行为断言。
   global.fetch = (url, opts) => {
     if (String(url).indexOf('/agents/available') !== -1) {
       const payload = {enabled: false};
@@ -495,13 +497,36 @@ const check = (label, cond, extra) => {
     }
     return realFetch(url, opts);
   };
-  const navAgents = element('btnNavAgents');
   await api.loadAgentsAvailability();
-  check('a server-form panel hides the agents tab',
-        navAgents.style.display === 'none', JSON.stringify(navAgents.style));
   check('the availability flag flips to false', api.agentsAvailable() === false);
+
+  // 入口的高亮与标记由壳的 nextSyncChrome() 写：把侧栏的「智能体」入口喂给它。
+  const agentsEntry = {
+    attrs: {}, toggles: [],
+    classList: {add(){}, remove(){}, contains(){ return false; },
+                toggle(name, on){ agentsEntry.toggles.push([name, !!on]); }},
+    setAttribute(name, value){ agentsEntry.attrs[name] = String(value); },
+    getAttribute(name){ return agentsEntry.attrs[name] || ''; },
+    removeAttribute(name){ delete agentsEntry.attrs[name]; },
+  };
+  const queryAll = document.querySelectorAll;
+  document.querySelectorAll = sel => sel === '[data-next-tab="agents"]' ? [agentsEntry] : queryAll(sel);
+  window.nextSyncChrome('gateway');
+  document.querySelectorAll = queryAll;
+  check('a server-form panel marks the agents entry as unavailable',
+        agentsEntry.toggles.some(([name, on]) => name === 'next-disabled' && on)
+          && agentsEntry.attrs['data-disabled'] === '1',
+        JSON.stringify([agentsEntry.toggles, agentsEntry.attrs]));
+  check('the entry says why it is unavailable',
+        /127\.0\.0\.1/.test(agentsEntry.attrs.title || ''), agentsEntry.attrs.title);
+
   api.switchMainTab('agents');
   check('a stale agents tab falls back to the gateway page',
+        api.currentTab() === 'gateway', api.currentTab());
+
+  // 点侧栏入口同样进不去：nextGo() 拒绝切页并提示，当前页不变。
+  window.nextGo('agents');
+  check('the sidebar entry refuses to open the page',
         api.currentTab() === 'gateway', api.currentTab());
 
   process.stdout.write('agent config UI assertions passed (' + checks + ' checks)\n');
