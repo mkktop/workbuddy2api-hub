@@ -1,3 +1,9 @@
+## v2.4.2
+
+- **面板只剩一套外壳，功能页统一为「工作台」**：删除传统布局、控制台布局、主题风格预设与调色台，`<html>` 静态带 `data-ui="next" data-skin="sanctum"`，圣轮总览默认开启且外观未改。其余十页换成与总览同一套纸墨设计：卡片 8px、控件 6px、发丝线分层、数字等宽，状态色只留健康绿 / 警告琥珀 / 错误红 / 信息蓝。账号表收成紧凑单行，低频操作（刷新凭证 / 重新登录、同步昵称、导出、出站身份、任务、备注、分组、禁用模型、删除）收进新增的「⋯」菜单；运行详情、网关、接口、用量、自动化任务、智能体、媒体、设置与日志逐页重排并清掉静态标记里的内联样式，设置页的旧分类胶囊与重复页头删除。新增 `tests/_test_shell_single.js`（36 项）与 `tests/_test_account_menu.js`（113 项）钉住「只剩一套壳」与菜单接线，新增文案同步补英文与繁体。
+- **圣轮调用轨迹**：调用星点沿弧线入轨、转向账号并汇入完成轨道，换绑或提前结束时从当前位置沿原方向过渡，拖尾连续，环速随负载平缓变化。
+- 全量测试：**318 个套件：237 个 Python + 81 个 JS，318 passed, 0 failed, 0 skipped**。
+
 ## v2.4.1
 
 - **统一模型网关**：`/v1` 的模型 ID 改为带出口前缀的 `<出口>/<模型>`（`wb-cn/`、`wb-intl/`、`codearts/`）。`GET /v1/models` 返回当前 Key 可用的跨出口目录，一个出口的目录暂不可读时其他出口照常列出，故障出口出现在 `unavailable_routes`。路由结果区分 400（格式）、403（权限）、404（目录无此模型）、503（出口不可用），用量行新增 `route_id`、`requested_model`、`upstream_model`。
@@ -1054,7 +1060,6 @@ Windows 便携包补一个可选的前台窗口启动入口：默认仍是静默
 
 ## 未发布
 
-- **面板只剩一套外壳，功能页统一为「工作台」**：删除传统布局、控制台布局、主题风格预设与调色台，<code>&lt;html&gt;</code> 静态带 <code>data-ui="next" data-skin="sanctum"</code>，圣轮总览默认开启且外观未改。其余十页换成与总览同一套纸墨设计：卡片 8px、控件 6px、发丝线分层、数字等宽，状态色只留健康绿 / 警告琥珀 / 错误红 / 信息蓝。账号表收成紧凑单行，低频操作（刷新凭证 / 重新登录、同步昵称、导出、出站身份、任务、备注、分组、禁用模型、删除）收进新增的「⋯」菜单；运行详情、网关、接口、用量、自动化任务、智能体、媒体、设置与日志逐页重排并清掉静态标记里的内联样式，设置页的旧分类胶囊与重复页头删除。新增 <code>tests/_test_shell_single.js</code>（36 项）与 <code>tests/_test_account_menu.js</code>（113 项）钉住「只剩一套壳」与菜单接线，新增文案同步补英文与繁体。全量测试 **318 个套件：237 个 Python + 81 个 JS，318 passed, 0 failed, 0 skipped**。
 - **一键测试不再把 Clash fake-IP 误判为本机断网**：Clash Verge / sing-box 开启 fake-IP 后，所有域名都解析到 `198.18.0.0/15`，而 Python 的 `ipaddress` 把这段 IANA benchmarking 地址算作 `is_private`；连通性探针在 TCP 握手前就拒绝，面板于是弹「本机网络不通：解析到非公网地址 198.18.0.11」，可真实请求链路并不做这个检查（实测到 fake-IP 的 TCP+TLS 可达，证书正确）。现在 `_is_public_addr()` 单独放行 fake-IP 段，环回 / RFC1918 / 链路本地 / 保留段仍照旧拒绝，并新增回归用例钉住「放行后继续走 TCP 握手」。实测 fake-IP 环境下 cn/intl 探针均 ok，一键测试 5/5 账号通过。 / One-click test no longer mistakes Clash fake-IP for a dead local network: with Clash Verge / sing-box fake-IP enabled every hostname resolves into `198.18.0.0/15`, which Python's `ipaddress` classifies as `is_private` (IANA benchmarking range); the connectivity probe refused it before the TCP handshake, so the panel reported "local network down" even though real requests were fine (TCP+TLS to the fake IP is reachable with a valid certificate). `_is_public_addr()` now allowlists the fake-IP range while loopback / RFC1918 / link-local / reserved addresses stay rejected, with a regression test asserting the address proceeds to the TCP handshake. Verified under fake-IP: both cn/intl probes ok and 5/5 accounts passed the one-click test.
 - **面板密码加密异常明确报错**（#658）：解释器缺少 `hashlib.pbkdf2_hmac` 支持时（如 Windows SAC 拦截便携运行时 DLL），不再将计算异常吞成「密码错误」返回 401，而是明确返回 500 与环境排查指引；启动自检与 `/health`、`/panel/status` 暴露 `crypto_ok` 状态并在面板提示。新增 `tests/_test_panel_crypto_unavailable.py`。
 - **智能体一键配置 (Agent Config)**：参照 EasyCLIProxyAPI 的 agents 机制，支持对本机 Claude Code、Codex CLI、OpenCode、DSH、Crush 客户端的一键检测、配置写入与安全备份还原；内置纯标准库文本级 YAML/TOML/JSON 编辑器与两阶段事务回滚保护。
