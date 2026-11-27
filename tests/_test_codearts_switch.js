@@ -1,4 +1,4 @@
-/* CodeArts 第三出口：卡片、视图按钮、默认出口循环与区块显隐。
+/* CodeArts 第三出口：卡片、运行详情筛选与账号区块显隐。
  *
  * 结构断言钉住入口和 id；行为断言把整段脚本放进假 DOM 跑一次 updateUI，
  * 确认 codearts 视图下 WorkBuddy 区块隐藏、CodeArts 区块出现，未配置时卡片隐藏。
@@ -14,12 +14,10 @@ const html = dashboardHtml();
 const script = dashboardScript();
 
 /* ---- 1. 结构 ---- */
-assert.ok(/id="tabCodearts"[^>]*onclick="switchViewRealm\('codearts'\)"/.test(html),
-  '网关页缺少 CodeArts 出口卡片');
+assert.ok(/id="tabCodearts"[^>]*onclick="switchRuntimeRealm\('codearts'\)"/.test(html),
+  '运行详情缺少 CodeArts 筛选卡片');
 assert.ok(/id="accountsRealmCodearts"[^>]*onclick="switchViewRealm\('codearts'\)"/.test(html),
   '账号页缺少 CodeArts 视图按钮');
-assert.ok(html.includes('id="codeartsSummary"'), '缺少 CodeArts 统计条');
-assert.ok(html.includes('id="codeartsCards"'), '缺少 CodeArts 统计卡片容器');
 assert.ok(html.includes('id="codeartsAccountsSection"'), '缺少 CodeArts 账号区');
 assert.ok(html.includes('id="codeartsAccounts"'), '缺少 CodeArts 账号表容器');
 assert.ok(html.includes('id="tabCodeartsCredits"'), '缺少 CodeArts 积分显示');
@@ -31,14 +29,10 @@ assert.ok(html.includes('id="workbuddyAccountsSection"'), 'WorkBuddy 账号区�
 assert.ok(html.includes('id="workbuddyDisabledSection"'), 'WorkBuddy 禁用区缺少可定位 id');
 assert.ok(html.includes('id="workbuddyActivitySection"'), 'WorkBuddy 活动区缺少可定位 id');
 
-assert.ok(/const nextGw = gwOptions\[\(gwIdx \+ 1\) % gwOptions\.length\]/.test(script),
-  '默认出口应按服务端 options 循环（未配置时跳过 codearts）');
-assert.ok(/window\.REALM_OPTIONS/.test(script),
-  '默认出口循环应读取服务端返回的 options');
 assert.ok(/if\(r === "codearts"\)\{/.test(script),
   'switchViewRealm 应有 codearts 分支');
-assert.ok(/\[\'intl\', \'cn\', \'codearts\'\]\.includes\(viewFromUrl\)/.test(script),
-  '?view=codearts 应被接受');
+assert.ok(/preferredChannel\(viewFromUrl/.test(script),
+  '深链应通过启用状态过滤');
 
 /* ---- 2. 行为 ---- */
 dom.installDom({
@@ -83,8 +77,8 @@ assert.equal(byId('codeartsAccountsSection').style.display, '',
   'CodeArts 视图应显示 CodeArts 账号区');
 assert.equal(byId('workbuddyAccountsSection').style.display, 'none',
   'CodeArts 视图应隐藏 WorkBuddy 账号区');
-assert.equal(byId('workbuddyDisabledSection').style.display, 'none',
-  'CodeArts 视图应隐藏 WorkBuddy 禁用区');
+assert.ok(/id="accounts"><\/div>\s*<details id="workbuddyDisabledSection"/.test(html),
+  '受限状态详情应置于 WorkBuddy 账号列表中');
 assert.equal(byId('workbuddyActivitySection').style.display, '',
   '签到与活跃记录在自动化页且含 CodeArts 记录，CodeArts 视图下不应隐藏');
 assert.equal(byId('tabCodeartsHealthy').textContent, 1,
@@ -104,8 +98,8 @@ window.VIEW_REALM = 'intl';
 api.updateUI();
 assert.equal(byId('tabCodearts').style.display, 'none',
   '未配置时 CodeArts 卡片应隐藏');
-assert.equal(byId('accountsRealmCodearts').style.display, 'none',
-  '未配置时 CodeArts 视图按钮应隐藏');
+assert.equal(byId('accountsRealmCodearts').hidden, true,
+  '停用的渠道在账号页应隐藏');
 
 assert.equal(api.realmLabel('codearts'), 'CodeArts', 'CodeArts 出口名称');
 console.log('codearts switch assertions passed');

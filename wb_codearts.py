@@ -275,7 +275,7 @@ def save_config(accounts_dir, patch):
     """
     if not isinstance(patch, dict):
         raise ValueError("codearts settings must be an object")
-    with _LOCK:
+    with _LOCK, wb_settings._lock:
         current = load_config(accounts_dir)
         merged = dict(current)
         for key in DEFAULTS:
@@ -946,7 +946,7 @@ def pool_for(accounts_dir, trigger_auto=True):
             for acct in pool.accounts:
                 acct.max_concurrent = cfg.get("max_concurrent", 1)
     # 锁外触发：自动签到只做判断/记账，真正的领积分在后台线程里跑。
-    if trigger_auto:
+    if trigger_auto and cfg["enabled"]:
         _maybe_auto_checkin(pool)
     return pool
 

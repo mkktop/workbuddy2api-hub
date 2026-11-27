@@ -450,8 +450,8 @@ table.account-cards td[data-label="权重"] .cs-arrow{margin-left:0}
 .acct-group-head .sec{padding:3px 9px;font-size:11px}
 .credit-summary{white-space:nowrap}
 .credit-kind{font-size:11px;font-weight:500;color:var(--dim)}
-@media (max-width:1100px){.realm-cards-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.realm-cards-grid .gateway-ctrl{grid-column:span 2}}
-@media (max-width:720px){.realm-cards-grid{grid-template-columns:1fr!important}.realm-cards-grid .gateway-ctrl{grid-column:auto}.credit-summary{white-space:normal}}
+@media (max-width:1100px){.realm-cards-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media (max-width:720px){.realm-cards-grid{grid-template-columns:1fr!important}.credit-summary{white-space:normal}}
 .modal-mask{display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);
   backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;z-index:100}
 .modal-mask.show{display:flex}
@@ -552,17 +552,6 @@ a{color:var(--accent);text-decoration:none}
 .realm-card.active#tabCn{
   border-color:var(--bad);background:var(--bad-selected-bg);box-shadow:0 0 0 1px var(--bad), var(--shadow-md);
 }
-.realm-card.gateway-ctrl{
-  background:var(--panel2);cursor:default;border-color:var(--line);
-}
-.realm-card.gateway-ctrl:hover{transform:none;border-color:var(--line);box-shadow:var(--shadow)}
-.toggle-realm-btn{
-  background:var(--panel);border:1px solid var(--accent);color:var(--accent);
-  padding:8px 18px;font-size:13px;font-weight:600;border-radius:8px;box-shadow:var(--shadow-sm);cursor:pointer;
-  transition:all .15s ease;
-}
-.toggle-realm-btn:hover{background:var(--panel2);box-shadow:var(--shadow-md)}
-.realm-endpoint-info{font-size:12px;color:var(--dim)}
 
 /* 顶部右侧区域与主题切换组件 (黑白单色、极简线条Outline、符合规范) */
 .header-right{display:flex;align-items:center;gap:10px}
@@ -1051,10 +1040,6 @@ button.page-nav-top:hover{background:var(--panel2);border-color:var(--accent);co
 #pageAnalytics .recent-item .err{color:var(--red)}
 
 
-#pageAnalytics .hm-row{display:flex;gap:30px;align-items:flex-start;flex-wrap:wrap}
-#pageAnalytics .hm-stats{display:grid;grid-template-columns:repeat(2,minmax(110px,1fr));gap:9px 26px;flex:1;min-width:240px;padding-top:14px}
-#pageAnalytics .hm-stat b{display:block;font-size:16px;font-weight:650;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
-#pageAnalytics .hm-stat span{font-size:10.5px;color:var(--dim)}
 #pageAnalytics .ratio-ok{color:var(--green)} #pageAnalytics .ratio-bad{color:var(--red)} #pageAnalytics .ratio-gold{color:var(--gold)}
 
 
@@ -1108,24 +1093,54 @@ button.page-nav-top:hover{background:var(--panel2);border-color:var(--accent);co
 
 
 #pageAnalytics .hm-meta{font-size:10.5px;color:var(--dim)}
-#pageAnalytics .hm-scroll{overflow-x:auto;padding-bottom:2px}
-#pageAnalytics .hm-wrap{display:inline-flex;gap:7px}
-#pageAnalytics .hm-days{display:grid;grid-template-rows:repeat(7,10px);gap:2px;font-size:8.5px;color:var(--dim2);padding-top:13px}
-#pageAnalytics .hm-days span{height:10px;line-height:10px}
-#pageAnalytics .hm-cols{position:relative}
-#pageAnalytics .hm-months{display:grid;font-size:8.5px;color:var(--dim2);height:11px;margin-bottom:2px}
+#pageAnalytics .hm-scroll{container-type:inline-size;overflow-x:auto;scrollbar-width:thin;overscroll-behavior-inline:contain;padding:4px 0 8px}
+#pageAnalytics .hm-wrap{
+  --hm-gap:3px;
+  --hm-cell-size:12px;
+  display:grid;grid-template-columns:30px max-content;gap:8px;width:max-content;padding:0 2px;
+}
+@supports (width:1cqw){
+  #pageAnalytics .hm-wrap{
+    --hm-cell-size:clamp(9px,calc((100cqw - 42px - (var(--hm-weeks) - 1)*var(--hm-gap))/var(--hm-weeks)),20px);
+  }
+}
+#pageAnalytics .hm-days,#pageAnalytics .hm-grid{display:grid;grid-template-rows:repeat(7,var(--hm-cell-size));gap:var(--hm-gap)}
+#pageAnalytics .hm-days{padding-top:22px;font-size:10px;color:var(--dim)}
+#pageAnalytics .hm-days span{display:flex;align-items:center;justify-content:flex-end;line-height:1}
+#pageAnalytics .hm-months{display:grid;gap:var(--hm-gap);height:22px;align-items:start;font-size:11px;color:var(--dim);line-height:16px}
 #pageAnalytics .hm-months span{grid-row:1;white-space:nowrap}
-#pageAnalytics .hm-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,10px);grid-auto-columns:10px;gap:2px}
-#pageAnalytics .hm-cell{width:10px;height:10px;border-radius:2px;cursor:pointer;transition:transform .1s ease}
-#pageAnalytics .hm-cell:hover{transform:scale(1.3);outline:1px solid var(--fg2)}
-#pageAnalytics .hm-cell.l0{background:var(--hm0)}
-#pageAnalytics .hm-cell.l1{background:var(--hm1)}
-#pageAnalytics .hm-cell.l2{background:var(--hm2)}
-#pageAnalytics .hm-cell.l3{background:var(--hm3)}
-#pageAnalytics .hm-cell.l4{background:var(--hm4)}
-#pageAnalytics .hm-foot{display:flex;justify-content:space-between;align-items:center;margin-top:7px;font-size:10.5px;color:var(--dim)}
-#pageAnalytics .hm-legend{display:inline-flex;align-items:center;gap:3px}
-#pageAnalytics .hm-legend .hm-cell{width:9px;height:9px}
+#pageAnalytics .hm-grid{grid-auto-flow:column}
+#pageAnalytics .hm-grid .hm-cell{
+  appearance:none;min-width:0;min-height:0;padding:0;border:0;border-radius:3px;
+  background:var(--hm-color);box-shadow:none;cursor:pointer;
+}
+#pageAnalytics .hm-cell.l0{--hm-color:var(--hm0)}
+#pageAnalytics .hm-cell.l1{--hm-color:var(--hm1)}
+#pageAnalytics .hm-cell.l2{--hm-color:var(--hm2)}
+#pageAnalytics .hm-cell.l3{--hm-color:var(--hm3)}
+#pageAnalytics .hm-cell.l4{--hm-color:var(--hm4)}
+#pageAnalytics .hm-grid .hm-cell[aria-current="date"][aria-pressed="false"]{box-shadow:inset 0 0 0 1px var(--fg)}
+#pageAnalytics .hm-grid .hm-cell:is(:hover,:focus-visible,[aria-pressed="true"]){outline:1px solid var(--fg);outline-offset:1px;z-index:1}
+#pageAnalytics .hm-foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px 16px;margin-top:8px}
+#pageAnalytics .hm-detail,#pageAnalytics .hm-legend{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;font-size:11px;color:var(--dim)}
+#pageAnalytics .hm-detail b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+#pageAnalytics .hm-legend-item{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+#pageAnalytics .hm-legend .hm-cell{width:9px;height:9px;border-radius:2px;background:var(--hm-color)}
+#pageAnalytics .hm-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin:0 0 14px}
+#pageAnalytics #hmAnnual[hidden]{display:none}
+#pageAnalytics .hm-annual-label{margin:0 0 6px;font-size:11px;font-weight:600;color:var(--dim)}
+#pageAnalytics .hm-stat{background:var(--panel2);padding:8px 11px;min-width:0;overflow-wrap:anywhere}
+#pageAnalytics .hm-stat b{display:block;font-size:16px;font-weight:650;font-variant-numeric:tabular-nums}
+#pageAnalytics .hm-stat span{font-size:11px;color:var(--dim)}
+#pageAnalytics .hm-range{display:flex;gap:3px}
+#pageAnalytics .hm-range button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+#pageAnalytics .hm-range button{min-height:28px}
+#pageAnalytics .hm-view-dates{font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums;margin-bottom:3px}
+#pageAnalytics .hm-header{flex-wrap:wrap}
+#pageAnalytics .hm-header .spacer{min-width:0}
+#pageAnalytics .hm-empty{padding:12px 0;color:var(--dim);font-size:12px}
+#pageAnalytics .hm-wrap[hidden],#pageAnalytics .hm-foot[hidden],#pageAnalytics .hm-empty[hidden]{display:none}
+
 
 
 #pageAnalytics .dimtabs{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:2px;gap:2px}
@@ -2385,6 +2400,61 @@ button.page-nav-top:hover{background:var(--panel2);border-color:var(--accent);co
     '新增': 'Added',
     '新增的行还没有填写 Key': 'The new row has no key yet',
     '新密码': 'New password',
+    'MiniMax 官方套餐': 'MiniMax subscription',
+    'MiniMax 模型清单': 'MiniMax models',
+    '使用 MiniMax 官方订阅 Key 接入文本模型。客户端通过模型 ID 的 minimax/ 前缀选路。': 'Use a MiniMax Subscription Key for text models. Clients select this route with the minimax/ model ID prefix.',
+    'MiniMax 站点': 'MiniMax region',
+    '中国站': 'China',
+    '国际站': 'Global',
+    'MiniMax 套餐 Key': 'MiniMax Subscription Key',
+    '套餐文本模型 ID（逗号分隔）': 'Subscription text model IDs (comma-separated)',
+    '启用 MiniMax 出口': 'Enable MiniMax route',
+    '查询套餐额度': 'Check subscription quota',
+    '清除套餐 Key': 'Remove Subscription Key',
+    '已保存，留空保留套餐 Key': 'Saved. Leave blank to keep the current key',
+    '清除 MiniMax 套餐 Key 并停用此出口？': 'Remove the MiniMax Subscription Key and disable this route?',
+    'MiniMax 套餐设置已保存': 'MiniMax subscription settings saved',
+    '正在查询 MiniMax 套餐额度…': 'Checking MiniMax subscription quota…',
+    '当前窗口剩余': 'Window remaining',
+    '本周剩余': 'Weekly remaining',
+    'MiniMax 未返回套餐额度': 'MiniMax returned no quota data',
+    'MiniMax 套餐额度查询失败:': 'Could not check MiniMax subscription quota:',
+    '按上游出口查看': 'View by upstream route',
+    '上游状态': 'Upstream status',
+    '全部请求': 'All requests',
+    '按上游筛选运行详情': 'Filter runtime by upstream',
+    '网关在线': 'Gateway online',
+    '网关不可达': 'Gateway unreachable',
+    '调用量': 'Requests',
+    'Token 用量': 'Token usage',
+    '累计请求': 'Total requests',
+    '累计 Token': 'Total tokens',
+    '暂无样本': 'No samples',
+    'WorkBuddy 调度': 'WorkBuddy scheduler',
+    '旧客户端路由': 'Legacy client routing',
+    '旧路径默认上游': 'Default upstream for legacy paths',
+    '按模型 ID 自动选路。查看上游状态、用量和请求记录。': 'Route by model ID. Review upstream status, usage, and requests.',
+    '默认上游用于不带 /v1 的旧文本路径。标准 /v1 请求按模型 ID 前缀自动选路。': 'The default upstream applies to legacy text paths without /v1. Standard /v1 requests route by the model ID prefix.',
+    'WorkBuddy 国际版': 'WorkBuddy Global',
+    'WorkBuddy 国内版': 'WorkBuddy China',
+    '按上游出口查看模型、能力、思考档位和倍率。': 'Browse models, capabilities, reasoning levels, and rates by upstream route.',
+    '按上游出口管理账号、凭证和使用额度。': 'Manage accounts, credentials, and quotas by upstream route.',
+    '管理账号接口的 API Key、调用记录和请求示例。': 'Manage account API keys, request logs, and examples.',
+    '选择接入协议，配置客户端调用网关。': 'Choose a protocol and connect your client to the gateway.',
+    '账号管理 Key': 'Account API keys',
+    '账号接口文档': 'Account API docs',
+    'Anthropic Messages（先在「设置 → 模型与定价」中启用）': 'Anthropic Messages (enable it under Settings → Models & pricing first)',
+    '账号管理 Key 用于账号授权和读取。通过 realm 指定要操作的 WorkBuddy 国内版或国际版。': 'Account API keys grant authorization and read access. Use realm to select WorkBuddy China or Global.',
+    '模型调用 API Key': 'Model API key',
+    '客户端用此 Key 调用模型。可绑定一个上游出口，也可留空，通过模型 ID 前缀选择已授权的出口。': 'Clients use this key to call models. Bind it to an upstream route, or leave it unbound and use the model ID prefix to choose an authorized route.',
+    '模型调用 Key、上游平台接入、账号代理槽与出站设置。': 'Model API keys, upstream providers, account proxy slots, and outbound settings.',
+    '客户端连接参数': 'Client connection settings',
+    '为本机客户端配置网关地址、模型调用 Key 和默认模型。': 'Set the gateway URL, model API key, and default model for local clients.',
+    '手动接入客户端': 'Connect clients manually',
+    '按客户端支持的协议选择 Base URL，并填写模型调用 API Key。': 'Choose the Base URL for your client’s protocol and enter a model API key.',
+    '在「设置 → API 与出口 → 模型调用 API Key」中复制 Key，填入客户端的 API Key / Token 字段。': 'Copy a key from Settings → API & routes → Model API key and paste it into your client’s API Key or Token field.',
+    '勾选结果适用于所有上游出口，只影响一键配置时写入客户端的模型清单。': 'The selection applies to all upstream routes and controls which models are written to client configurations.',
+    '保存勾选后，重新执行一键配置并重启客户端。WorkBuddy 国际版未保存过勾选时，按账号档位确定默认模型。': 'Save the selection, run one-click setup again, and restart the client. WorkBuddy Global uses the account tier to choose default models until you save a selection.',
     'API 接入': 'API access',
     '接口': 'API',
     '接口文档': 'API docs',
@@ -2565,6 +2635,12 @@ button.page-nav-top:hover{background:var(--panel2);border-color:var(--accent);co
     // 数据看板（B 版）的区块标题与指标名：此前整条回落中文，实测 en 界面残留。
     'Token 时序': 'Token timeline',
     '工作回溯': 'Activity lookback',
+    '近 13 周': 'Last 13 weeks',
+    '每日请求数': 'Daily requests',
+    '近一年统计': 'Last 12 months',
+    '周一': 'Mon',
+    '周三': 'Wed',
+    '周五': 'Fri',
     '吞吐量': 'Throughput',
     '峰值吞吐': 'Peak throughput',
     '输出 tok/s': 'Output tok/s',
@@ -3051,6 +3127,18 @@ button.page-nav-top:hover{background:var(--panel2);border-color:var(--accent);co
     '请确认后端代理服务已重启以加载新代码': 'Restart the backend proxy service to load the new code',
     '请确认已安装并登录 WorkBuddy 客户端后点「重新扫描」。': 'Make sure the WorkBuddy client is installed and signed in, then click Rescan.',
     '请输入面板密码': 'Enter the panel password',
+    '网关版本': 'Gateway version',
+    '模型网关': 'Model Gateway',
+    '通过统一的 API 调用多个上游平台的模型。': 'Call models from multiple providers through one API.',
+    '登录管理面板': 'Sign in to the dashboard',
+    '登录中…': 'Signing in…',
+    '模型 API 地址': 'Model API endpoints',
+    '查看接口地址': 'Show endpoint URLs',
+    '客户端配置': 'Client setup',
+    '复制模型列表地址': 'Copy model list URL',
+    '复制 Chat Completions 地址': 'Copy Chat Completions URL',
+    '复制 Responses 地址': 'Copy Responses URL',
+    '复制失败，请手动复制地址': 'Could not copy. Select and copy the URL manually.',
     '请输入面板访问密码': 'Enter the panel access password',
     'WorkBuddy 网关看板': 'WorkBuddy gateway console',
     '保持登录': 'Stay signed in',
@@ -3379,7 +3467,7 @@ button.page-nav-top:hover{background:var(--panel2);border-color:var(--accent);co
     '小时粒度': 'hourly',
     '总 ': 'total ',
     '峰值单日': 'Peak day',
-    '近一年': 'Last 12 months',
+    '近一年': 'Last year',
     '近 ': 'Last ',
     ' 请求': ' requests',
     '清单构建顺序：先请求上游 API（/v3/config，用当前视图版本的账号）→ 失败则读取本机桌面客户端缓存文件 → 都拿不到才用内置快照。': 'Build order: request the upstream API first (/v3/config with an account of the current view), then read the local desktop client cache, and fall back to the built-in snapshot.',
@@ -3809,6 +3897,72 @@ button.page-nav-top:hover{background:var(--panel2);border-color:var(--accent);co
     "当前范围内最近消耗积分（credit &gt; 0）的请求。": "目前範圍內最近消耗積分（credit &gt; 0）的請求。",
     "当前范围没有请求数据": "目前範圍沒有請求資料",
     "当前视图": "目前檢視",
+    "网关版本": "閘道版本",
+    "模型网关": "模型閘道",
+    "通过统一的 API 调用多个上游平台的模型。": "透過統一的 API 呼叫多個上游平台的模型。",
+    "登录管理面板": "登入管理面板",
+    "登录中…": "登入中…",
+    "模型 API 地址": "模型 API 網址",
+    "查看接口地址": "查看介面網址",
+    "客户端配置": "用戶端設定",
+    "复制模型列表地址": "複製模型清單網址",
+    "复制 Chat Completions 地址": "複製 Chat Completions 網址",
+    "复制 Responses 地址": "複製 Responses 網址",
+    "复制失败，请手动复制地址": "複製失敗，請手動複製網址。",
+    "MiniMax 官方套餐": "MiniMax 官方方案",
+    "MiniMax 模型清单": "MiniMax 模型清單",
+    "使用 MiniMax 官方订阅 Key 接入文本模型。客户端通过模型 ID 的 minimax/ 前缀选路。": "使用 MiniMax 官方訂閱 Key 接入文字模型。用戶端透過模型 ID 的 minimax/ 前綴選擇出口。",
+    "MiniMax 站点": "MiniMax 站點",
+    "中国站": "中國站",
+    "国际站": "國際站",
+    "MiniMax 套餐 Key": "MiniMax 方案 Key",
+    "套餐文本模型 ID（逗号分隔）": "方案文字模型 ID（以逗號分隔）",
+    "启用 MiniMax 出口": "啟用 MiniMax 出口",
+    "查询套餐额度": "查詢方案額度",
+    "清除套餐 Key": "清除方案 Key",
+    "已保存，留空保留套餐 Key": "已儲存，留空保留方案 Key",
+    "清除 MiniMax 套餐 Key 并停用此出口？": "清除 MiniMax 方案 Key 並停用此出口？",
+    "MiniMax 套餐设置已保存": "MiniMax 方案設定已儲存",
+    "正在查询 MiniMax 套餐额度…": "正在查詢 MiniMax 方案額度…",
+    "当前窗口剩余": "目前時段剩餘",
+    "本周剩余": "本週剩餘",
+    "MiniMax 未返回套餐额度": "MiniMax 未回傳方案額度",
+    "MiniMax 套餐额度查询失败:": "MiniMax 方案額度查詢失敗:",
+    "按上游出口查看": "依上游出口檢視",
+    "上游状态": "上游狀態",
+    "全部请求": "全部請求",
+    "按上游筛选运行详情": "依上游篩選執行詳情",
+    "网关在线": "閘道在線",
+    "网关不可达": "閘道無法連線",
+    "调用量": "呼叫量",
+    "累计请求": "累計請求",
+    "累计 Token": "累計 Token",
+    "暂无样本": "暫無樣本",
+    "WorkBuddy 调度": "WorkBuddy 排程",
+    "旧客户端路由": "舊版用戶端路由",
+    "旧路径默认上游": "舊路徑預設上游",
+    "按模型 ID 自动选路。查看上游状态、用量和请求记录。": "依模型 ID 自動選路。檢視上游狀態、用量和請求紀錄。",
+    "默认上游用于不带 /v1 的旧文本路径。标准 /v1 请求按模型 ID 前缀自动选路。": "預設上游用於不含 /v1 的舊文字路徑。標準 /v1 請求依模型 ID 前綴自動選路。",
+    "WorkBuddy 国际版": "WorkBuddy 國際版",
+    "WorkBuddy 国内版": "WorkBuddy 國內版",
+    "按上游出口查看模型、能力、思考档位和倍率。": "依上游出口查看模型、能力、思考檔位與倍率。",
+    "按上游出口管理账号、凭证和使用额度。": "依上游出口管理帳號、憑證與使用額度。",
+    "管理账号接口的 API Key、调用记录和请求示例。": "管理帳號介面的 API Key、呼叫記錄與請求範例。",
+    "选择接入协议，配置客户端调用网关。": "選擇接入協定，設定用戶端呼叫閘道。",
+    "账号管理 Key": "帳號管理 Key",
+    "账号接口文档": "帳號介面文件",
+    "Anthropic Messages（先在「设置 → 模型与定价」中启用）": "Anthropic Messages（先在「設定 → 模型與定價」中啟用）",
+    "账号管理 Key 用于账号授权和读取。通过 realm 指定要操作的 WorkBuddy 国内版或国际版。": "帳號管理 Key 用於帳號授權與讀取。透過 realm 指定要操作的 WorkBuddy 國內版或國際版。",
+    "模型调用 API Key": "模型呼叫 API Key",
+    "客户端用此 Key 调用模型。可绑定一个上游出口，也可留空，通过模型 ID 前缀选择已授权的出口。": "用戶端使用此 Key 呼叫模型。可繫結一個上游出口，也可留空，透過模型 ID 前綴選擇已授權的出口。",
+    "模型调用 Key、上游平台接入、账号代理槽与出站设置。": "模型呼叫 Key、上游平台接入、帳號代理槽與出站設定。",
+    "客户端连接参数": "用戶端連線參數",
+    "为本机客户端配置网关地址、模型调用 Key 和默认模型。": "為本機用戶端設定閘道網址、模型呼叫 Key 與預設模型。",
+    "手动接入客户端": "手動接入用戶端",
+    "按客户端支持的协议选择 Base URL，并填写模型调用 API Key。": "依用戶端支援的協定選擇 Base URL，並填入模型呼叫 API Key。",
+    "在「设置 → API 与出口 → 模型调用 API Key」中复制 Key，填入客户端的 API Key / Token 字段。": "在「設定 → API 與出口 → 模型呼叫 API Key」中複製 Key，填入用戶端的 API Key / Token 欄位。",
+    "勾选结果适用于所有上游出口，只影响一键配置时写入客户端的模型清单。": "勾選結果適用於所有上游出口，只影響一鍵設定時寫入用戶端的模型清單。",
+    "保存勾选后，重新执行一键配置并重启客户端。WorkBuddy 国际版未保存过勾选时，按账号档位确定默认模型。": "儲存勾選後，重新執行一鍵設定並重啟用戶端。WorkBuddy 國際版未儲存過勾選時，依帳號檔位決定預設模型。",
     "版本视图": "版本檢視",
     "当前账号正常": "目前帳號正常",
     "待解码的凭证（加密存储）": "待解碼的憑證（加密儲存）",
@@ -4779,98 +4933,90 @@ html[data-ui="next"] body{
   font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
   font-size:13px; line-height:1.5;
 }
-/* 登录闸门：左侧品牌动画区 + 右侧登录表单的分屏布局（样式取自 qoder2api-hub 的
-   登录页，配色换成本主题的 --bg/--fg/--dim，深浅色随主题自动切换）。 */
-html[data-ui="next"] #panelGate{
-  padding:0!important;background:var(--bg)!important;overflow:auto;
-  align-items:stretch!important;justify-content:stretch!important;
+/* The login surface uses its own neutral palette across dashboard themes. */
+#panelGate{
+  --login-bg:#fff;--login-text:#18181b;--login-muted:#62626d;--login-line:#e2e2e7;
+  --login-fill:#f6f6f8;--login-primary:#242429;--login-on-primary:#fff;
+  --login-error:#a62436;--login-warning:#80520a;--login-warning-bg:#fcf6eb;
+  flex-direction:column;overflow:auto;color:var(--login-text);background:var(--login-bg)!important;
 }
-html[data-ui="next"] .wb-login-brand{
-  width:53.5%;position:relative;overflow:hidden;
-  min-height:100vh;min-height:100dvh;
+html[data-theme="dark"] #panelGate{
+  --login-bg:#111113;--login-text:#f5f5f7;--login-muted:#aaaab3;--login-line:#34343b;
+  --login-fill:#1c1c21;--login-primary:#f3f3f5;--login-on-primary:#161618;
+  --login-error:#ff9ca9;--login-warning:#e8bd75;--login-warning-bg:#272017;
 }
-html[data-ui="next"] #wbLoginCanvas{
-  position:absolute;inset:0;width:100%;height:100%;
-  mask-image:linear-gradient(to right,#000 calc(100% - 120px),transparent);
-  -webkit-mask-image:linear-gradient(to right,#000 calc(100% - 120px),transparent);
+.wb-login-topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;
+  padding:22px clamp(18px,4vw,46px);
 }
-html[data-ui="next"] .wb-login-brand h2{
-  position:absolute;right:9%;bottom:13%;margin:0;
-  font-size:clamp(28px,3.6vw,48px);font-weight:600;line-height:1.15;
-  text-align:right;letter-spacing:-.025em;color:var(--fg);
-  text-shadow:0 0 18px var(--bg);
-  animation:wbReveal .6s cubic-bezier(.23,1,.32,1) .4s both;
+.wb-login-brand{display:flex;align-items:center;gap:10px;min-width:0}
+.wb-login-mark{
+  display:grid;place-items:center;flex:0 0 30px;height:30px;border-radius:8px;
+  background:var(--login-primary);color:var(--login-on-primary);font-size:15px;font-weight:750;
 }
-html[data-ui="next"] .wb-login-brand>span{
-  position:absolute;left:32px;top:32px;
-  font:10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  letter-spacing:.15em;color:var(--dim-light);
+.wb-login-brand h1{margin:0;font-size:17px;line-height:1.35;font-weight:650;color:var(--login-text)}
+.wb-login-version{display:flex;align-items:center;gap:6px;color:var(--login-muted);font-size:12px}
+.wb-login-version b{
+  padding:2px 7px;border:1px solid var(--login-line);border-radius:5px;color:var(--login-text);
+  font:600 11px/1.45 var(--mono);font-variant-numeric:tabular-nums;overflow-wrap:anywhere;
 }
-html[data-ui="next"] .wb-login-form{
-  width:46.5%;max-width:none;border:0;box-shadow:none;border-radius:0;
-  padding:clamp(32px,5vw,72px);background:transparent;
-  display:flex;flex-direction:column;justify-content:center;gap:12px;
-  min-height:100vh;min-height:100dvh;
+.wb-login-layout{width:min(100%,440px);margin:auto;padding:24px 20px 46px;min-width:0}
+.wb-login-form{display:grid;gap:14px;min-width:0}
+.wb-login-title{
+  margin:0 0 8px;font-size:26px;font-weight:650;line-height:1.25;letter-spacing:-.025em;color:var(--login-text);
 }
-html[data-ui="next"] .wb-login-title{
-  font-size:32px;font-weight:600;letter-spacing:-.03em;line-height:1.25;color:var(--fg);
-  animation:wbReveal .48s cubic-bezier(.23,1,.32,1) .16s both;
+.wb-login-field{display:grid;gap:6px}
+.wb-login-password-label{font-size:13px;font-weight:600;color:var(--login-text)}
+.wb-login-input{
+  width:100%;min-width:0;height:42px;border-radius:7px;padding:0 11px;
+  background:var(--login-bg);border:1px solid var(--login-line);color:var(--login-text);font:inherit;font-size:15px;
 }
-html[data-ui="next"] .wb-login-sub{font-size:13px;color:var(--dim)}
-html[data-ui="next"] .wb-login-input{
-  width:100%;height:48px;border-radius:10px;padding:0 14px;
-  background:var(--panel2);border:1px solid var(--line);
-  color:var(--fg);font:inherit;font-size:15px;
+.wb-login-input::placeholder{color:var(--login-muted)}
+.wb-login-remember{
+  display:flex;align-items:baseline;gap:8px;font-size:12px;color:var(--login-text);cursor:pointer;
 }
-html[data-ui="next"] .wb-login-input:focus{
-  outline:none;border-color:var(--fg);
-  box-shadow:0 0 0 3px color-mix(in srgb,var(--fg) 12%,transparent);
+.wb-login-remember input{width:14px;height:14px;margin:0;align-self:center;flex:none;accent-color:var(--login-primary)}
+.wb-login-remember small{margin-left:5px;color:var(--login-muted);font-size:inherit}
+.wb-login-msg{font-size:12px;color:var(--login-error);overflow-wrap:anywhere}
+.wb-login-msg:empty,.wb-login-copy-status:empty{display:none}
+.wb-login-btn{
+  width:100%;min-height:40px;border:1px solid transparent;border-radius:7px;
+  background:var(--login-primary);color:var(--login-on-primary);font:inherit;font-size:14px;font-weight:650;
 }
-html[data-ui="next"] .wb-login-remember{
-  display:flex;align-items:center;gap:8px;margin-top:8px;
-  font-size:13px;color:var(--dim);cursor:pointer;
+.wb-login-btn:hover:not(:disabled){opacity:.87}
+#panelGate :is(button,input,summary):focus-visible{outline:2px solid var(--login-text);outline-offset:2px}
+.wb-login-hint{
+  padding:8px 10px;border-radius:6px;background:var(--login-warning-bg);
+  color:var(--login-warning);font-size:12px;line-height:1.5;overflow-wrap:anywhere;
 }
-html[data-ui="next"] .wb-login-remember input{
-  width:15px;height:15px;margin:0;accent-color:var(--accent);cursor:pointer;
+#panelCryptoWarning{color:var(--login-error)}
+.wb-login-endpoints{min-width:0;margin-top:22px;padding-top:16px;border-top:1px solid var(--login-line)}
+.wb-login-endpoints h2{margin:0 0 8px;font-size:13px;font-weight:650;color:var(--login-text)}
+.wb-login-endpoint{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;
+  padding:8px 0;border-bottom:1px solid var(--login-line);
 }
-html[data-ui="next"] .wb-login-remember span{font-size:11px;color:var(--dim-light)}
-html[data-ui="next"] .wb-login-msg{
-  font-size:12px;color:var(--bad);min-height:17px;
-  word-break:break-word;line-height:1.4;
+.wb-login-base{padding:7px 8px 7px 10px;background:var(--login-fill);border:1px solid var(--login-line);border-radius:7px}
+.wb-login-endpoint-label{display:flex;align-items:center;flex-wrap:wrap;gap:6px;color:var(--login-muted);font-size:11px}
+.wb-login-endpoint-label strong{font-weight:600;color:var(--login-text)}
+.wb-login-method{
+  padding:1px 4px;border-radius:3px;background:var(--login-fill);color:var(--login-muted);font:600 10px/1.5 var(--mono);
 }
-html[data-ui="next"] .wb-login-btn{
-  width:100%;height:46px;margin-top:4px;padding:0 20px;
-  border-radius:9999px;border:1px solid transparent;
-  background:var(--fg);color:var(--bg);
-  font-family:inherit;font-size:14px;font-weight:600;letter-spacing:.02em;cursor:pointer;
-  transition:transform .16s cubic-bezier(.23,1,.32,1),box-shadow .22s ease,filter .2s ease;
-  box-shadow:0 4px 14px color-mix(in srgb,var(--fg) 16%,transparent);
+.wb-login-endpoint code{display:block;font:12px/1.45 var(--mono);color:var(--login-text);overflow-wrap:anywhere}
+.wb-login-endpoint-label+code{margin-top:3px}
+.wb-login-endpoint button{
+  min-height:28px;border:1px solid var(--login-line);border-radius:5px;padding:3px 8px;
+  background:var(--login-bg);color:var(--login-text);font:inherit;font-size:11px;white-space:nowrap;
 }
-html[data-ui="next"] .wb-login-btn:hover{filter:brightness(1.08)}
-html[data-ui="next"] .wb-login-btn:active{transform:scale(.97)}
-html[data-ui="next"] .wb-login-hint{font-size:11px;color:var(--warn);margin-top:12px;line-height:1.5}
-html[data-ui="next"] .wb-login-reveal-veil{
-  position:fixed;inset:0;z-index:590;background:var(--bg);pointer-events:none;
-  animation:wbVeilOut .6s cubic-bezier(.32,.72,0,1) .04s both;
-}
-@keyframes wbReveal{from{opacity:0;transform:translate3d(0,10px,0)}to{opacity:1;transform:none}}
-@keyframes wbVeilOut{from{opacity:1}to{opacity:0}}
-@media(max-width:768px){
-  html[data-ui="next"] #panelGate{flex-direction:column}
-  html[data-ui="next"] .wb-login-brand{width:100%;min-height:180px;height:25dvh;max-height:240px}
-  html[data-ui="next"] #wbLoginCanvas{
-    mask-image:linear-gradient(to bottom,#000,transparent);
-    -webkit-mask-image:linear-gradient(to bottom,#000,transparent);
-  }
-  html[data-ui="next"] .wb-login-brand h2{display:none}
-  html[data-ui="next"] .wb-login-form{width:100%;min-height:0;max-width:460px;margin:0 auto;padding:28px!important}
-  html[data-ui="next"] .wb-login-title{font-size:24px}
-  html[data-ui="next"] .wb-login-remember span{font-size:10px}
-}
-@media(prefers-reduced-motion:reduce){
-  html[data-ui="next"] .wb-login-brand h2,
-  html[data-ui="next"] .wb-login-title{animation:none}
-  html[data-ui="next"] .wb-login-reveal-veil{display:none}
+.wb-login-endpoint button:hover:not(:disabled){border-color:var(--login-muted)}
+#panelGate button:disabled{opacity:.5;cursor:default}
+.wb-login-extra{margin-top:9px}
+.wb-login-extra summary{width:fit-content;color:var(--login-muted);font-size:12px;cursor:pointer}
+.wb-login-copy-status{margin-top:6px;color:var(--login-muted);font-size:11px}
+@media(max-width:520px){
+  .wb-login-topbar{padding:16px 20px}
+  .wb-login-layout{padding-top:16px;padding-bottom:24px}
+  .wb-login-title{text-align:center}
 }
 html[data-ui="next"] #nextShell{display:flex;min-height:100vh;align-items:stretch}
 html[data-ui="next"] #nextSidebar{
@@ -5293,7 +5439,6 @@ html[data-ui="next"] .next-more-danger:hover{background:var(--bad-soft);color:va
   html[data-ui="next"] #nextTopbar .next-topbar-actions .header-right{gap:4px}
   html[data-ui="next"] #nextContent > main{padding:14px 11px 88px}
   html[data-ui="next"] main section{padding:14px 13px}
-  html[data-ui="next"] #pageAnalytics .kpis{grid-template-columns:1fr!important}
 }
 
 html[data-ui="next"] .next-status-dot.err{background:var(--bad);box-shadow:0 0 0 2px var(--bad-soft)}
@@ -5708,8 +5853,6 @@ html[data-ui="next"]:not([data-main-tab="overview"]) :is(main,.modal) .id-btn:ho
 html[data-ui="next"]:not([data-main-tab="overview"]) :is(main,.modal) .id-btn.active{background:var(--fg);color:var(--on-accent);border-color:var(--fg);font-weight:600;box-shadow:none}
 html[data-ui="next"]:not([data-main-tab="overview"]) .id-btn-label{color:var(--dim);font-size:11px;white-space:nowrap}
 html[data-ui="next"]:not([data-main-tab="overview"]) :is(main,.modal) .realm-pill.active{color:var(--on-accent)}
-html[data-ui="next"]:not([data-main-tab="overview"]) main .toggle-realm-btn{background:transparent;border:1px solid var(--line-hover);color:var(--fg);border-radius:var(--radius-control);box-shadow:none;font-weight:500}
-html[data-ui="next"]:not([data-main-tab="overview"]) main .toggle-realm-btn:hover{background:var(--accent-soft);border-color:var(--fg);box-shadow:none}
 /* 分段控件 */
 html[data-ui="next"]:not([data-main-tab="overview"]) :is(main,.modal) .range-btn{background:transparent;border:0;color:var(--dim);border-radius:4px!important;font-size:12px!important;font-weight:500;padding:3px 10px!important;box-shadow:none;line-height:1.5}
 html[data-ui="next"]:not([data-main-tab="overview"]) :is(main,.modal) .range-btn:hover{color:var(--fg);background:var(--accent-soft)}
@@ -5951,24 +6094,14 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .realm-cards-grid{display:g
 html[data-ui="next"]:not([data-main-tab="overview"]) .realm-card{background:var(--panel)!important;border:1px solid var(--line)!important;border-radius:var(--radius-card)!important;padding:14px 16px!important;box-shadow:none!important;min-height:0;transition:border-color .15s ease}
 html[data-ui="next"]:not([data-main-tab="overview"]) .realm-card:hover{border-color:var(--line-hover)!important;transform:none}
 html[data-ui="next"]:not([data-main-tab="overview"]) .realm-card.active{border-color:var(--fg)!important;background:var(--panel)!important;box-shadow:none!important}
-html[data-ui="next"]:not([data-main-tab="overview"]) .realm-card.gateway-ctrl{background:var(--panel)!important;cursor:default;border-color:var(--gw-signal,var(--line))!important}
-html[data-ui="next"]:not([data-main-tab="overview"]) .realm-card.gateway-ctrl:hover{border-color:var(--gw-signal,var(--line))!important}
-.gateway-ctrl .rc-head{justify-content:space-between;margin-bottom:6px}
-.rc-gw{display:flex;align-items:center;gap:8px;margin:2px 0 10px}
-.rc-gw-name{font-size:18px;font-weight:600;letter-spacing:-.01em;color:var(--gw-signal,var(--fg))}
-html[data-ui="next"]:not([data-main-tab="overview"]) .gateway-ctrl .toggle-realm-btn{color:var(--gw-signal,var(--fg));border-color:var(--gw-signal,var(--line-hover))}
-html[data-ui="next"]:not([data-main-tab="overview"]) .gateway-ctrl .toggle-realm-btn:hover{background:var(--accent-soft);border-color:var(--gw-signal,var(--fg))}
-.codearts-summary{margin-bottom:14px}
 html[data-ui="next"]:not([data-main-tab="overview"]) .dot.off{background:var(--dim)}
 .rc-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px}
-.rc-label{font-size:11px;font-weight:500;color:var(--dim);letter-spacing:.02em}
 .rc-host{font-family:var(--mono);font-size:11px;color:var(--dim)}
 .rc-body{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .rc-figs{display:flex;align-items:baseline;gap:5px;flex-wrap:wrap;min-width:0;white-space:nowrap}
 .rc-num{font-family:var(--mono);font-size:24px;font-weight:600;line-height:1.1;letter-spacing:-.02em;color:var(--fg);font-variant-numeric:tabular-nums}
 .rc-sub{font-size:12px;color:var(--dim)}
 .rc-sub b{color:var(--fg);font-weight:500;font-family:var(--mono);font-variant-numeric:tabular-nums}
-.rc-foot{margin-top:12px}
 html[data-ui="next"]:not([data-main-tab="overview"]) .gw-summary{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-card);box-shadow:none;overflow:hidden;margin-bottom:14px}
 html[data-ui="next"]:not([data-main-tab="overview"]) #cards .card{padding:14px 20px;border-radius:0;background:transparent;border:0;box-shadow:none}
 html[data-ui="next"]:not([data-main-tab="overview"]) #cards .card+.card{border-left:1px solid var(--line)}
@@ -6154,6 +6287,14 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .api-doc-pre{padding:10px 1
 /* 文档正文里的 section 只是分组小标题，不该再套一层卡片。 */
 html[data-ui="next"]:not([data-main-tab="overview"]) .api-doc-detail section{background:transparent;border:0;border-radius:0;padding:0;margin-bottom:18px;box-shadow:none}
 html[data-ui="next"]:not([data-main-tab="overview"]) .api-doc-detail section > h3{margin:0 0 8px}
+html[data-ui="next"]:not([data-main-tab="overview"]) .api-doc-detail{min-width:0;overflow-wrap:anywhere}
+@media (max-width:760px){
+  html[data-ui="next"]:not([data-main-tab="overview"]) .api-doc-layout{grid-template-columns:minmax(0,1fr);gap:12px}
+  html[data-ui="next"]:not([data-main-tab="overview"]) .api-doc-list{position:static;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:4px}
+  html[data-ui="next"]:not([data-main-tab="overview"]) .api-doc-item{min-width:0}
+  html[data-ui="next"]:not([data-main-tab="overview"]) .api-doc-path{overflow-wrap:anywhere}
+  html[data-ui="next"]:not([data-main-tab="overview"]) .api-param-table :is(th,td){padding:6px 4px}
+}
 html[data-ui="next"]:not([data-main-tab="overview"]) .empty{color:var(--dim);text-align:center;padding:28px 0;font-size:12.5px}
 html[data-ui="next"]:not([data-main-tab="overview"]) .empty.is-error{color:var(--bad)}
 
@@ -6190,7 +6331,7 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .field-label{display:block;
 html[data-ui="next"]:not([data-main-tab="overview"]) .field-label input, html[data-ui="next"]:not([data-main-tab="overview"]) .field-label select{display:block;width:100%}
 html[data-ui="next"]:not([data-main-tab="overview"]) .agent-form .field input, html[data-ui="next"]:not([data-main-tab="overview"]) .agent-form .field select{width:100%}
 html[data-ui="next"]:not([data-main-tab="overview"]) .realm-hint{color:var(--dim);font-weight:400}
-html[data-ui="next"]:not([data-main-tab="overview"]) .agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+html[data-ui="next"]:not([data-main-tab="overview"]) .agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:14px}
 html[data-ui="next"]:not([data-main-tab="overview"]) .agent-card{background:transparent;border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:5px;min-width:0}
 html[data-ui="next"]:not([data-main-tab="overview"]) .agent-card.is-off{opacity:.7}
 html[data-ui="next"]:not([data-main-tab="overview"]) .agent-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
@@ -6203,8 +6344,6 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .agent-warn{margin-top:8px;
 html[data-ui="next"]:not([data-main-tab="overview"]) .agent-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 html[data-ui="next"]:not([data-main-tab="overview"]) .agent-empty{font-size:12.5px;color:var(--dim);padding:18px;border:1px dashed var(--line);border-radius:8px}
 html[data-ui="next"]:not([data-main-tab="overview"]) .copy-inline{margin-left:8px}
-html[data-ui="next"]:not([data-main-tab="overview"]) .agent-url-table{margin-top:12px}
-html[data-ui="next"]:not([data-main-tab="overview"]) .agent-url-table .kv-key{width:220px;color:var(--dim)}
 
 /* ── 12f 媒体页 / 任务页零碎 ───────────────────────────────────── */
 html[data-ui="next"]:not([data-main-tab="overview"]) .media-form{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
@@ -6268,8 +6407,20 @@ html[data-ui="next"]:not([data-main-tab="overview"]) #pageAnalytics .dim-columns
 html[data-ui="next"]:not([data-main-tab="overview"]) #pageAnalytics .recent-list .recent-item{border-bottom:1px solid var(--line)}
 html[data-ui="next"]:not([data-main-tab="overview"]) #pageAnalytics .recent-list{max-height:300px}
 html[data-ui="next"]:not([data-main-tab="overview"]) #pageAnalytics .recent-item .t{color:var(--dim);font-family:var(--mono);font-size:10.5px}
-html[data-ui="next"]:not([data-main-tab="overview"]) #pageAnalytics .hm-cell{border-radius:2px}
-html[data-ui="next"]:not([data-main-tab="overview"]) #pageAnalytics .hm-legend .hm-cell{display:inline-block;width:10px;height:10px;vertical-align:-1px}
+#pageAnalytics #sectionWorkHistory{--hm0:#1c2421;--hm1:#244c40;--hm2:#2c7961;--hm3:#42ad87;--hm4:#82dfb6;padding:0}
+html[data-theme="light"] #pageAnalytics #sectionWorkHistory{--hm0:#e2e8e4;--hm1:#afd7c3;--hm2:#73b99e;--hm3:#398c70;--hm4:#1d604e}
+html[data-ui="next"]:not([data-main-tab="overview"]) #pageAnalytics #sectionWorkHistory .hm-range button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+html[data-ui="next"]:not([data-main-tab="overview"]) #pageAnalytics #rangeSeg{min-width:0;max-width:100%;flex-wrap:wrap}
+@media (max-width:520px){
+  html[data-ui="next"]:not([data-main-tab="overview"]) #pageAnalytics .usage-head{justify-content:flex-start}
+  html[data-ui="next"]:not([data-main-tab="overview"]) #pageAnalytics #rangeSeg{width:100%}
+  html[data-ui="next"]:not([data-main-tab="overview"]) #pageAnalytics .range-custom{min-width:0;width:100%}
+  html[data-ui="next"]:not([data-main-tab="overview"]) #pageAnalytics .range-custom input{min-width:0;max-width:100%}
+  html[data-ui="next"]:not([data-main-tab="overview"]) #pageAnalytics .kpi .v{font-size:clamp(16px,5vw,22px);overflow-wrap:anywhere}
+  html[data-ui="next"]:not([data-main-tab="overview"]) #pageAnalytics .kpi .k{overflow-wrap:anywhere}
+  #pageAnalytics .hm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #pageAnalytics .hm-header .spacer{display:none}
+}
 
 /* ── 12h 设置页 ────────────────────────────────────────────────── */
 /* 这一页的普通按钮全是「保存 / 立即执行」类提交动作，次级动作已经带 .sec，
@@ -6296,6 +6447,16 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-filters{background:tra
 html[data-ui="next"]:not([data-main-tab="overview"]) .log-seg{display:inline-flex;gap:2px;background:transparent;padding:2px;border-radius:6px;border:1px solid var(--line);flex-wrap:wrap}
 html[data-ui="next"]:not([data-main-tab="overview"]) .log-search-wrap{flex:1;min-width:180px;position:relative}
 html[data-ui="next"]:not([data-main-tab="overview"]) .log-search-wrap input{width:100%}
+#pageLogs .log-actions{position:relative}
+#pageLogs .log-actions summary{
+  display:flex;align-items:center;gap:5px;list-style:none;cursor:pointer;background:var(--panel);
+  border:1px solid var(--line-hover);border-radius:var(--radius-control);padding:2px 8px;font-size:11.5px;line-height:1.6
+}
+#pageLogs .log-actions summary::-webkit-details-marker{display:none}
+#pageLogs .log-actions summary::after{content:"";width:5px;height:5px;border:solid currentColor;border-width:0 1px 1px 0;transform:rotate(45deg) translateY(-2px)}
+#pageLogs .log-actions[open] summary{background:var(--accent-soft)}
+#pageLogs .log-actions-menu{position:absolute;right:0;top:calc(100% + 5px);z-index:10;display:grid;gap:4px;min-width:96px;padding:5px;border:1px solid var(--line-hover);border-radius:8px;background:var(--panel);box-shadow:var(--shadow-md)}
+#pageLogs .log-actions-menu button{text-align:left;white-space:nowrap}
 html[data-ui="next"]:not([data-main-tab="overview"]) .sec.is-live{color:var(--fg);border-color:var(--line-hover)}
 html[data-ui="next"]:not([data-main-tab="overview"]) .sec.is-live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ok);display:inline-block;margin-right:6px;vertical-align:1px}
 /* 终端：两个主题里都是墨色控制台；层级颜色只留给 WARN / ERROR。 */
@@ -6303,8 +6464,6 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-viewport{--terminal-bg
 html[data-ui="next"]:not([data-main-tab="overview"]) .log-viewport{background:#0a0a0a;border:1px solid #1f1f1f;border-radius:8px;overflow:hidden;box-shadow:none}
 html[data-ui="next"]:not([data-main-tab="overview"]) .log-viewport-head{background:#111111;border-bottom:1px solid #1f1f1f;padding:8px 14px;display:flex;align-items:center;justify-content:space-between}
 html[data-ui="next"]:not([data-main-tab="overview"]) .log-head-left{display:flex;align-items:center;gap:7px}
-html[data-ui="next"]:not([data-main-tab="overview"]) .log-dot{width:10px;height:10px;border-radius:50%;display:inline-block;background:#3a3a3a}
-html[data-ui="next"]:not([data-main-tab="overview"]) .log-dot.err{background:#ff5f5f}html[data-ui="next"]:not([data-main-tab="overview"]) .log-dot.warn{background:#f5a623}html[data-ui="next"]:not([data-main-tab="overview"]) .log-dot.ok{background:#3ecf8e}
 html[data-ui="next"]:not([data-main-tab="overview"]) .log-file{font-size:11px;color:#c9c9c9;font-family:var(--mono);margin-left:8px}
 html[data-ui="next"]:not([data-main-tab="overview"]) .log-status{font-size:11px;color:#6f6f6f;font-family:var(--mono)}
 html[data-ui="next"]:not([data-main-tab="overview"]) .log-body{height:min(620px,calc(100vh - 300px));min-height:260px;overflow-y:auto;padding:10px 12px;background:#0a0a0a;color:#c9c9c9}
@@ -6340,10 +6499,184 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
 @media (max-width:700px){
   html[data-ui="next"]:not([data-main-tab="overview"]) :is(.acct-filterbar,.recent-filterbar){flex-direction:column;align-items:stretch}
   html[data-ui="next"]:not([data-main-tab="overview"]) .toolbar .tb-group{flex-wrap:wrap}
+  html[data-ui="next"]:not([data-main-tab="overview"]) :is(#pageRuntime,#pageAccounts,#pageGateway) :is(.acct-filterbar,.recent-filterbar){display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  html[data-ui="next"]:not([data-main-tab="overview"]) :is(#pageRuntime,#pageAccounts,#pageGateway) :is(.acct-filterbar,.recent-filterbar) .console-search{grid-column:1 / -1;min-width:0}
+  html[data-ui="next"]:not([data-main-tab="overview"]) :is(#pageRuntime,#pageAccounts,#pageGateway) :is(.acct-filterbar,.recent-filterbar) :is(select,.cs-wrap){min-width:0;max-width:100%}
+  html[data-ui="next"]:not([data-main-tab="overview"]) .main-page.page-nav-on > .page-sidebar{align-items:flex-start!important}
+  html[data-ui="next"]:not([data-main-tab="overview"]) .page-nav{flex-wrap:wrap;gap:2px 14px!important;overflow:visible!important}
+  html[data-ui="next"]:not([data-main-tab="overview"]) .next-settings-groups{flex-wrap:wrap!important;width:100%;gap:2px 14px!important;overflow:visible!important}
+  html[data-ui="next"]:not([data-main-tab="overview"]) .log-toolbar-main .sec-tools{margin-left:0;flex-wrap:wrap}
+  html[data-ui="next"]:not([data-main-tab="overview"]) .log-search-wrap{flex-basis:100%;min-width:0}
 }
 @media (max-width:520px){
   html[data-ui="next"]:not([data-main-tab="overview"]) #nextContent > main{padding:12px 11px calc(88px + env(safe-area-inset-bottom,0px))}
 }
+/* 运行详情：把出口、总计和请求区分成三个稳定的阅读层级。 */
+html[data-ui="next"] #pageRuntime .realm-card.active{background:var(--panel2)!important;box-shadow:inset 0 2px var(--fg)!important}
+#pageRuntime .realm-card{width:100%;text-align:left;color:var(--fg)}
+#pageRuntime .runtime-monitor-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+#pageRuntime .runtime-monitor-head h2{margin:0;font-size:15px}
+#pageRuntime .runtime-monitor-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#pageRuntime #runtimeAll[aria-pressed="true"]{background:var(--panel2);border-color:var(--fg);color:var(--fg)}
+#pageRuntime #runtimeGatewayStatus{display:inline-flex;align-items:center;gap:6px}
+#pageRuntime #runtimeGatewayStatus .dot.err{background:var(--bad);box-shadow:none}
+#pageRuntime .runtime-summary-note{color:var(--dim);font-size:12px;margin:0 0 8px}
+#pageRuntime #cards{grid-template-columns:repeat(4,minmax(0,1fr))}
+#pageRuntime #cards .card{grid-column:auto;order:initial}
+#pageRuntime .runtime-request-route{display:table;margin-top:4px;font-family:system-ui,sans-serif}
+#pageRuntime .console-health-row{grid-template-columns:minmax(50px,auto) minmax(0,1fr) max-content}
+#pageRuntime #runtimeScheduler{margin:10px 0;color:var(--dim);font-size:12px}
+#pageRuntime #runtimeScheduler summary{cursor:pointer}
+#pageRuntime #runtimeScheduler[hidden],#pageRuntime .rc-head .badge[hidden]{display:none}
+@media(max-width:900px){
+  html[data-ui="next"] #pageRuntime #cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #pageRuntime #cards .card:nth-child(2){border-top:none}
+  #pageRuntime #cards .card:nth-child(n+3){border-top:1px solid var(--line)}
+}
+#pageRuntime .realm-card .rc-host{flex-basis:100%;order:1;overflow-wrap:anywhere}
+#pageRuntime .rc-figs{white-space:normal}
+#pageRuntime .console-insight-head{padding-bottom:10px;border-bottom:1px solid var(--line2)}
+#pageRuntime .console-insight-note{padding:2px 7px;background:var(--panel2);border-radius:var(--radius-control)}
+#pageRuntime #schedulerBar{background:var(--panel2)}
+@media (min-width:1101px){
+  html[data-ui="next"] #pageRuntime .realm-cards-grid{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))!important}
+}
+
+/* 网关、账号和智能体使用同样的上游切换样式。 */
+html[data-ui="next"] :is(#pageGateway,#pageAccounts,#pageAgents) .page-head > .realm-switch{
+  display:inline-flex;gap:3px;padding:3px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;max-width:100%;flex-wrap:wrap
+}
+html[data-ui="next"] :is(#pageGateway,#pageAccounts,#pageAgents) .page-head > .realm-switch button{
+  min-height:32px;padding:4px 12px;border:1px solid transparent;background:transparent;color:var(--dim);box-shadow:none;border-radius:5px
+}
+html[data-ui="next"] :is(#pageGateway,#pageAccounts,#pageAgents) .page-head > .realm-switch button.active{
+  border-color:var(--line-hover);background:var(--panel);color:var(--fg);font-weight:650
+}
+#pageGateway #modelPickActions{gap:4px;padding:3px;background:var(--panel2);border-radius:var(--radius-control)}
+#pageGateway #modelSelectionStatus:empty{display:none}
+.realm-badge-minimax{color:var(--think);font-weight:700}
+#tabMiniMax[hidden],#minimaxAccountsSection[hidden],
+#tabMiniMax .badge[hidden],.realm-switch button[hidden]{display:none}
+.minimax-account-form{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin:12px 0}
+.minimax-account-form[hidden]{display:none}
+.minimax-account-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+.minimax-account-row p{width:100%;margin:0;white-space:pre-line}
+.minimax-model-toggle{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.channel-settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:8px;margin:12px 0}
+.channel-setting{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-control);cursor:pointer}
+.channel-setting:has(input:checked){background:var(--panel2);border-color:var(--line-hover)}
+.channel-setting code{display:block;color:var(--dim);font-size:11px}
+#modelPickActions[hidden],#btnRefreshModels[hidden],#workbuddyAddApiKey[hidden]{display:none}
+#accountsHeader[hidden],#accountsNoChannels[hidden],#workbuddyDisabledSection[hidden]{display:none}
+#workbuddyDisabledSection{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+#workbuddyDisabledSection summary{cursor:pointer;font-weight:600}
+#workbuddyDisabledSection summary em{margin-left:6px;font-style:normal;color:var(--dim)}
+#pageGateway #btnSaveModelSelection{border-color:var(--line-hover);background:var(--panel)}
+@media (min-width:641px){
+  #pageGateway #modelsTable :is(th,td):first-child:not([colspan]){
+    position:sticky;left:0;z-index:1;background:var(--panel);box-shadow:1px 0 var(--line)
+  }
+  #pageGateway #modelsTable th:first-child{background:var(--panel2);z-index:11}
+  #pageGateway #modelsTable tbody tr:hover td:first-child:not([colspan]){background:var(--row-hover)}
+}
+@media (max-width:640px){
+  #pageGateway .next-table-scroll{border:0;border-radius:0}
+  #pageGateway #modelsTable tr{padding:10px 12px;gap:0;background:var(--panel)}
+  #pageGateway #modelsTable td:not([colspan]){padding:5px 0!important;border-bottom:0!important}
+  #pageGateway #modelsTable td.model-id-cell:not([colspan]){
+    display:grid;gap:2px;margin-bottom:5px;padding-bottom:7px!important;border-bottom:1px solid var(--line)!important
+  }
+}
+#pageGateway #modelsTable:has(tbody tr:only-child > td[colspan]){min-width:0}
+#pageGateway #modelsTable:has(tbody tr:only-child > td[colspan]) thead{display:none}
+#pageAccounts #accountToolbar,
+#pageAccounts #codeartsAccountsSection .toolbar{
+  display:flex;gap:6px;align-items:center;padding:8px;background:var(--panel2);
+  border:1px solid var(--line);border-radius:var(--radius-card);margin:8px 0 12px
+}
+#pageAccounts #accountToolbar .tb-group{background:var(--panel)}
+#pageAccounts #accountsToggle{font-weight:650}
+
+/* 接口文档：方便沿着接口、参数、示例的顺序阅读。 */
+#pageApi .api-doc-detail{container-type:inline-size;background:var(--panel);padding:18px 20px}
+#pageApi .api-doc-detail > .api-section-head{border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px}
+#pageApi .api-doc-detail > .api-section-head h3{font-size:16px}
+#pageApi .api-doc-detail section{max-height:none;overflow:visible}
+#pageApi .api-doc-detail section > h3{position:static;padding:0;margin-bottom:8px!important;background:transparent}
+#pageApi .api-doc-detail > section:last-child,#pageApi .api-doc-examples > section{margin-bottom:0}
+#pageApi .api-doc-examples{display:grid;gap:12px}
+#pageApi .api-doc-list button.active{background:var(--panel2)!important;border-color:var(--line-hover)!important}
+#pageApi .api-doc-method{color:var(--info);background:var(--info-soft);border-color:transparent}
+#pageApi .api-doc-method[data-method="POST"]{color:var(--ok);background:var(--ok-soft)}
+@container (min-width:640px){
+  #pageApi .api-doc-examples{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* 自动化：每日任务的两个出口各有一组状态和操作。 */
+#pageTasks .daily-task-realms{display:grid;gap:12px}
+#pageTasks .daily-task-realms .task-realm-panel{
+  min-width:0;margin:0;padding:14px;border:1px solid var(--line);border-radius:var(--radius-card);background:var(--panel2)
+}
+#pageTasks .task-realm-panel .sec-head{align-items:flex-start;flex-direction:column;gap:8px}
+#pageTasks .task-realm-panel :is(.task-pref,.task-log-panel){background:var(--panel)}
+#pageTasks .task-realm-panel :is(.task-cards-2,.task-cards-7){
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,135px),1fr));gap:6px
+}
+#pageTasks .task-realm-panel .card{padding:9px 10px}
+@media (min-width:1150px){
+  #pageTasks .daily-task-realms{grid-template-columns:minmax(0,4fr) minmax(0,5fr);align-items:start}
+}
+
+/* 智能体与媒体：表单字段和动作保持各自对齐。 */
+#pageAgents .agent-form{padding:12px;background:var(--panel2);border-radius:var(--radius-card)}
+#pageAgents .agent-card{background:var(--panel2);gap:8px}
+#pageAgents .agent-card.is-off{opacity:1}
+#pageAgents .agent-card .agent-actions{margin-top:auto;padding-top:8px}
+#pageAgents .agent-endpoints{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:8px;margin:0 0 10px}
+#pageAgents .agent-endpoints > div{padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-card);min-width:0;background:var(--panel2)}
+#pageAgents .agent-endpoints dt{color:var(--dim);font-size:11px;margin-bottom:6px}
+#pageAgents .agent-endpoints dd{margin:0;display:flex;align-items:center;justify-content:space-between;gap:8px;overflow-wrap:anywhere}
+#pageAgents .agent-endpoints button{flex:0 0 auto}
+#pageMedia .media-form{display:grid;gap:10px;padding:12px;background:var(--panel2);border-radius:var(--radius-card)}
+#pageMedia .media-limits{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,125px),1fr));gap:8px}
+#pageMedia .media-limits .field{min-width:0}
+#pageMedia .media-form-actions{display:flex;align-items:center;gap:6px 14px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:8px}
+#pageMedia .media-form-actions .primary{margin-left:auto}
+#pageMedia :is(#mediaModelsSection,#mediaTasksSection) .sec-head{padding-bottom:10px;border-bottom:1px solid var(--line2)}
+
+/* 设置：宽屏固定分类，窄屏换行显示同一组入口。 */
+#pageSettings .settings-content{min-width:0}
+#pageSettings .next-settings-head{padding:3px 0 12px;border-bottom:1px solid var(--line)}
+#pageSettings .next-settings-head h2{font-size:18px}
+@media (min-width:1000px){
+  #pageSettings .settings-workspace{display:grid;grid-template-columns:172px minmax(0,1fr);gap:18px;align-items:start}
+  html[data-ui="next"] #pageSettings #nextSettingsGroups{
+    position:sticky;top:var(--page-nav-top,84px);width:100%;flex-direction:column;align-items:stretch;
+    margin:0;gap:3px!important;padding:5px!important;overflow:visible!important;
+    border:1px solid var(--line)!important;border-radius:var(--radius-card)!important;background:var(--panel)!important
+  }
+  html[data-ui="next"] #pageSettings .next-settings-group{
+    text-align:left;margin:0;padding:8px 10px!important;border-radius:5px!important;border:1px solid transparent!important
+  }
+  html[data-ui="next"] #pageSettings .next-settings-group:hover,
+  html[data-ui="next"] #pageSettings .next-settings-group.active{background:var(--panel2)!important}
+  html[data-ui="next"] #pageSettings .next-settings-group.active{border-color:var(--line)!important}
+}
+
+/* 日志：搜索、状态和终端放在同一工作区。 */
+#pageLogs .logs-workspace{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-card)}
+#pageLogs .log-toolbar{padding:12px 14px;margin:0;border-bottom:1px solid var(--line)}
+#pageLogs .log-filters{padding:10px 14px;margin:0;border:0;border-radius:0}
+#pageLogs .log-viewport{border-inline:0;border-bottom:0;border-radius:0 0 var(--radius-card) var(--radius-card)}
+#pageLogs .log-file{margin:0}
+#pageLogs .log-status{color:#aaa}
+#pageLogs .log-viewport-head{gap:8px;flex-wrap:wrap}
+@media (max-width:520px){
+  #pageApi .api-doc-detail{padding:12px}
+  #pageAccounts #accountToolbar{padding:6px}
+  #pageLogs :is(.log-toolbar,.log-filters){padding:9px 10px}
+}
+
 </style>
 </head>
 <body>
@@ -6353,30 +6686,67 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
      （html.wb-panel-session），复核失败再由 panelNeedsLogin() 显示。 -->
 <div id="panelGate" style="position:fixed;inset:0;z-index:600;display:flex;
      align-items:stretch;justify-content:stretch;padding:0;background:var(--bg)">
-  <div class="wb-login-brand">
-    <canvas id="wbLoginCanvas" aria-hidden="true"></canvas>
-    <h2>Welcome to<br>WorkBuddy Gateway.</h2>
-    <span>YOUR GATEWAY. YOUR CONTROL.</span>
+  <div class="wb-login-topbar">
+    <div class="wb-login-brand">
+      <span class="wb-login-mark" aria-hidden="true">W</span>
+      <h1>模型网关</h1>
+    </div>
+    <div class="wb-login-version"><span>网关版本</span><b id="panelGatewayVersion">—</b></div>
   </div>
-  <div class="wb-login-form">
-    <div class="wb-login-title">WorkBuddy 网关看板</div>
-    <div class="wb-login-sub">请输入面板访问密码</div>
-    <input id="panelPwdInput" type="password" placeholder="面板密码" autocomplete="current-password" disabled
-           class="wb-login-input"
-           onkeydown="if(event.key==='Enter') submitPanelLogin()">
-    <label class="wb-login-remember">
-      <input id="panelRemember" type="checkbox"
-             onchange="panelRememberChanged(this)">
-      保持登录 <span>仅在本机保存会话令牌</span>
-    </label>
-    <div id="panelLoginMsg" class="wb-login-msg"></div>
-    <button type="button" class="wb-login-btn" onclick="submitPanelLogin()">进入面板</button>
-    <div id="panelDefaultHint" class="wb-login-hint" style="display:none">
-      当前仍在使用默认密码 <b>admin</b>，登录后请在「设置」中修改。
-    </div>
-    <div id="panelCryptoWarning" class="wb-login-hint" style="display:none;color:var(--bad);line-height:1.4;word-break:break-word">
-      警告：当前 Python 解释器缺少 <code>hashlib.pbkdf2_hmac</code> 支持。若使用 Windows 便携版 Python，可能因系统安全策略（如 Smart App Control）拦截了 <code>DLLs/_hashlib.pyd</code>。自定义密码将无法登录，请更换为完整 Python 或放行该 DLL。
-    </div>
+  <div class="wb-login-layout">
+    <form id="panelLoginForm" class="wb-login-form" aria-labelledby="panelLoginTitle" onsubmit="event.preventDefault(); submitPanelLogin()">
+      <h2 class="wb-login-title" id="panelLoginTitle">登录管理面板</h2>
+      <div class="wb-login-field">
+        <label class="wb-login-password-label" for="panelPwdInput">面板密码</label>
+        <input id="panelPwdInput" type="password" autocomplete="current-password" disabled
+               class="wb-login-input" aria-describedby="panelLoginMsg">
+      </div>
+      <label class="wb-login-remember">
+        <input id="panelRemember" type="checkbox"
+               onchange="panelRememberChanged(this)">
+        <span>保持登录 <small>仅在本机保存会话令牌</small></span>
+      </label>
+      <div id="panelLoginMsg" class="wb-login-msg" role="status"></div>
+      <button type="submit" id="panelLoginSubmit" class="wb-login-btn" disabled>进入面板</button>
+      <div id="panelDefaultHint" class="wb-login-hint" style="display:none">
+        当前仍在使用默认密码 <b>admin</b>，登录后请在「设置」中修改。
+      </div>
+      <div id="panelCryptoWarning" class="wb-login-hint" style="display:none">
+        警告：当前 Python 解释器缺少 <code>hashlib.pbkdf2_hmac</code> 支持。若使用 Windows 便携版 Python，可能因系统安全策略（如 Smart App Control）拦截了 <code>DLLs/_hashlib.pyd</code>。自定义密码将无法登录，请更换为完整 Python 或放行该 DLL。
+      </div>
+    </form>
+    <section class="wb-login-endpoints" aria-labelledby="panelEndpointsTitle">
+      <h2 id="panelEndpointsTitle">模型 API 地址</h2>
+      <div class="wb-login-endpoint wb-login-base" data-login-path="/v1">
+        <code id="panelApiBaseUrl">—</code>
+        <button type="button" disabled onclick="copyPanelEndpoint('panelApiBaseUrl')" aria-label="复制 Base URL">复制</button>
+      </div>
+      <details class="wb-login-extra">
+        <summary>查看接口地址</summary>
+        <div class="wb-login-endpoint" data-login-path="/v1/models">
+          <div>
+            <div class="wb-login-endpoint-label"><span class="wb-login-method">GET</span><strong>模型列表</strong></div>
+            <code id="panelApiModelsUrl">—</code>
+          </div>
+          <button type="button" disabled onclick="copyPanelEndpoint('panelApiModelsUrl')" aria-label="复制模型列表地址">复制</button>
+        </div>
+        <div class="wb-login-endpoint" data-login-path="/v1/chat/completions">
+          <div>
+            <div class="wb-login-endpoint-label"><span class="wb-login-method">POST</span><strong>Chat Completions</strong></div>
+            <code id="panelApiChatUrl">—</code>
+          </div>
+          <button type="button" disabled onclick="copyPanelEndpoint('panelApiChatUrl')" aria-label="复制 Chat Completions 地址">复制</button>
+        </div>
+        <div class="wb-login-endpoint" data-login-path="/v1/responses">
+          <div>
+            <div class="wb-login-endpoint-label"><span class="wb-login-method">POST</span><strong>Responses</strong></div>
+            <code id="panelApiResponsesUrl">—</code>
+          </div>
+          <button type="button" disabled onclick="copyPanelEndpoint('panelApiResponsesUrl')" aria-label="复制 Responses 地址">复制</button>
+        </div>
+      </details>
+      <div class="wb-login-copy-status" id="panelEndpointCopyStatus" role="status"></div>
+    </section>
   </div>
 </div>
 <div id="nextShell">
@@ -6544,84 +6914,70 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
   </div><!-- /pageOverview -->
 
   <div id="pageRuntime" class="main-page">
-  <!-- 出口卡片：国际版 / 国内版 / CodeArts 三张出口卡 + 网关默认出口控制。点出口卡
-       切换视图（switchViewRealm）；数字与徽标的 id 由 updateUI 每轮改写。 -->
-  <div class="realm-cards-grid">
-
-    <!-- 卡片 1: 国际版 (Global) -->
-    <div id="tabIntl" class="realm-card active" onclick="switchViewRealm('intl')">
-      <div class="rc-head">
-        <span class="realm-badge-intl">国际版 (Global)</span>
-        <span class="rc-host">www.workbuddy.ai</span>
-        <span id="tabIntlDefaultBadge" class="badge ok mini" style="display:none">默认出口</span>
-        <span id="tabIntlViewBadge" class="badge s mini" style="display:inline-block">当前视图</span>
-      </div>
-      <div class="rc-body">
-        <div class="rc-figs">
+  <div class="runtime-monitor-head">
+    <h2>上游状态</h2>
+    <div class="runtime-monitor-tools">
+      <button type="button" id="runtimeAll" class="sec mini" onclick="switchRuntimeRealm('all')" aria-pressed="true">全部请求</button>
+      <span class="badge" id="runtimeGatewayStatus"><span id="runtimeGatewayDot" class="dot"></span><span id="runtimeGatewayText">连接中</span></span>
+    </div>
+  </div>
+  <div class="realm-cards-grid" role="group" aria-label="按上游筛选运行详情">
+    <button type="button" id="tabIntl" class="realm-card" onclick="switchRuntimeRealm('intl')" aria-pressed="false">
+      <span class="rc-head">
+        <span class="realm-badge-intl">WorkBuddy 国际版</span>
+        <code class="rc-host">wb-intl/</code>
+      </span>
+      <span class="rc-body">
+        <span class="rc-figs">
           <span id="tabIntlAvailCred" class="rc-num" title="可用积分：只算启用且未触发保留/限额护栏的账号之和，与「N/M 账号」同一口径">0</span>
           <span class="rc-sub">/ <b id="tabIntlCredits" title="总积分：全部账号（含停用）之和">0</b> 总积分 · <b id="tabIntlAccts">0/0 账号</b></span>
-        </div>
-        <span id="tabIntlKeyBadge" class="badge mini">0 个 Key</span>
-      </div>
-    </div>
+        </span>
+      </span>
+    </button>
 
-    <!-- 卡片 2: 国内版 (China) -->
-    <div id="tabCn" class="realm-card" onclick="switchViewRealm('cn')">
-      <div class="rc-head">
-        <span class="realm-badge-cn">国内版 (China)</span>
-        <span class="rc-host">copilot.tencent.com</span>
-        <span id="tabCnDefaultBadge" class="badge ok mini" style="display:none">默认出口</span>
-        <span id="tabCnViewBadge" class="badge warn mini" style="display:none">当前视图</span>
-      </div>
-      <div class="rc-body">
-        <div class="rc-figs">
+    <button type="button" id="tabCn" class="realm-card" onclick="switchRuntimeRealm('cn')" aria-pressed="false">
+      <span class="rc-head">
+        <span class="realm-badge-cn">WorkBuddy 国内版</span>
+        <code class="rc-host">wb-cn/</code>
+      </span>
+      <span class="rc-body">
+        <span class="rc-figs">
           <span id="tabCnAvailCred" class="rc-num" title="可用积分：只算启用且未触发保留/限额护栏的账号之和，与「N/M 账号」同一口径">0</span>
           <span class="rc-sub">/ <b id="tabCnCredits" title="总积分：全部账号（含停用）之和">0</b> 总积分 · <b id="tabCnAccts">0/0 账号</b></span>
-        </div>
-        <span id="tabCnKeyBadge" class="badge mini">0 个 Key</span>
-      </div>
-    </div>
+        </span>
+      </span>
+    </button>
 
-    <!-- 卡片 3: CodeArts (华为云) -->
-    <div id="tabCodearts" class="realm-card" onclick="switchViewRealm('codearts')" style="display:none">
-      <div class="rc-head">
+    <button type="button" id="tabMiniMax" class="realm-card" onclick="switchRuntimeRealm('minimax')" aria-pressed="false" hidden>
+      <span class="rc-head">
+        <span class="realm-badge-minimax">MiniMax</span>
+        <code class="rc-host">minimax/</code>
+        <span id="tabMiniMaxDisabled" class="badge off mini" hidden>已停用</span>
+      </span>
+      <span class="rc-body">
+        <span class="rc-sub"><b id="tabMiniMaxAccounts">0 / 0</b> 套餐账号启用 · <b id="tabMiniMaxModels">0</b> 个模型</span>
+      </span>
+    </button>
+
+    <!-- CodeArts (华为云) -->
+    <button type="button" id="tabCodearts" class="realm-card" onclick="switchRuntimeRealm('codearts')" aria-pressed="false" style="display:none">
+      <span class="rc-head">
         <span class="realm-badge-codearts">CodeArts (华为云)</span>
-        <span id="tabCodeartsHost" class="rc-host">华为云</span>
-        <span id="tabCodeartsDefaultBadge" class="badge ok mini" style="display:none">默认出口</span>
-        <span id="tabCodeartsViewBadge" class="badge s mini" style="display:none">当前视图</span>
+        <code class="rc-host">codearts/</code>
         <span id="tabCodeartsOffline" class="badge bad mini" style="display:none">离线</span>
-      </div>
-      <div class="rc-body">
-        <div class="rc-figs">
+      </span>
+      <span class="rc-body">
+        <span class="rc-figs">
           <span id="tabCodeartsHealthy" class="rc-num" title="健康账号数 / 账号总数">—</span>
           <span class="rc-sub">/ <b id="tabCodeartsTotal">0</b> 账号 · <b id="tabCodeartsModels">0</b> 模型 · <b id="tabCodeartsCredits">—</b> 积分</span>
-        </div>
-        <span id="tabCodeartsKeyBadge" class="badge mini">0 个 Key</span>
-      </div>
-    </div>
-
-    <!-- 卡片 4: 网关出口控制 -->
-    <div id="cardGatewayCtrl" class="realm-card gateway-ctrl">
-      <div class="rc-head">
-        <span class="rc-label">网关默认出口</span>
-        <span id="activeGatewayKeyCount" class="badge mini">0 个 Key 生效</span>
-      </div>
-      <div class="rc-gw">
-        <span id="gatewayDot" class="dot"></span>
-        <span id="activeGatewayName" class="rc-gw-name">国际版 (Global)</span>
-      </div>
-      <div class="rc-foot">
-        <button class="toggle-realm-btn" id="btnToggleRealm" onclick="toggleActiveGatewayRealm()">
-          ⇄ 切换默认出口为【国内版】
-        </button>
-      </div>
-    </div>
-
+        </span>
+      </span>
+    </button>
   </div>
-  <!-- 顶部统计条：三张统计卡（JS 每轮重画 #cards 内部）+ 调度器状态行，合成
-       一块面板（样式见 .gw-summary / #schedulerBar）。 -->
-  <div class="gw-summary">
-    <div class="cards" id="cards"></div>
+  <p id="runtimeScopeNote" class="runtime-summary-note">全部请求 · 累计用量</p>
+  <div class="gw-summary"><div class="cards" id="cards"></div></div>
+  <details id="runtimeScheduler">
+    <summary>WorkBuddy 调度</summary>
     <div id="schedulerBar">
       <div class="sched-info">
         <span class="dot" id="schedDot"></span>
@@ -6633,11 +6989,7 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
         <button class="sec mini" id="btnToggleSched" onclick="toggleScheduler(this)">暂停调度</button>
       </div>
     </div>
-  </div>
-  <!-- CodeArts 视图的统计条：WorkBuddy 的积分/调度口径不适用，单独一块。 -->
-  <div id="codeartsSummary" class="codearts-summary" style="display:none">
-    <div class="cards" id="codeartsCards"></div>
-  </div>
+  </details>
 
   <div class="console-insights" id="consoleInsights">
     <div class="console-insight">
@@ -6647,9 +6999,8 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
       <div id="consoleModelShare" hidden></div>
     </div>
     <div class="console-insight">
-      <div class="console-insight-head"><h2>账号健康度</h2><span class="console-insight-note" id="consoleHealthSummary">—</span></div>
+      <div class="console-insight-head"><h2>账号状态</h2></div>
       <div id="consoleAccountHealth"></div>
-      <div class="console-health-note">按启用状态、凭证有效期、限流、熔断与本地限额护栏计算，与账号列表的「启用」计数口径不同：启用但凭证失效或被护栏挡住的账号，在这里算不可用。</div>
     </div>
   </div>
 
@@ -6704,9 +7055,10 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
 
   <div id="pageGateway" class="main-page">
     <div class="page-head">
-      <div class="realm-switch" id="nextGatewayRealmSwitch">
-        <button type="button" data-realm="intl" onclick="switchViewRealm('intl')">国际版</button>
-        <button type="button" data-realm="cn" onclick="switchViewRealm('cn')">国内版</button>
+      <div class="realm-switch" id="nextGatewayRealmSwitch" role="group" aria-label="按上游出口查看">
+        <button type="button" data-realm="intl" onclick="switchViewRealm('intl')">WorkBuddy 国际版</button>
+        <button type="button" data-realm="cn" onclick="switchViewRealm('cn')">WorkBuddy 国内版</button>
+        <button type="button" data-realm="minimax" onclick="switchViewRealm('minimax')" aria-pressed="false" hidden>MiniMax</button>
         <button type="button" data-realm="codearts" id="nextGatewayRealmCodearts" onclick="switchViewRealm('codearts')">CodeArts</button>
       </div>
     </div>
@@ -6732,7 +7084,7 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
       <button type="button" class="sec mini" onclick="clearModelCatalogFilter()">清除筛选</button>
     </div>
     <p id="modelPickHint" class="hint"
-         title="勾选结果存在网关设置里，对所有版本视图生效；未勾选只影响一键配置写入客户端的模型清单。">勾选后点击保存，再重新一键配置并重启客户端。未保存过的国际版清单会根据账号档位默认选择 Pro Only 模型。</p>
+         title="勾选结果适用于所有上游出口，只影响一键配置时写入客户端的模型清单。">保存勾选后，重新执行一键配置并重启客户端。WorkBuddy 国际版未保存过勾选时，按账号档位确定默认模型。</p>
     <!-- 清单来源横幅：API 获取 → 绿色状态条（附刷新时间）；非 API（项目默认
          信息/缓存文件）→ 黄色警示「模型、倍率数据可能不一致」。内容由
          /panel/model-catalog 的 catalog 字段驱动，见 renderModelsSourceLine。 -->
@@ -6743,7 +7095,7 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
           <tr>
             <th class="t">客户端模型 ID</th>
             <th class="t">名称</th>
-            <th class="c">消费倍率 / 优惠</th>
+            <th id="modelBillingTh" class="c">消费倍率 / 优惠</th>
             <th class="c">模型能力</th>
             <th class="c">上下文窗口</th>
             <th class="c">最大输出</th>
@@ -6760,17 +7112,37 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
   </div><!-- /pageGateway -->
   
   <div id="pageAccounts" class="main-page">
-  <!-- 版本视图切换：账号列表、「当前禁用」与签到记录都按当前视图区域取，所以
-       这一页自己得有个入口，不必为了换版本跑回网关页。它切的是视图
-       （window.VIEW_REALM），与网关页出口卡片的点击完全等价；改网关默认出口
-       仍然是运行详情页那张控制卡上的按钮，两者是不同的事。 -->
-  <div id="accountsHeader" class="page-head">
-    <div id="accountsRealmSwitch" class="realm-switch" role="group" aria-label="版本视图">
-      <button type="button" id="accountsRealmIntl" onclick="switchViewRealm('intl')" aria-pressed="false">国际版</button>
-      <button type="button" id="accountsRealmCn" onclick="switchViewRealm('cn')" aria-pressed="false">国内版</button>
-      <button type="button" id="accountsRealmCodearts" onclick="switchViewRealm('codearts')" aria-pressed="false" style="display:none">CodeArts</button>
+  <div id="accountsHeader" class="page-head" hidden>
+    <div id="accountsRealmSwitch" class="realm-switch" role="group" aria-label="按上游出口查看">
+      <button type="button" id="accountsRealmIntl" onclick="switchViewRealm('intl')" aria-pressed="false">WorkBuddy 国际版</button>
+      <button type="button" id="accountsRealmCn" onclick="switchViewRealm('cn')" aria-pressed="false">WorkBuddy 国内版</button>
+      <button type="button" id="accountsRealmMiniMax" onclick="switchViewRealm('minimax')" aria-pressed="false" hidden>MiniMax</button>
+      <button type="button" id="accountsRealmCodearts" onclick="switchViewRealm('codearts')" aria-pressed="false">CodeArts</button>
+    </div>
+    <div class="sec-tools">
+      <button type="button" class="primary" onclick="addChannelAccount()">添加账号</button>
+      <button type="button" class="sec" id="workbuddyAddApiKey" onclick="openApiKeyModal()">+ API Key</button>
     </div>
   </div>
+  <section id="accountsNoChannels" hidden>
+    <h2>尚未开启渠道</h2>
+    <p class="set-desc">在设置页开启渠道后，即可在这里添加或管理账号。</p>
+    <a class="sec" href="/?tab=settings&amp;group=api" onclick="switchMainTab('settings'); nextSettingsGroup('api'); return false">前往渠道设置</a>
+  </section>
+  <section id="minimaxAccountsSection" hidden>
+    <div class="sec-head">
+      <h2>MiniMax 套餐账号</h2>
+    </div>
+    <p class="set-desc" id="miniMaxAccountStatus"></p>
+    <form id="miniMaxAccountForm" class="minimax-account-form" onsubmit="saveMiniMaxAccount(event)" hidden>
+      <label class="field"><span class="field-label">账号名称</span><input id="miniMaxAccountName" maxlength="80"></label>
+      <label class="field"><span class="field-label">站点</span><select id="miniMaxRegion"><option value="cn">中国站</option><option value="global">国际站</option></select></label>
+      <label class="field"><span class="field-label">套餐 Key</span><input id="miniMaxPlanKey" type="password" autocomplete="new-password" placeholder="sk-cp-…"></label>
+      <button type="submit" class="primary">保存账号</button>
+      <button type="button" class="sec" onclick="this.form.reset(); this.form.hidden=true">取消</button>
+    </form>
+    <div id="miniMaxAccountRows"></div>
+  </section>
   <!-- CodeArts 视图：账号池由本进程直接管理。 -->
   <section id="codeartsAccountsSection" style="display:none">
     <div class="sec-head">
@@ -6778,7 +7150,6 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
       <div class="legend"><span>账号、token 续期、模型发现、冷却与签到都由本进程直接完成。</span></div>
     </div>
     <div class="toolbar">
-      <button onclick="openCodeartsOauthModal()">+ 添加账号 (OAuth)</button>
       <button class="sec" onclick="codeartsCheckinAll(this)">全员签到</button>
       <button class="sec" onclick="refreshCodeartsCredits(this)">刷新积分</button>
       <button class="sec" onclick="codeartsKeepalive(this)">保活</button>
@@ -6815,11 +7186,6 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
       <button type="button" class="sec mini" onclick="clearAccountFilters()">清除筛选</button>
     </div>
     <div class="toolbar" id="accountToolbar">
-    <button class="primary" onclick="openLoginModal()">添加</button>
-    <!-- 静态 API Key 是另一条并行入口：CodeBuddy 的登录页不支持企业微信扫码，
-         企业号只能在 API 管理页手工建 Key 再粘进来。 -->
-    <button class="sec" onclick="openApiKeyModal()">+ API Key</button>
-    <!-- 打卡按钮与「添加」同排：手机端靠右显示，不再单独占一行。 -->
     <div class="tb-group tb-checkin">
     <button class="sec" id="btnCheckin" onclick="doCheckin(this)" style="display:none">Buddy 加油站签到</button>
     <button class="sec" id="btnDailyChat" onclick="doDailyChat(this)" style="display:none">每日活跃打卡 (国际版)</button>
@@ -6881,18 +7247,12 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
     </div>
   </div>
     <div id="accounts"></div>
+    <details id="workbuddyDisabledSection" hidden>
+      <summary>受限账号与模型<em id="disabledCount"></em></summary>
+      <div id="disabledList"></div>
+    </details>
       </div>
     </div>
-  </section>
-
-  <!-- 当前禁用总览：把散落在账号卡片上的停用/限流状态汇总成一张表。
-       数据全部取自 /accounts（window.ACCOUNTS），不额外发请求。 -->
-  <section id="workbuddyDisabledSection">
-    <div class="sec-head">
-      <h2>当前禁用<em id="disabledRealmTag"></em><em id="disabledCount"></em></h2>
-      <div class="legend"><span>「账号封禁」需官方申诉；「上游限流」到点自动恢复；「本地停用」需手动启用；「日限额」次日零点恢复</span></div>
-    </div>
-    <div id="disabledList"></div>
   </section>
   </div><!-- /pageAccounts -->
   
@@ -6910,6 +7270,7 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
       </div>
     </div>
 
+    <div class="daily-task-realms">
     <div class="task-realm-panel">
       <div class="sec-head">
         <div>
@@ -7005,6 +7366,7 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
           <div class="v" id="nrgBalance">-</div>
         </div>
       </div>
+    </div>
     </div>
   </section>
 
@@ -7128,6 +7490,7 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
         </div>
       </div>
       <div id="mediaSettingsRow" class="media-form">
+        <div class="media-limits">
         <label class="field"><span class="field-label">每分钟生图上限</span>
           <input id="setMediaImageRate" type="number" min="1" max="60">
         </label>
@@ -7140,9 +7503,12 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
         <label class="field"><span class="field-label">每 Key 每日积分上限</span>
           <input id="setMediaDailyCredits" type="number" min="0" max="100000">
         </label>
-        <label class="media-flag"><input id="setTtsEnabled" type="checkbox"> 语音合成 TTS</label>
-        <label class="media-flag"><input id="setAsrEnabled" type="checkbox"> 语音转写 ASR</label>
-        <button class="primary" onclick="saveMediaConfig(this)">保存</button>
+        </div>
+        <div class="media-form-actions">
+          <label class="media-flag"><input id="setTtsEnabled" type="checkbox"> 语音合成 TTS</label>
+          <label class="media-flag"><input id="setAsrEnabled" type="checkbox"> 语音转写 ASR</label>
+          <button class="primary" onclick="saveMediaConfig(this)">保存</button>
+        </div>
       </div>
       <div class="form-help">
         每 Key 每日积分上限填 0 表示不限。视频时长会与模型目录里的上限取小值。
@@ -7254,33 +7620,48 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
     </section>
   </div>
 
-  <!-- ====================== ③ 工作回溯（B 版：全宽 + 年度统计） ====================== -->
-  <section class="panel">
-    <div class="phead">
-      <h2>工作回溯</h2>
-        <span class="hint">近一年每日活动</span>
+  <!-- ====================== ③ 工作回溯 ====================== -->
+  <section class="panel" id="sectionWorkHistory">
+    <div class="phead hm-header">
+      <h2 id="hmTitle">工作回溯</h2>
       <div class="spacer"></div>
-      <div class="hm-meta" id="hmMeta">—</div>
+      <div class="hm-range" id="hmRange" role="group" aria-labelledby="hmTitle">
+        <button type="button" class="sec mini" data-heat-range="recent" aria-pressed="false">近 13 周</button>
+        <button type="button" class="sec mini" data-heat-range="year" aria-pressed="false">近一年</button>
+      </div>
     </div>
     <div class="pbody">
-      <div class="hm-row">
-        <div class="hm-scroll" id="hmScroll" tabindex="0" role="region" aria-label="近一年每日活动">
-          <div class="hm-wrap">
-            <div class="hm-days"><span>一</span><span></span><span>三</span><span></span><span>五</span><span></span><span></span></div>
-            <div class="hm-cols">
-              <div class="hm-months" id="hmMonths"></div>
-              <div class="hm-grid" id="hmGrid"></div>
-            </div>
-          </div>
-        </div>
+      <div id="hmAnnual" role="group" aria-labelledby="hmAnnualLabel" hidden>
+        <div class="hm-annual-label" id="hmAnnualLabel">近一年统计</div>
         <div class="hm-stats" id="hmStats"></div>
       </div>
-      <div class="hm-foot">
-        <span id="hmSummary">—</span>
-        <span class="hm-legend">少 <span class="hm-cell l0"></span><span class="hm-cell l1"></span><span class="hm-cell l2"></span><span class="hm-cell l3"></span><span class="hm-cell l4"></span> 多</span>
+      <div class="hm-empty" id="hmEmpty">加载中…</div>
+      <div class="hm-view-dates" id="hmMeta"></div>
+      <div class="hm-scroll" id="hmScroll" role="region" aria-labelledby="hmTitle">
+        <div class="hm-wrap" id="hmWrap" hidden>
+          <div class="hm-days" aria-hidden="true"><span>周一</span><span></span><span>周三</span><span></span><span>周五</span><span></span><span></span></div>
+          <div>
+            <div class="hm-months" id="hmMonths" aria-hidden="true"></div>
+            <div class="hm-grid" id="hmGrid" role="group" aria-labelledby="hmTitle hmMeta"></div>
+          </div>
+        </div>
+      </div>
+      <div class="hm-foot" id="hmFoot" hidden>
+        <div class="hm-detail" aria-live="polite" aria-atomic="true">
+          <b id="hmDate"></b>
+          <span>请求数 <b id="hmRequests"></b></span>
+          <span>Token <b id="hmTokens"></b></span>
+        </div>
+        <div class="hm-legend" role="group" aria-label="每日请求数">
+          <span>每日请求数</span>
+          <span class="hm-legend-item"><i class="hm-cell l0"></i>0</span>
+          <span class="hm-legend-item"><i class="hm-cell l1"></i>1–9</span>
+          <span class="hm-legend-item"><i class="hm-cell l2"></i>10–49</span>
+          <span class="hm-legend-item"><i class="hm-cell l3"></i>50–199</span>
+          <span class="hm-legend-item"><i class="hm-cell l4"></i>200+</span>
+        </div>
       </div>
     </div>
-    <div class="tooltip" id="hmTip"></div>
   </section>
 
   <!-- ====================== ④ 用量明细 ====================== -->
@@ -7423,7 +7804,8 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
 
 
   <div id="pageSettings" class="main-page">
-    <div class="next-settings-groups" id="nextSettingsGroups">
+    <div class="settings-workspace">
+    <div class="next-settings-groups" id="nextSettingsGroups" role="group" aria-label="设置">
       <button type="button" class="next-settings-group active" data-settings-group="basic" onclick="nextSettingsGroup('basic', this)">基础</button>
       <button type="button" class="next-settings-group" data-settings-group="api" onclick="nextSettingsGroup('api', this)">API 与出口</button>
       <button type="button" class="next-settings-group" data-settings-group="model" onclick="nextSettingsGroup('model', this)">模型与定价</button>
@@ -7431,6 +7813,7 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
       <button type="button" class="next-settings-group" data-settings-group="stability" onclick="nextSettingsGroup('stability', this)">稳定性</button>
       <button type="button" class="next-settings-group" data-settings-group="system" onclick="nextSettingsGroup('system', this)">日志与系统</button>
     </div>
+    <div class="settings-content">
     <div class="next-settings-head">
       <h2 id="nextSettingsTitle">基础</h2>
       <p id="nextSettingsDesc">面板密码、语言、窗口和隐私声明。</p>
@@ -7496,12 +7879,24 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
       </div>
     </section>
 
+    <section id="sectionChannels" data-cat="access">
+      <h2>文本渠道</h2>
+      <p class="set-desc">勾选要开放模型调用的渠道。各渠道的账号在「账号」页添加和维护，停用渠道会保留账号。</p>
+      <div class="channel-settings-grid">
+        <label class="channel-setting"><input type="checkbox" id="channelIntl"><span>WorkBuddy 国际版<code>wb-intl/</code></span></label>
+        <label class="channel-setting"><input type="checkbox" id="channelCn"><span>WorkBuddy 国内版<code>wb-cn/</code></span></label>
+        <label class="channel-setting"><input type="checkbox" id="channelMiniMax"><span>MiniMax<code>minimax/</code></span></label>
+        <label class="channel-setting"><input type="checkbox" id="channelCodearts"><span>CodeArts<code>codearts/</code></span></label>
+      </div>
+      <button type="button" class="primary" id="saveChannelsBtn" onclick="saveChannels(this)" disabled>保存渠道</button>
+    </section>
+
     <section data-cat="access">
       <div class="set-flex" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
         <div>
-          <h2 style="margin:0">API Key <em id="setKeyState"></em></h2>
+          <h2 style="margin:0">模型调用 API Key <em id="setKeyState"></em></h2>
           <div style="font-size:12px;color:var(--dim);margin-top:4px">
-            为每个 Key 绑定专属出口。客户端使用该 Key 请求将固定走对应区域，实现双出口并发。
+            客户端用此 Key 调用模型。可绑定一个上游出口，也可留空，通过模型 ID 前缀选择已授权的出口。
           </div>
         </div>
         <button onclick="addApiKeyRow()">+ 添加 API Key</button>
@@ -7521,7 +7916,7 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
             <div><code>GET /v1/models</code> · 模型清单</div>
             <div><code>POST /v1/chat/completions</code> · OpenAI Chat Completions</div>
             <div><code>POST /v1/responses</code> · OpenAI Responses</div>
-            <div><code>POST /v1/messages</code> · Anthropic Messages（需先在「智能体接入」中开启）</div>
+            <div><code>POST /v1/messages</code> · Anthropic Messages（先在「设置 → 模型与定价」中启用）</div>
           </div>
           <div style="font-size:11px;color:var(--dim);margin-top:8px">
             LAN 模式下把 Base URL 换成其他设备可访问的网关地址，端口与路径保持不变。
@@ -7533,17 +7928,18 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
       <div id="deletedKeySection"></div>
     </section>
 
-    <section data-cat="network">
-      <h2>CodeArts 接入 <em id="setCodeartsState"></em></h2>
-      <div style="font-size:12px;color:var(--dim);margin-bottom:12px">
-        第三个出口直接连华为云 CodeArts：OAuth 登录、token 续期、模型发现、
-        冷却与签到都在本进程内完成，不需要再跑独立的 codearts2api 服务。
+    <section id="sectionLegacyRouting" data-cat="access">
+      <h2>旧客户端路由</h2>
+      <p class="set-desc">默认上游用于不带 /v1 的旧文本路径。标准 /v1 请求按模型 ID 前缀自动选路。</p>
+      <div class="set-row">
+        <label class="field"><span class="field-label">旧路径默认上游</span><select id="legacyRealmSelect" disabled></select></label>
+        <button type="button" class="sec" id="saveLegacyRealmBtn" onclick="saveLegacyRealm(this)" disabled>保存</button>
       </div>
+    </section>
+
+    <section data-cat="network">
+      <h2>CodeArts 高级参数 <em id="setCodeartsState"></em></h2>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;min-height:40px">
-          <input id="setCodeartsEnabled" type="checkbox" style="width:16px;height:16px">
-          启用 CodeArts 出口
-        </label>
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;min-height:40px"
                title="跟随国内版签到时段；只对已启用账号执行">
           <input id="setCodeartsAutoCheckin" type="checkbox" style="width:16px;height:16px">
@@ -8701,22 +9097,23 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
         <button class="sec" onclick="panelLogout()">退出面板登录</button>
       </div>
     </section>
-
+    </div><!-- /settings-content -->
+    </div><!-- /settings-workspace -->
   </div>
 
 
   <div id="pageApi" class="main-page api-access-page">
     <div class="api-page-tabs" role="tablist" aria-label="API 接入模块">
-      <button type="button" class="api-page-tab active" id="apiKeyTab" role="tab" aria-selected="true" onclick="selectExternalApiPanel('keys', this)">API Key</button>
-      <button type="button" class="api-page-tab" id="apiDocsTab" role="tab" aria-selected="false" onclick="selectExternalApiPanel('docs', this)">接口文档</button>
+      <button type="button" class="api-page-tab active" id="apiKeyTab" role="tab" aria-selected="true" onclick="selectExternalApiPanel('keys', this)">账号管理 Key</button>
+      <button type="button" class="api-page-tab" id="apiDocsTab" role="tab" aria-selected="false" onclick="selectExternalApiPanel('docs', this)">账号接口文档</button>
     </div>
 
     <div id="apiPaneKeys" class="api-pane">
       <section>
         <div class="api-section-head">
           <div>
-            <h3>API Key</h3>
-            <p>Key 只控制接口权限；国内版 / 国际版由每次请求的 realm 参数决定。</p>
+            <h3>账号管理 Key</h3>
+            <p>账号管理 Key 用于账号授权和读取。通过 realm 指定要操作的 WorkBuddy 国内版或国际版。</p>
           </div>
           <button type="button" class="primary" onclick="toggleExternalApiKeyForm()">+ 新建 API Key</button>
         </div>
@@ -8752,7 +9149,7 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
         <aside class="api-doc-list" id="apiDocList">
           <div class="api-doc-list-title">接口列表</div>
           <button type="button" class="api-doc-item active" data-doc="authorize" onclick="selectExternalApiDoc('authorize', this)">
-            <span class="api-doc-method">POST</span><span class="api-doc-path">/v1/accounts/authorize</span>
+            <span class="api-doc-method" data-method="POST">POST</span><span class="api-doc-path">/v1/accounts/authorize</span>
           </button>
           <button type="button" class="api-doc-item" data-doc="authorize-status" onclick="selectExternalApiDoc('authorize-status', this)">
             <span class="api-doc-method">GET</span><span class="api-doc-path">/v1/accounts/authorize/{request_id}</span>
@@ -8768,13 +9165,21 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
 
 
   <div id="pageAgents" class="main-page">
+    <div class="page-head">
+      <div class="realm-switch" id="agentsRealmSwitch" role="group" aria-label="按上游出口查看">
+        <button type="button" data-realm="intl" onclick="switchViewRealm('intl')">WorkBuddy 国际版</button>
+        <button type="button" data-realm="cn" onclick="switchViewRealm('cn')">WorkBuddy 国内版</button>
+        <button type="button" data-realm="minimax" onclick="switchViewRealm('minimax')" hidden>MiniMax</button>
+        <button type="button" data-realm="codearts" onclick="switchViewRealm('codearts')" hidden>CodeArts</button>
+      </div>
+    </div>
 
     <!-- 左侧导航由 initPageNav() 扫描本页的 section 自动生成，增删区块无需同步改动。 -->
     <section>
       <div class="sec-head">
         <div>
-          <h2>连接信息 <em id="agentConnState"></em></h2>
-          <div class="sec-desc">写入各客户端配置时使用的网关地址、鉴权 Key 与默认模型。</div>
+          <h2>客户端连接参数 <em id="agentConnState"></em></h2>
+          <div class="sec-desc">为本机客户端配置网关地址、模型调用 Key 和默认模型。</div>
         </div>
         <div class="sec-tools"><button class="sec mini" onclick="loadAgents(true)" title="重新检测本机客户端">刷新</button></div>
       </div>
@@ -8782,7 +9187,7 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
         <label class="field field-wide"><span class="field-label">网关地址</span>
           <input id="agentBaseUrl" type="text" placeholder="http://127.0.0.1:8788/v1">
         </label>
-        <label class="field"><span class="field-label">API Key</span>
+        <label class="field"><span class="field-label">模型调用 API Key</span>
           <select id="agentKeySelect"></select>
         </label>
         <label class="field"><span class="field-label">默认模型 <span id="agentModelRealmHint" class="realm-hint"></span></span>
@@ -8805,29 +9210,28 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
     <section>
       <div class="sec-head">
         <div>
-          <h2>其他客户端</h2>
-          <div class="sec-desc">任何支持 OpenAI 兼容或 Anthropic Messages 协议的客户端都可以手动接入本网关，把下面的地址填进客户端的 Base URL / API 地址即可；Key 到「设置」页复制。</div>
+          <h2>手动接入客户端</h2>
+          <div class="sec-desc">按客户端支持的协议选择 Base URL，并填写模型调用 API Key。</div>
         </div>
       </div>
-      <table class="agent-url-table">
-        <tbody>
-          <tr>
-            <td class="kv-key">OpenAI 兼容 Base URL</td>
-            <td><span class="mono" id="agentOpenAIUrl">-</span>
-                <button class="sec mini copy-inline" onclick="copyAgentUrl('agentOpenAIUrl', this)">复制</button></td>
-          </tr>
-          <tr>
-            <td>Anthropic Messages Base URL</td>
-            <td><span class="mono" id="agentAnthropicUrl">-</span>
-                <button class="sec mini copy-inline" onclick="copyAgentUrl('agentAnthropicUrl', this)">复制</button></td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="sec-desc">鉴权 Key 请前往「设置 → API Key 与出口绑定」页复制，填入客户端的 API Key / Token 字段。</div>
+      <dl class="agent-endpoints">
+        <div>
+          <dt>OpenAI 兼容 Base URL</dt>
+          <dd><span class="mono" id="agentOpenAIUrl">-</span>
+            <button class="sec mini" onclick="copyAgentUrl('agentOpenAIUrl', this)">复制</button></dd>
+        </div>
+        <div>
+          <dt>Anthropic Messages Base URL</dt>
+          <dd><span class="mono" id="agentAnthropicUrl">-</span>
+            <button class="sec mini" onclick="copyAgentUrl('agentAnthropicUrl', this)">复制</button></dd>
+        </div>
+      </dl>
+      <div class="sec-desc">在「设置 → API 与出口 → 模型调用 API Key」中复制 Key，填入客户端的 API Key / Token 字段。</div>
     </section>
   </div>
 
   <div id="pageLogs" class="main-page">
+    <div class="logs-workspace">
     <div class="log-toolbar">
       <div class="log-toolbar-main">
         <span id="logStatsBadge" class="log-stats">加载中...</span>
@@ -8836,8 +9240,13 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
           <button class="sec mini is-live" id="btnToggleLogAuto" onclick="toggleLogAuto()">实时监听中</button>
           <button class="sec mini" id="btnToggleLogScroll" onclick="toggleLogScroll()">自动滚屏: 开</button>
           <button class="sec mini" onclick="copyFilteredLogs()" title="复制当前视图显示的日志">复制</button>
-          <button class="sec mini" onclick="exportLogsFile()" title="下载为 .log 文件">导出</button>
-          <button class="danger mini" onclick="clearServerLogs()" title="清空所有日志">清空</button>
+          <details class="log-actions">
+            <summary>更多操作</summary>
+            <div class="log-actions-menu">
+              <button class="sec mini" onclick="exportLogsFile()" title="下载为 .log 文件">导出</button>
+              <button class="danger mini" onclick="clearServerLogs()" title="清空所有日志">清空</button>
+            </div>
+          </details>
         </div>
       </div>
       <div id="logPageHint" class="log-hint">实时捕获反向代理请求、流式转发、调度巡检、任务打卡与异常告警（内存保留最新 2000 条）</div>
@@ -8868,9 +9277,6 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
     <div class="log-viewport">
       <div class="log-viewport-head">
         <div class="log-head-left">
-          <span class="log-dot err"></span>
-          <span class="log-dot warn"></span>
-          <span class="log-dot ok"></span>
           <span class="log-file">wb-proxy-console.log</span>
         </div>
         <div id="logTerminalStatus" class="log-status">就绪</div>
@@ -8879,6 +9285,7 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
         <div class="log-empty">正在拉取网关日志...</div>
       </div>
     </div>
+    </div><!-- /logs-workspace -->
   </div>
 
   <footer>每 5 秒自动刷新 · 数据来自本机反代 <span class="mono" id="logfile"></span></footer>
@@ -9478,122 +9885,41 @@ window.MODEL_ALIASES = {};
 window.MODEL_ALIASES_ENABLED = false;
 
 function updateUI(){
-  const isIntlView = (window.VIEW_REALM === "intl");
-  const isCnView = (window.VIEW_REALM === "cn");
-  const isCodeartsView = (window.VIEW_REALM === "codearts");
-  const caEnabled = (window.REALM_OPTIONS || []).includes("codearts");
-  const tIntl = document.getElementById("tabIntl");
-  const tCn = document.getElementById("tabCn");
-  const tCa = document.getElementById("tabCodearts");
-  if(tIntl) tIntl.className = "realm-card" + (isIntlView ? " active" : "");
-  if(tCn) tCn.className = "realm-card" + (isCnView ? " active" : "");
-  if(tCa){
-    tCa.style.display = caEnabled ? "" : "none";
-    tCa.className = "realm-card" + (isCodeartsView ? " active" : "");
+  const view = preferredChannel(window.VIEW_REALM);
+  if(view && view !== window.VIEW_REALM){
+    window.VIEW_REALM = view;
+    if(PANEL_READY) renderAccounts(true);
   }
-  const vbIntl = document.getElementById("tabIntlViewBadge");
-  if(vbIntl) vbIntl.style.display = isIntlView ? "inline-block" : "none";
-  const vbCn = document.getElementById("tabCnViewBadge");
-  if(vbCn) vbCn.style.display = isCnView ? "inline-block" : "none";
-  const vbCa = document.getElementById("tabCodeartsViewBadge");
-  if(vbCa) vbCa.style.display = isCodeartsView ? "inline-block" : "none";
-
-  // 账号页页头的版本切换与上面两张卡片同一份状态（VIEW_REALM），所以两边永远
-  // 一起亮：在账号页切过去，回网关页看到的就是刚切的那一版，反之亦然。
-  const rsIntl = document.getElementById("accountsRealmIntl");
-  if(rsIntl){
-    rsIntl.classList.toggle("active", isIntlView);
-    rsIntl.setAttribute("aria-pressed", isIntlView ? "true" : "false");
-  }
-  const rsCn = document.getElementById("accountsRealmCn");
-  if(rsCn){
-    rsCn.classList.toggle("active", isCnView);
-    rsCn.setAttribute("aria-pressed", isCnView ? "true" : "false");
-  }
-  const rsCa = document.getElementById("accountsRealmCodearts");
-  if(rsCa){
-    rsCa.style.display = caEnabled ? "" : "none";
-    rsCa.classList.toggle("active", isCodeartsView);
-    rsCa.setAttribute("aria-pressed", isCodeartsView ? "true" : "false");
-  }
-
-  // 区块标题上的出口标签：这几个区块的内容都按当前视图区域取（账号、禁用汇总、
-  // 最近请求、模型清单），标出来免得把国际版的数字看成全局的。用 <em> 承载：
-  // 侧栏导航由 h2 生成时会剥掉 <em>，所以标签不会串进导航项。
-  const sectionRealm = isIntlView ? "（国际版）" : (isCnView ? "（国内版）" : "（CodeArts）");
-  ["disabledRealmTag", "recentRealmTag", "modelsRealmTag"].forEach(function(id){
-    const el = document.getElementById(id);
-    if(el) el.textContent = sectionRealm;
+  const isWorkBuddyView = view === 'intl' || view === 'cn';
+  const accountTabs = {intl: 'accountsRealmIntl', cn: 'accountsRealmCn',
+    minimax: 'accountsRealmMiniMax', codearts: 'accountsRealmCodearts'};
+  Object.entries(accountTabs).forEach(([realm, id]) => {
+    const tab = document.getElementById(id);
+    if(!tab) return;
+    tab.hidden = !channelEnabled(realm);
+    tab.classList.toggle('active', view === realm);
+    tab.setAttribute('aria-pressed', String(view === realm));
   });
+
+  const modelTag = document.getElementById('modelsRealmTag');
+  if(modelTag) modelTag.textContent = view ? '（' + realmLabel(view) + '）' : '';
+  const accountHeader = document.getElementById('accountsHeader');
+  if(accountHeader) accountHeader.hidden = !view;
+  const emptyAccounts = document.getElementById('accountsNoChannels');
+  if(emptyAccounts) emptyAccounts.hidden = !!view;
+  const workbuddyKey = document.getElementById('workbuddyAddApiKey');
+  if(workbuddyKey) workbuddyKey.hidden = !isWorkBuddyView;
+  syncRuntimeScope();
 
   // 工具栏上「一键切换所有出站身份」的当前值：它作用于全部账号（含另一个
   // 版本），所以不看视图、只看 window.ACCOUNTS。
   updateProductAllButton();
-
-  const gwRealm = window.ACTIVE_GATEWAY_REALM || "intl";
-  const isIntlGw = (gwRealm === "intl");
-  const isCnGw = (gwRealm === "cn");
-  const isCaGw = (gwRealm === "codearts");
-  const dbIntl = document.getElementById("tabIntlDefaultBadge");
-  if(dbIntl) dbIntl.style.display = isIntlGw ? "inline-block" : "none";
-  const dbCn = document.getElementById("tabCnDefaultBadge");
-  if(dbCn) dbCn.style.display = isCnGw ? "inline-block" : "none";
-  const dbCa = document.getElementById("tabCodeartsDefaultBadge");
-  if(dbCa) dbCa.style.display = isCaGw ? "inline-block" : "none";
-
-  const gwName = document.getElementById("activeGatewayName");
-  if(gwName) {
-    gwName.textContent = isIntlGw ? "国际版 (Global)"
-      : (isCnGw ? "国内版 (China)" : "CodeArts (华为云)");
-  }
-  const ep = document.getElementById("activeEndpoint");
-  if(ep) ep.textContent = isIntlGw ? "https://www.workbuddy.ai/v2"
-    : (isCnGw ? "https://copilot.tencent.com/v2"
-              : ((window.CODEARTS_OVERVIEW || {}).base_url || "华为云 CodeArts"));
-
-  const gwOptions = (window.REALM_OPTIONS && window.REALM_OPTIONS.length)
-    ? window.REALM_OPTIONS : ["intl", "cn"];
-  let gwIdx = gwOptions.indexOf(gwRealm);
-  if(gwIdx < 0) gwIdx = 0;
-  const nextGw = gwOptions[(gwIdx + 1) % gwOptions.length];
-  const nextGwName = (nextGw === "intl") ? "国际版" : (nextGw === "cn" ? "国内版" : "CodeArts");
-  const btnToggle = document.getElementById("btnToggleRealm");
-  if(btnToggle) {
-    btnToggle.textContent = "切换默认出口为【" + nextGwName + "】";
-  }
-  const cardGw = document.getElementById("cardGatewayCtrl");
-  if(cardGw){
-    // 默认出口的信号色：国际版蓝 / 国内版琥珀 / CodeArts 绿。写在控制卡的一个
-    // 变量上，出口名、按钮和卡片边框都从它取色（见 #workbenchStyles 的 --gw-signal）。
-    cardGw.style.setProperty("--gw-signal",
-      isIntlGw ? "var(--info)" : (isCnGw ? "var(--warn)" : "var(--ok)"));
-  }
 
   const btnCheckin = document.getElementById("btnCheckin");
   if(btnCheckin) btnCheckin.style.display = (window.VIEW_REALM === "cn" ? "inline-block" : "none");
   const btnDailyChat = document.getElementById("btnDailyChat");
   if(btnDailyChat) btnDailyChat.style.display = (window.VIEW_REALM === "intl" ? "inline-block" : "none");
   // btnDailyChatWeb 不上屏（见按钮上的注释），所以这里不再按视图显隐它。
-
-  // 计算当前绑定与生效的 Key 数量
-  const keys = (typeof API_KEY_ROWS !== 'undefined' && API_KEY_ROWS.length) ? API_KEY_ROWS : (window.API_KEY_ROWS || []);
-  const intlKeys = keys.filter(k => k.enabled !== false && k.realm === 'intl').length;
-  const cnKeys = keys.filter(k => k.enabled !== false && k.realm === 'cn').length;
-  const caKeys = keys.filter(k => k.enabled !== false && k.realm === 'codearts').length;
-  const followKeys = keys.filter(k => k.enabled !== false && !k.realm).length;
-  const activeKeysTotal = isIntlGw ? (intlKeys + followKeys)
-    : (isCnGw ? (cnKeys + followKeys) : (caKeys + followKeys));
-
-  const elGwKeyBadge = document.getElementById("activeGatewayKeyCount");
-  if(elGwKeyBadge) elGwKeyBadge.textContent = activeKeysTotal + ' 个 Key 生效';
-
-  const elIntlKey = document.getElementById("tabIntlKeyBadge");
-  if(elIntlKey) elIntlKey.textContent = intlKeys + ' 个 Key';
-
-  const elCnKey = document.getElementById("tabCnKeyBadge");
-  if(elCnKey) elCnKey.textContent = cnKeys + ' 个 Key';
-  const elCaKey = document.getElementById("tabCodeartsKeyBadge");
-  if(elCaKey) elCaKey.textContent = caKeys + ' 个 Key';
 
   // 左侧卡片账号数与积分统计：大数字是「总剩余」（含停用账号），副行的
   // 「可用」只算 isAcctActive（启用且未触发保留/限额护栏）的账号——与旁边
@@ -9656,25 +9982,12 @@ function updateUI(){
   if(elCaCredits) elCaCredits.textContent = fmtCredits(caStats.credits);
   const elCaOffline = document.getElementById("tabCodeartsOffline");
   if(elCaOffline) elCaOffline.style.display = (ca.online === false) ? "inline-block" : "none";
-  const elCaHost = document.getElementById("tabCodeartsHost");
-  if(elCaHost && ca.base_url){
-    try { elCaHost.textContent = new URL(ca.base_url).host; }
-    catch(e) { elCaHost.textContent = ca.base_url; }
-  }
-
-  // CodeArts 视图隐藏 WorkBuddy 专属区块，避免把两套账号/积分读混。
-  ["workbuddyAccountsSection", "workbuddyDisabledSection"].forEach(function(id){
-    const el = document.getElementById(id);
-    if(el) el.style.display = isCodeartsView ? "none" : "";
-  });
+  const wbSection = document.getElementById('workbuddyAccountsSection');
+  if(wbSection) wbSection.style.display = isWorkBuddyView ? '' : 'none';
+  const miniMaxAccounts = document.getElementById('minimaxAccountsSection');
+  if(miniMaxAccounts) miniMaxAccounts.hidden = view !== 'minimax';
   const caSection = document.getElementById("codeartsAccountsSection");
-  if(caSection) caSection.style.display = isCodeartsView ? "" : "none";
-  const caSummary = document.getElementById("codeartsSummary");
-  if(caSummary) caSummary.style.display = isCodeartsView ? "" : "none";
-  const wbCards = document.getElementById("cards");
-  if(wbCards) wbCards.style.display = isCodeartsView ? "none" : "";
-  const wbSched = document.getElementById("schedulerBar");
-  if(wbSched) wbSched.style.display = isCodeartsView ? "none" : "";
+  if(caSection) caSection.style.display = view === 'codearts' ? '' : 'none';
 };
 
 // 切换视图的唯一入口：改完 VIEW_REALM 立刻用**已经加载好的**全量 window.ACCOUNTS
@@ -9688,9 +10001,8 @@ function setViewRealm(r){
 }
 
 async function switchViewRealm(r){
-  if(window.VIEW_REALM === r) return;
+  if(window.VIEW_REALM === r || !channelEnabled(r)) return;
   setViewRealm(r);
-  RECENT_PAGE = 1;
   window.updateUI();
   // 智能体页的模型目录跟着视图走（见 agentRequestRealm）：换了版本就把下拉框
   // 重取一次，否则切到国际版后它还在列上一次（国内版）的目录。不 await——
@@ -9702,6 +10014,10 @@ async function switchViewRealm(r){
                        loadAnalytics(), refresh()]);
     return;
   }
+  if(r === 'minimax'){
+    await Promise.all([loadModels(), loadAnalytics(), refresh()]);
+    return;
+  }
   // 并行发起，不要逐个 await：国内版的成长任务一次要约 2 秒（上游两个接口），
   // 串行排队时后面那些毫秒级的用量接口全被它堵着，切过去看着就是"过几秒才刷新"。
   await Promise.all([loadAccounts(), loadModels(), loadGrowthTasks(),
@@ -9709,32 +10025,138 @@ async function switchViewRealm(r){
 };
 
 function realmLabel(r){
-  return r === "intl" ? "国际版" : (r === "cn" ? "国内版" : "CodeArts");
+  return {all: '全部请求', intl: '国际版', cn: '国内版', minimax: 'MiniMax', codearts: 'CodeArts'}[r] || '国际版';
 }
 
-async function toggleActiveGatewayRealm(){
-  const options = window.REALM_OPTIONS || ["intl", "cn"];
-  const cur = window.ACTIVE_GATEWAY_REALM || "intl";
-  let idx = options.indexOf(cur);
-  if(idx < 0) idx = 0;
-  const next = options[(idx + 1) % options.length];
-  try {
-    const res = await postJSON("/realm", {realm: next});
-    window.ACTIVE_GATEWAY_REALM = res.current || next;
-    toast("网关默认上游已切换并永久保存为: " + realmLabel(window.ACTIVE_GATEWAY_REALM));
-    setViewRealm(window.ACTIVE_GATEWAY_REALM);
+const CHANNEL_INPUTS = {intl: 'channelIntl', cn: 'channelCn', minimax: 'channelMiniMax', codearts: 'channelCodearts'};
+
+function channelEnabled(realm){
+  return window.CHANNEL_STATES
+    ? window.CHANNEL_STATES[realm] === true
+    : (window.REALM_OPTIONS || ['intl', 'cn']).includes(realm);
+}
+
+function renderChannelSettings(channels){
+  if(!channels) return;
+  window.CHANNEL_STATES = channels;
+  Object.entries(CHANNEL_INPUTS).forEach(([realm, id]) => {
+    const input = document.getElementById(id);
+    if(input) input.checked = channels[realm] === true;
+  });
+  const save = document.getElementById('saveChannelsBtn');
+  if(save) save.disabled = false;
+}
+
+async function saveChannels(button){
+  const channels = Object.fromEntries(Object.entries(CHANNEL_INPUTS).map(([realm, id]) =>
+    [realm, document.getElementById(id).checked]));
+  button.disabled = true;
+  try{
+    const result = await postJSON('/settings/save', {channels});
+    renderChannelSettings(result.channels);
+    renderMiniMaxPlan(result.minimax, result.minimax_accounts);
+    renderCodeartsSettings(result.codearts);
+    await refreshActiveRealm();
     window.updateUI();
-    if(window.ACTIVE_GATEWAY_REALM === "codearts"){
-      await Promise.all([loadCodeartsOverview(true), loadModels(),
-                         loadAnalytics(), refresh()]);
-    }else{
-      await Promise.all([loadAccounts(), loadModels(), loadGrowthTasks(),
-                         loadSchedulerStatus(), loadAnalytics(), refresh()]);
-    }
-  }catch(e){
-    alert("切换失败: " + e.message);
+    if(channelEnabled('codearts')) loadCodeartsOverview(true);
+    refresh();
+    toast(result.warning || '渠道设置已保存', result.warning ? 'warn' : 'ok');
+  }catch(error){
+    toast('保存失败: ' + error.message, 'bad');
+  }finally{
+    button.disabled = false;
   }
-};
+}
+
+function addChannelAccount(){
+  const realm = window.VIEW_REALM;
+  if(!channelEnabled(realm)) return;
+  if(realm === 'minimax') return editMiniMaxAccount();
+  if(realm === 'codearts') return openCodeartsOauthModal();
+  return openLoginModal(realm);
+}
+
+function preferredChannel(realm){
+  if(channelEnabled(realm)) return realm;
+  const fallback = window.ACTIVE_GATEWAY_REALM;
+  return (channelEnabled(fallback) ? fallback : Object.keys(CHANNEL_INPUTS).find(channelEnabled)) || '';
+}
+
+let RUNTIME_REALM = 'all';
+
+function runtimeRealmAvailable(realm){
+  return realm === 'all' || channelEnabled(realm);
+}
+
+function syncRuntimeScope(){
+  if(!runtimeRealmAvailable(RUNTIME_REALM)) RUNTIME_REALM = 'all';
+  const controls = {all: 'runtimeAll', intl: 'tabIntl', cn: 'tabCn', minimax: 'tabMiniMax', codearts: 'tabCodearts'};
+  Object.entries(controls).forEach(([realm, id]) => {
+    const button = document.getElementById(id);
+    if(!button) return;
+    const selected = RUNTIME_REALM === realm;
+    button.hidden = !runtimeRealmAvailable(realm);
+    if(realm === 'codearts') button.style.display = button.hidden ? 'none' : '';
+    button.classList.toggle('active', selected);
+    button.setAttribute('aria-pressed', String(selected));
+  });
+  const label = realmLabel(RUNTIME_REALM);
+  const scope = document.getElementById('runtimeScopeNote');
+  if(scope) scope.textContent = label + ' · 累计用量';
+  const recentTag = document.getElementById('recentRealmTag');
+  if(recentTag) recentTag.textContent = '（' + label + '）';
+  const scheduler = document.getElementById('runtimeScheduler');
+  if(scheduler) scheduler.hidden = !['all', 'intl', 'cn'].includes(RUNTIME_REALM);
+}
+
+async function switchRuntimeRealm(realm){
+  if(RUNTIME_REALM === realm || !runtimeRealmAvailable(realm)) return;
+  RUNTIME_REALM = realm;
+  RECENT_PAGE = 1;
+  Object.assign(RECENT_FILTERS, {account: '', model: '', key: ''});
+  RECENT_RENDER = null;
+  lastRecentFp = '';
+  closeRecentFailDetail();
+  const recent = document.getElementById('recent');
+  if(recent) recent.innerHTML = '<div class="empty">加载中…</div>';
+  const cards = document.getElementById('cards');
+  if(cards) cards.innerHTML = '';
+  const count = document.getElementById('recentCount');
+  if(count) count.textContent = '';
+  syncRuntimeScope();
+  renderConsoleInsights([], window.ACCOUNTS || []);
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set('scope', realm);
+    history.replaceState(null, '', url.toString());
+  } catch(e){}
+  await Promise.all([refresh(), ['all', 'intl', 'cn'].includes(realm) && loadSchedulerStatus()]);
+}
+
+function renderLegacyRoutingSetting(){
+  const select = document.getElementById('legacyRealmSelect');
+  const save = document.getElementById('saveLegacyRealmBtn');
+  if(!select || !save) return;
+  select.innerHTML = (window.REALM_OPTIONS || []).map(realm =>
+    '<option value="' + esc(realm) + '">' + realmLabel(realm) + '</option>').join('');
+  select.value = window.ACTIVE_GATEWAY_REALM || '';
+  select.disabled = save.disabled = !select.value;
+}
+
+async function saveLegacyRealm(button){
+  const select = document.getElementById('legacyRealmSelect');
+  if(!select?.value) return;
+  select.disabled = button.disabled = true;
+  try{
+    const result = await postJSON('/realm', {realm: select.value});
+    window.ACTIVE_GATEWAY_REALM = result.current;
+    renderLegacyRoutingSetting();
+    toast('旧路径默认上游已保存', 'ok');
+  }catch(error){
+    select.disabled = button.disabled = false;
+    toast('保存失败: ' + error.message, 'bad');
+  }
+}
 
 /* ---- CodeArts 第三出口 ---- */
 window.CODEARTS_OVERVIEW = null;
@@ -9746,14 +10168,14 @@ async function loadCodeartsOverview(force){
     const r = await getJSON("/codearts/overview");
     window.CODEARTS_OVERVIEW = r;
     await loadProxySlots();
-    renderCodeartsCards(r);
+    renderConsoleAccountHealth(window.ACCOUNTS || []);
     renderCodeartsAccounts(r);
     window.updateUI();
   }catch(e){
     if(box){
       box.innerHTML = '<div style="padding:24px;text-align:center;color:var(--bad)">'
         + escapeHtml(e.message || "读取 CodeArts 失败")
-        + '<div style="margin-top:8px;color:var(--dim);font-size:12px">检查「设置 → CodeArts 接入」的 Base URL 和 API Key。</div></div>';
+        + '<div style="margin-top:8px;color:var(--dim);font-size:12px">请检查 CodeArts 账号或重新授权。</div></div>';
     }
     window.updateUI();
   }
@@ -9762,27 +10184,6 @@ async function loadCodeartsOverview(force){
 function fmtCredits(value){
   if(value == null || value === "" || isNaN(Number(value))) return "—";
   return Number(value).toLocaleString(undefined, {maximumFractionDigits: 2});
-}
-
-function renderCodeartsCards(r){
-  const box = document.getElementById("codeartsCards");
-  if(!box) return;
-  const st = r.stats || {};
-  const healthy = (st.healthy != null) ? st.healthy : "—";
-  const total = (st.total != null) ? st.total : 0;
-  const credits = (st.credits != null) ? st.credits : null;
-  const creditsTotal = (st.credits_total != null) ? st.credits_total : null;
-  const creditsUsed = (st.credits_used != null) ? st.credits_used : null;
-  const creditSub = (creditsTotal != null)
-    ? ("剩余 / 总 " + fmtCredits(creditsTotal)
-       + (creditsUsed != null ? " · 已用 " + fmtCredits(creditsUsed) : ""))
-    : "CodeArts 积分";
-  box.innerHTML =
-    card("健康账号", healthy + "/" + total, "由本进程直接管理")
-    + card("积分", fmtCredits(credits), creditSub)
-    + card("模型", (r.models || []).length, "CodeArts 目录")
-    + card("冷却", (st.cooling != null) ? st.cooling : 0, "到点自动恢复")
-    + card("已停用", (st.disabled != null) ? st.disabled : 0, "手动/上游");
 }
 
 function codeartsSlotSelectHtml(a){
@@ -10051,10 +10452,129 @@ function openCodeartsAuthUrl(){
   if(url) window.open(url, "_blank", "noopener,noreferrer");
 }
 
+function renderMiniMaxPlan(config, accounts){
+  if(!config || !document.getElementById('miniMaxAccountRows')) return;
+  window.MINIMAX_PLAN = config;
+  window.MINIMAX_ACCOUNTS = accounts || [];
+  const active = window.MINIMAX_ACCOUNTS.filter(a => a.enabled).length;
+  const poolStatus = document.getElementById('tabMiniMaxAccounts');
+  if(poolStatus) poolStatus.textContent = (config.enabled ? active : 0) + ' / ' + window.MINIMAX_ACCOUNTS.length;
+  const disabled = document.getElementById('tabMiniMaxDisabled');
+  if(disabled) disabled.hidden = config.enabled;
+  if(disabled) disabled.textContent = channelEnabled('minimax') ? '待添加有效账号' : '已停用';
+  document.getElementById('tabMiniMaxModels').textContent = config.models.length;
+  document.getElementById('miniMaxAccountStatus').textContent =
+    window.MINIMAX_ACCOUNTS.length + ' 个套餐账号 · '
+    + window.MINIMAX_ACCOUNTS.filter(a => a.enabled).length + ' 个已启用 · '
+    + config.models.length + ' 个已启用模型';
+  document.getElementById('miniMaxAccountRows').innerHTML = window.MINIMAX_ACCOUNTS.map(account => {
+    const uid = esc(account.uid);
+    return '<div class="minimax-account-row" data-minimax-uid="' + uid + '">'
+      + '<div><b>' + esc(account.name) + '</b> · ' + (account.region === 'cn' ? '中国站' : '国际站')
+      + ' <span class="badge ' + (account.enabled ? 'ok">已启用' : 'off">已停用') + '</span></div>'
+      + '<div class="sec-tools"><button type="button" class="sec mini" onclick="loadMiniMaxQuota(this)">查询额度</button>'
+      + '<button type="button" class="sec mini" onclick="editMiniMaxAccount(this.closest(\'[data-minimax-uid]\').dataset.minimaxUid)">编辑</button>'
+      + '<button type="button" class="sec mini" onclick="changeMiniMaxAccount(this, false)">' + (account.enabled ? '停用' : '启用') + '</button>'
+      + '<button type="button" class="sec mini" onclick="changeMiniMaxAccount(this, true)">删除</button></div>'
+      + '<p class="set-desc" role="status" hidden></p></div>';
+  }).join('');
+  window.updateUI();
+}
+
+async function applyMiniMaxSettings(patch){
+  const result = await postJSON('/settings/save', {minimax: patch});
+  await refreshActiveRealm();
+  renderMiniMaxPlan(result.minimax, result.minimax_accounts);
+  if(window.VIEW_REALM === 'minimax') await loadModels();
+  return result;
+}
+
+function editMiniMaxAccount(uid = ''){
+  const account = (window.MINIMAX_ACCOUNTS || []).find(a => a.uid === uid);
+  const form = document.getElementById('miniMaxAccountForm');
+  form.dataset.uid = account?.uid || '';
+  document.getElementById('miniMaxAccountName').value = account?.name || '';
+  document.getElementById('miniMaxRegion').value = account?.region || 'cn';
+  const key = document.getElementById('miniMaxPlanKey');
+  key.value = '';
+  key.required = !account;
+  key.placeholder = account ? '留空保留已保存的 Key' : 'sk-cp-…';
+  form.hidden = false;
+  document.getElementById('miniMaxAccountName').focus();
+}
+
+async function saveMiniMaxAccount(event){
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = event.submitter;
+  const key = document.getElementById('miniMaxPlanKey');
+  if(button) button.disabled = true;
+  try{
+    await applyMiniMaxSettings({account: {
+      uid: form.dataset.uid, name: document.getElementById('miniMaxAccountName').value.trim(),
+      region: document.getElementById('miniMaxRegion').value, api_key: key.value.trim(),
+    }});
+    key.value = '';
+    form.hidden = true;
+    toast('MiniMax 账号已保存', 'ok');
+  }catch(error){
+    toast('保存失败: ' + error.message, 'bad');
+  }finally{
+    if(button) button.disabled = false;
+  }
+}
+
+async function changeMiniMaxAccount(button, remove){
+  const row = button.closest('[data-minimax-uid]');
+  const account = (window.MINIMAX_ACCOUNTS || []).find(a => a.uid === row.dataset.minimaxUid);
+  if(!account || (remove && !confirm('删除 MiniMax 账号「' + account.name + '」？'))) return;
+  button.disabled = true;
+  try{
+    await applyMiniMaxSettings({account: {uid: account.uid, ...(remove
+      ? {action: 'delete'} : {enabled: !account.enabled})}});
+  }catch(error){
+    toast('保存失败: ' + error.message, 'bad');
+  }finally{
+    button.disabled = false;
+  }
+}
+
+async function loadMiniMaxQuota(button){
+  const row = button.closest('[data-minimax-uid]');
+  const result = row.querySelector('[role="status"]');
+  result.hidden = false;
+  button.disabled = true;
+  result.textContent = '正在查询 MiniMax 套餐额度…';
+  try {
+    const data = await getJSON('/panel/minimax/quota?uid=' + encodeURIComponent(row.dataset.minimaxUid));
+    const percent = n => n == null ? '—' : n + '%';
+    result.textContent = data.windows.map(row => row.model + ' · 当前窗口剩余 ' +
+      percent(row.interval_percent) + ' · 本周剩余 ' + percent(row.weekly_percent)).join('\n') ||
+      'MiniMax 未返回套餐额度';
+  } catch(error) {
+    result.textContent = 'MiniMax 套餐额度查询失败: ' + error.message;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function toggleMiniMaxModel(input){
+  const enabled = input.checked;
+  const controls = Array.from(document.querySelectorAll('#modelsTable .minimax-model-toggle input'));
+  controls.forEach(box => { box.disabled = true; });
+  try{
+    await applyMiniMaxSettings({model_toggle: {id: input.dataset.minimaxModel, enabled}});
+    toast(enabled ? 'MiniMax 模型已启用' : 'MiniMax 模型已停用', 'ok');
+  }catch(error){
+    input.checked = !enabled;
+    toast('保存失败: ' + error.message, 'bad');
+  }finally{
+    controls.forEach(box => { box.disabled = false; });
+  }
+}
+
 function renderCodeartsSettings(cfg){
   if(!cfg) return;
-  const enabled = document.getElementById("setCodeartsEnabled");
-  if(enabled) enabled.checked = cfg.enabled === true;
   const auto = document.getElementById("setCodeartsAutoCheckin");
   if(auto) auto.checked = cfg.credits_auto_claim === true;
   const conc = document.getElementById("setCodeartsMaxConcurrent");
@@ -10080,7 +10600,6 @@ function renderCodeartsSettings(cfg){
 async function saveCodeartsSettings(btn){
   const val = id => { const el = document.getElementById(id); return el ? el.value : ""; };
   const payload = {
-    enabled: !!(document.getElementById("setCodeartsEnabled") || {}).checked,
     credits_auto_claim: !!(document.getElementById("setCodeartsAutoCheckin") || {}).checked,
     max_concurrent: parseInt(val("setCodeartsMaxConcurrent"), 10) || 1,
     timeout_seconds: parseFloat(val("setCodeartsTimeout")) || 30,
@@ -10121,8 +10640,9 @@ async function refreshActiveRealm(){
   // selection (including the ?view= parameter) lives in initRealm().
   try {
     const r = await getJSON("/realm");
-    if(r && r.current) window.ACTIVE_GATEWAY_REALM = r.current;
+    if(r && typeof r.current === "string") window.ACTIVE_GATEWAY_REALM = r.current;
     if(r && Array.isArray(r.options)) window.REALM_OPTIONS = r.options;
+    renderLegacyRoutingSetting();
   } catch(e){}
 }
 
@@ -10132,19 +10652,36 @@ async function initRealm(){
   // what moved the panel back to the other realm after 签到 / 活跃打卡, because
   // the view buttons do not rewrite the URL.
   await refreshActiveRealm();
-  window.VIEW_REALM = window.ACTIVE_GATEWAY_REALM;
-  const viewFromUrl = new URLSearchParams(window.location.search).get('view');
-  if(viewFromUrl && ['intl', 'cn', 'codearts'].includes(viewFromUrl)) window.VIEW_REALM = viewFromUrl;
-  const limitFromUrl = new URLSearchParams(window.location.search).get('limit');
+  const query = new URLSearchParams(window.location.search);
+  const viewFromUrl = query.get('view');
+  window.VIEW_REALM = preferredChannel(viewFromUrl || window.ACTIVE_GATEWAY_REALM) || 'intl';
+  const scope = query.get('scope') || (query.get('tab') === 'runtime' ? viewFromUrl : null);
+  RUNTIME_REALM = scope && runtimeRealmAvailable(scope) ? scope : 'all';
+  const limitFromUrl = query.get('limit');
   if(limitFromUrl && [10, 20, 50, 100].includes(parseInt(limitFromUrl, 10))) RECENT_LIMIT = parseInt(limitFromUrl, 10);
   window.updateUI();
-  if(window.VIEW_REALM === 'codearts') loadCodeartsOverview(true);
+  if(runtimeRealmAvailable('codearts') || window.VIEW_REALM === 'codearts') loadCodeartsOverview(true);
 }
 
 async function refreshModelCatalog(btn){
   // 手动刷新模型清单：强制走一次上游 /v3/config（服务端执行，绕过 300s 缓存），
   // 只刷当前视图版本——这张表显示的是哪个版本，刷新按钮就只拉哪个版本，绝
   // 不跨区（服务端会挑该版本自己的账号发请求）。完成后立即重载表格。
+  if(window.VIEW_REALM === 'minimax'){
+    const prevText = btn ? btn.textContent : '';
+    if(btn){ btn.disabled = true; btn.textContent = '刷新中…'; }
+    try{
+      const data = await loadModels(true);
+      if(data?.catalog?.fetched_at && !data.catalog.stale){
+        toast('MiniMax 官方模型目录已同步', 'ok');
+      }else{
+        toast('MiniMax 官方目录暂不可用，已显示本地目录', 'warn');
+      }
+    }finally{
+      if(btn){ btn.disabled = false; btn.textContent = prevText; }
+    }
+    return;
+  }
   if(window.VIEW_REALM === 'codearts'){
     if(btn) btn.disabled = true;
     const prevText = btn ? btn.textContent : '';
@@ -10183,10 +10720,28 @@ async function refreshModelCatalog(btn){
   }
 }
 
-async function loadModels(){
+async function loadModels(forceRefresh = false){
   const realm = window.VIEW_REALM;
+  const visible = !window.CHANNEL_STATES || channelEnabled(realm);
+  for(const id of ['modelPickActions', 'btnRefreshModels']){
+    const control = document.getElementById(id);
+    if(control) control.hidden = !visible;
+  }
+  if(!visible){
+    window.MODELS_DATA = [];
+    renderAvailableModels();
+    const source = document.getElementById('modelsSourceLine');
+    if(source){
+      source.className = 'source-line is-unknown';
+      source.textContent = '可在设置页开启文本渠道。';
+    }
+    return;
+  }
+  const unified = realm === 'minimax' ? null
+    : getJSON('/v1/models').then(catalogue => catalogue.data || []).catch(() => []);
   try{
-    const r = await getJSON('/panel/model-catalog?realm=' + encodeURIComponent(realm));
+    const r = await getJSON('/panel/model-catalog?realm=' + encodeURIComponent(realm)
+      + (forceRefresh && realm === 'minimax' ? '&refresh=1' : ''));
     if(window.VIEW_REALM !== realm) return;
     const list = r.data || [];
     window.MODELS_DATA = list;
@@ -10196,14 +10751,15 @@ async function loadModels(){
     renderAvailableModels();
     // The client catalogue provides the IDs accepted by /v1. Regional IDs
     // continue to identify models in the account and one-click settings.
-    if(list.length) getJSON('/v1/models').then(catalogue => {
+    if(unified && list.length) unified.then(models => {
       if(window.VIEW_REALM !== realm || window.MODELS_DATA !== list) return;
-      const ids = new Map((catalogue.data || [])
+      const ids = new Map(models
         .filter(m => m.route_realm === realm)
         .map(m => [m.upstream_model, m.id]));
       list.forEach(model => { model.client_model_id = ids.get(model.id); });
       renderAvailableModels();
     }).catch(() => {});
+    return r;
   }catch(e){
     console.error('loadModels error:', e);
   }
@@ -10275,14 +10831,14 @@ function materializeModelSelection(){
   AGENT_MODEL_SELECTION = new Set(ids.filter(isModelPicked));
   MODEL_SELECTION_CONFIGURED = true;
   ids.forEach(id => MODEL_SELECTION_SEEN_IDS.add(id));
-  if(window.VIEW_REALM === 'intl' || window.VIEW_REALM === 'cn'){
+  if(window.VIEW_REALM === 'minimax' || window.VIEW_REALM === 'intl' || window.VIEW_REALM === 'cn'){
     MODEL_SELECTION_MERGED_REALMS.add(window.VIEW_REALM);
   }
 }
 function mergeUnseenModelsForCurrentRealm(){
   if(!MODEL_SELECTION_CONFIGURED || MODEL_SELECTION_SAVED) return;
   const r = window.VIEW_REALM;
-  if(r !== 'intl' && r !== 'cn') return;
+  if(!['intl', 'cn', 'minimax'].includes(r)) return;
   if(MODEL_SELECTION_MERGED_REALMS.has(r)) return;
   allModelPickIds().forEach(id => {
     if(!MODEL_SELECTION_SEEN_IDS.has(id)){
@@ -10297,7 +10853,7 @@ function allModelPickIds(){
   const list = (typeof MODELS_DATA !== 'undefined' && Array.isArray(MODELS_DATA))
     ? MODELS_DATA
     : catalogModelsData();
-  return list.map(m => String((m && m.id) || '')).filter(Boolean);
+  return list.filter(m => m && !m.catalog_only).map(m => String(m.id || '')).filter(Boolean);
 }
 let MODEL_CATALOG_FILTER = '';
 function clearModelCatalogFilter(){
@@ -10313,8 +10869,11 @@ function updateAvailModelCount(){
   const em = document.getElementById('availModelCount');
   if(!em) return;
   const total = catalogModelsData().length;
-  const picked = allModelPickIds().filter(isModelPicked).length;
-  em.textContent = '(共 ' + total + ' 个) · 已选 ' + picked;
+  const ids = allModelPickIds();
+  const picked = ids.filter(isModelPicked).length;
+  em.textContent = '(共 ' + total + ' 个)'
+    + (window.VIEW_REALM === 'minimax' ? ' · 已启用 ' + ids.length : '')
+    + ' · 已选 ' + picked;
 }
 
 // 只改复选框的勾选状态与计数，不重建行——避免把滚动位置、排序和焦点抖掉。
@@ -10368,11 +10927,13 @@ async function saveModelSelection(){
     const seen = new Set(MODEL_SELECTION_SEEN_IDS);
     const merged = new Set(MODEL_SELECTION_MERGED_REALMS);
     ids.forEach(id => seen.add(id));
-    if(window.VIEW_REALM === 'intl' || window.VIEW_REALM === 'cn'){
+    if(['intl', 'cn', 'minimax'].includes(window.VIEW_REALM)){
       merged.add(window.VIEW_REALM);
     }
     if(!MODEL_SELECTION_SAVED){
-      for(const realm of ['intl', 'cn']){
+      const realms = ['intl', 'cn'];
+      if((window.REALM_OPTIONS || []).includes('minimax')) realms.push('minimax');
+      for(const realm of realms){
         if(merged.has(realm)) continue;
         let catalog;
         try{
@@ -10382,7 +10943,7 @@ async function saveModelSelection(){
           return;
         }
         (catalog && catalog.data ? catalog.data : []).forEach(model => {
-          if(model && model.id && !seen.has(model.id)){
+          if(model && !model.catalog_only && model.id && !seen.has(model.id)){
             seen.add(model.id);
             if(defaultModelPicked(model.id, realm, catalog.data)) draft.add(model.id);
           }
@@ -10509,6 +11070,16 @@ function renderModelsSourceLine(meta){
   const isApi = (meta.source === 'remote' || meta.source === 'endpoint');
   const at = fmtCatalogStamp(meta.fetched_at);
   el.title = tip;
+  if(meta.source === 'minimax'){
+    el.classList.add(meta.stale ? 'is-warn' : 'is-ok');
+    el.title = '';
+    const status = meta.stale
+      ? (at ? 'MiniMax 官方目录暂不可用 · 上次同步 ' + at : 'MiniMax 官方目录暂不可用 · 显示已配置模型')
+      : (at ? 'MiniMax 官方目录 · 已同步 ' + at : 'MiniMax 套餐配置');
+    el.innerHTML = '<b>' + esc(status) + '</b>'
+      + (meta.docs_url ? ' <a href="' + esc(meta.docs_url) + '" target="_blank" rel="noopener noreferrer">官方模型规格</a>' : '');
+    return;
+  }
   if(meta.source === 'codearts'){
     el.classList.add('is-ok');
     el.title = 'CodeArts 模型目录来自本进程的 agent-center / builtin / 福利三路发现；缓存过期后自动重取，失败时回退到上次成功的目录。';
@@ -10562,7 +11133,7 @@ function externalNamesFor(id){
 function modelMapCell(m){
   const id = String((m && m.id) || '');
   // 别名开关关着时整列不出现（表头也一起隐藏），单元格本身不再单独兜底。
-  if(window.MODEL_ALIASES_ENABLED !== true){
+  if(window.MODEL_ALIASES_ENABLED !== true || window.VIEW_REALM === 'minimax'){
     return '<td style="text-align:left" class="model-map-cell" data-label="对外名称" hidden></td>';
   }
   const names = externalNamesFor(id);
@@ -10623,9 +11194,12 @@ function renderAvailableModels(){
   if(!tb) return;
   // 「对外名称」列只在模型别名开关打开时出现：开关关着时别名既不进 /models
   // 也不改写请求，留着这一列只会让人以为填了没生效。表头与每行单元格一起显隐。
-  const aliasOn = window.MODEL_ALIASES_ENABLED === true;
+  const aliasOn = window.MODEL_ALIASES_ENABLED === true && window.VIEW_REALM !== 'minimax';
+  const columns = aliasOn ? 9 : 8;
   const aliasTh = document.getElementById('modelAliasTh');
   if(aliasTh) aliasTh.style.display = aliasOn ? '' : 'none';
+  const billingTh = document.getElementById('modelBillingTh');
+  if(billingTh) billingTh.textContent = window.VIEW_REALM === 'minimax' ? '网关状态' : '消费倍率 / 优惠';
   updateAvailModelCount();
   const query = MODEL_CATALOG_FILTER.trim().toLowerCase();
   const modelsList = catalogModelsData();
@@ -10638,11 +11212,11 @@ function renderAvailableModels(){
   const count = document.getElementById('modelCatalogFilterCount');
   if(count) count.textContent = query ? ('显示 ' + visibleModels.length + ' / ' + modelsList.length + ' 个模型') : '';
   if(!modelsList.length){
-    tb.innerHTML = '<tr><td colspan="' + (aliasOn ? 9 : 8) + '" class="empty">暂无可用模型</td></tr>';
+    tb.innerHTML = '<tr><td colspan="' + columns + '" class="empty">暂无可用模型</td></tr>';
     return;
   }
   if(!visibleModels.length){
-    tb.innerHTML = '<tr><td colspan="' + (aliasOn ? 9 : 8) + '"><div class="console-filter-empty"><span>没有符合当前条件的模型</span><button type="button" class="sec mini" onclick="clearModelCatalogFilter()">清除筛选</button></div></td></tr>';
+    tb.innerHTML = '<tr><td colspan="' + columns + '"><div class="console-filter-empty"><span>没有符合当前条件的模型</span><button type="button" class="sec mini" onclick="clearModelCatalogFilter()">清除筛选</button></div></td></tr>';
     return;
   }
   tb.innerHTML = visibleModels.map(m => {
@@ -10652,6 +11226,13 @@ function renderAvailableModels(){
     //    上游一旦调价面板会继续宣传免费；cn 的夜间注记在 credits 缺失时还会
     //    兜底显示写死的 0.79x。现在取不到就不显示数字。
     let credBadge = '-';
+    if(m.route_id === 'minimax'){
+      credBadge = '<label class="minimax-model-toggle" title="启用或停用此模型的网关路由">'
+        + '<input type="checkbox" data-minimax-model="' + esc(m.upstream_model || m.id.slice('minimax/'.length)) + '"'
+        + (m.catalog_only ? '' : ' checked') + ' onchange="toggleMiniMaxModel(this)" aria-label="启用 ' + esc(m.name || m.id) + '">'
+        + (m.catalog_only ? '<span class="badge off">未启用</span>' : '<span class="badge ok">已启用</span>')
+        + '</label>';
+    }
     let credText = (m.credits == null ? '' : String(m.credits)).trim();
 
     const c = credText.toLowerCase().replace('x', '');
@@ -10717,7 +11298,8 @@ function renderAvailableModels(){
     }
 
     // 4. 最大输出（有实测钳制时标注「钳制 N×」，数据来自 output_probes.json）
-    let maxOut = m.max_output_tokens ? ('<b>' + fmtK(m.max_output_tokens) + '</b>') : '-';
+    let maxOut = m.max_output_tokens
+      ? ('<b>' + (m.route_id === 'minimax' ? fmt(m.max_output_tokens) : fmtK(m.max_output_tokens)) + '</b>') : '-';
     const clamp = Number(m.output_clamp || 0);
     if(clamp > 0){
       const claimed = Number(m.max_output_tokens || 0);
@@ -10786,19 +11368,22 @@ function renderAvailableModels(){
     // 8. 模型 ID 前的「一键配置」复选框：勾上才会被写进 DSH 等客户端的模型
     //    清单（选择全局一份，见 AGENT_MODEL_SELECTION）。服务端还没存过勾选时
     //    isModelPicked() 一律返回 true——默认全部勾选，首屏不必等 GET 回来。
-    const picked = isModelPicked(m.id);
     const displayId = m.client_model_id || m.id;
+    const modelLabel = m.catalog_only ? '启用后可作为网关模型 ID 使用'
+      : (m.client_model_id ? displayId : '上游模型 ID');
+    const idText = '<b title="' + esc(modelLabel) + '">' + esc(displayId) + '</b>';
+    const pick = m.catalog_only ? idText
+      : '<label><input type="checkbox" class="model-pick" data-model-id="' + esc(m.id) + '"'
+        + (isModelPicked(m.id) ? ' checked' : '')
+        + ' title="勾选后该模型才会写入 DSH 等客户端的一键配置">' + idText + '</label>';
     const copy = m.client_model_id ? '<button type="button" class="sec mini model-id-copy" aria-label="复制模型 ID" title="复制模型 ID"'
       + ' data-copy-model-id="' + esc(displayId) + '" onclick="copyCatalogModelId(this)">'
       + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button>' : '';
     return '<tr>'
       + '<td class="t mono model-id-cell" data-label="模型 ID"><div class="model-id-wrap">'
-      + '<label><input type="checkbox" class="model-pick" data-model-id="' + esc(m.id) + '"'
-      + (picked ? ' checked' : '')
-      + ' title="勾选后该模型才会写入 DSH 等客户端的一键配置"><b title="'
-      + (m.client_model_id ? esc(displayId) : '上游模型 ID') + '">' + esc(displayId) + '</b></label>' + copy + '</div></td>'
+      + pick + copy + '</div></td>'
       + nameCell
-      + '<td class="c rate-cell" data-label="消费倍率">' + credBadge + '</td>'
+      + '<td class="c rate-cell" data-label="' + (m.route_id === 'minimax' ? '网关状态' : '消费倍率') + '">' + credBadge + '</td>'
       + '<td class="c" data-label="能力">' + capHtml + '</td>'
       + '<td class="c num" data-label="上下文">' + ctx + '</td>'
       + '<td class="c num" data-label="最大输出">' + maxOut + '</td>'
@@ -11569,7 +12154,7 @@ async function loadSchedulerStatus(){
     const btnTrig = document.getElementById("btnTriggerSched");
 
     if(dot) dot.className = s.enabled ? 'dot' : 'dot off';
-    const modeText = (window.VIEW_REALM === 'intl')
+    const modeText = RUNTIME_REALM === 'all' ? 'WorkBuddy 调度' : (RUNTIME_REALM === 'intl')
       ? (s.mode_intl || '账号 Token 自动保活与凭证常驻 (每日 22:00 集中巡检)')
       : (s.mode_cn || s.mode || '整点排程');
     if(txt) txt.textContent = s.enabled ? ('运行中 · ' + modeText) : '已暂停';
@@ -13587,6 +14172,8 @@ function renderDisabled(){
   ensureHoverTip();
   const count = document.getElementById('disabledCount');
   const rows = disabledRows();
+  const details = document.getElementById('workbuddyDisabledSection');
+  if(details) details.hidden = rows.length === 0;
   if(count) count.textContent = rows.length ? '(' + rows.length + ')' : '';
   if(!rows.length){
     box.innerHTML = '<div class="legend"><span>当前没有禁用的账号或模型。</span></div>';
@@ -15895,27 +16482,31 @@ let CONSOLE_INSIGHT_ROWS = [];
 function renderConsoleAccountHealth(accts){
   const box = document.getElementById('consoleAccountHealth');
   if(!box) return;
-  const isCodearts = window.VIEW_REALM === 'codearts';
-  const groups = isCodearts ? (() => {
-    const st = (window.CODEARTS_OVERVIEW || {}).stats || {};
-    return [
-      {label: 'CodeArts', total: Number(st.total || 0), ok: Number(st.healthy || 0)}
-    ];
-  })() : [['intl', '国际版'], ['cn', '国内版']].map(([realm, label]) => {
-    const realmAccounts = (accts || []).filter(account => account.realm === realm);
-    return {label, total: realmAccounts.length, ok: realmAccounts.filter(accountIsHealthy).length};
-  });
-  const total = groups.reduce((n, g) => n + g.total, 0);
-  const healthy = groups.reduce((n, g) => n + g.ok, 0);
-  const summary = document.getElementById('consoleHealthSummary');
-  if(summary) summary.textContent = total ? healthy + ' / ' + total + ' 可用' : '未接入';
+  const groups = [];
+  for(const realm of ['intl', 'cn', 'minimax', 'codearts']){
+    if((RUNTIME_REALM !== 'all' && RUNTIME_REALM !== realm) || !runtimeRealmAvailable(realm)) continue;
+    const label = realmLabel(realm);
+    if(realm === 'minimax'){
+      const subscriptions = window.MINIMAX_ACCOUNTS || [];
+      const enabled = window.MINIMAX_PLAN?.enabled ? subscriptions.filter(account => account.enabled).length : 0;
+      groups.push({label, total: subscriptions.length, ok: enabled, qualifier: '启用'});
+    }else if(realm === 'codearts'){
+      const stats = window.CODEARTS_OVERVIEW?.stats;
+      groups.push({label, total: stats?.total || 0, ok: stats?.healthy || 0, qualifier: '可用',
+        unknown: !stats});
+    }else{
+      const accounts = (accts || []).filter(account => (account.realm || 'intl') === realm);
+      groups.push({label, total: accounts.length, ok: accounts.filter(accountIsHealthy).length, qualifier: '可用'});
+    }
+  }
   box.innerHTML = groups.map(g => {
     if(!g.total) return '<div class="console-health-row"><span>' + esc(g.label) + '</span>'
-      + '<div class="console-health-track" aria-hidden="true"></div><strong class="console-health-unconfigured">未接入</strong></div>';
+      + '<div class="console-health-track" aria-hidden="true"></div><strong class="console-health-unconfigured">'
+      + (g.unknown ? '等待状态' : '未接入') + '</strong></div>';
     const ratio = Math.max(0, Math.min(100, g.ok / g.total * 100));
     return '<div class="console-health-row"><span>' + esc(g.label) + '</span>'
-      + '<div class="console-health-track" role="progressbar" aria-label="' + esc(g.label) + '账号可用比例" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + ratio.toFixed(1) + '"><span class="console-health-fill" style="width:' + ratio + '%"></span></div>'
-      + '<strong>' + g.ok + ' / ' + g.total + '</strong></div>';
+      + '<div class="console-health-track" role="progressbar" aria-label="' + esc(g.label) + '账号' + g.qualifier + '比例" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + ratio.toFixed(1) + '"><span class="console-health-fill" style="width:' + ratio + '%"></span></div>'
+      + '<strong>' + g.ok + ' / ' + g.total + ' ' + g.qualifier + '</strong></div>';
   }).join('');
 }
 function renderConsoleUsageChart(rows){
@@ -16020,6 +16611,10 @@ function setGatewayStatus(err){
   if(dot) dot.classList.toggle('err', !!err);
   const text = document.getElementById('nextStatusText');
   if(text) text.textContent = err ? '无法连接反代' : '网关运行中';
+  const runtimeDot = document.getElementById('runtimeGatewayDot');
+  if(runtimeDot) runtimeDot.classList.toggle('err', !!err);
+  const runtimeText = document.getElementById('runtimeGatewayText');
+  if(runtimeText) runtimeText.textContent = err ? '网关不可达' : '网关在线';
 }
 async function refresh(polled = false){
   // 5 秒轮询。撞上正在飞的那一轮时**排队补跑**，而不是直接丢掉：早先的实现是
@@ -16052,12 +16647,14 @@ function refreshAllCostViews(){
   }
 }
 async function refreshInner(gen, polled){
+  const scope = RUNTIME_REALM;
+  const scopeQuery = '?realm=' + encodeURIComponent(scope);
   let usage, recent, perf;
   try{
     [usage, recent, perf] = await Promise.all([
-      getJSON('/usage?realm=' + encodeURIComponent(window.VIEW_REALM), POLL_READ),
+      getJSON('/usage' + scopeQuery, POLL_READ),
       recentSnapshot(recentUrl(), polled && RECENT_PAGE > 1),
-      getJSON('/usage/perf?realm=' + encodeURIComponent(window.VIEW_REALM), POLL_READ),
+      getJSON('/usage/perf' + scopeQuery, POLL_READ),
     ]);
     // 取数期间又发起了更新的一轮（例如刚切了区域），这批结果已经过期，
     // 直接扔掉，交给排队的那一轮渲染，免得把旧区域的数字画上去。
@@ -16079,41 +16676,16 @@ async function refreshInner(gen, polled){
   document.getElementById('logfile').textContent = t.log_file || '';
   const rEl = document.getElementById('realm'); if(rEl) rEl.textContent = t.realm ? ' · ' + t.realm : '';
 
-  // 分别统计国际版与国内版账号与积分
   const accts = window.ACCOUNTS || [];
-  const intlAccts = accts.filter(a => a.realm === 'intl');
-  const cnAccts = accts.filter(a => a.realm === 'cn');
-
-  const isAcctActive = a => a.enabled && !a.reserveBlocked && !a.dailyLimitBlocked && !a.creditLimitReached;
-  const intlActive = intlAccts.filter(isAcctActive).length;
-  const cnActive = cnAccts.filter(isAcctActive).length;
-
-  let intlRemain = 0, cnRemain = 0;
-  intlAccts.forEach(a => { if(a.credits) intlRemain += (a.credits.remain || 0); });
-  cnAccts.forEach(a => { if(a.credits) cnRemain += (a.credits.remain || 0); });
-
-  const poolHtml =
-    '<div class="v-split">' +
-      '<div class="v-row"><span class="v-label">国际</span><span class="v-num" style="color:var(--accent)">' + intlActive + '<span class="v-unit">/' + intlAccts.length + '</span></span></div>' +
-      '<div class="v-row"><span class="v-label">国内</span><span class="v-num" style="color:var(--accent)">' + cnActive + '<span class="v-unit">/' + cnAccts.length + '</span></span></div>' +
-    '</div>';
-
-  const credHtml =
-    '<div class="v-split">' +
-      '<div class="v-row"><span class="v-label">国际</span><span class="v-num" style="color:var(--accent2)">' + fmt(intlRemain) + '</span></div>' +
-      '<div class="v-row"><span class="v-label">国内</span><span class="v-num" style="color:var(--accent2)">' + fmt(cnRemain) + '</span></div>' +
-    '</div>';
-
-  const succStr = (perf.success_rate_pct != null ? pct(perf.success_rate_pct) : '100.0%');
   if(t.usd_cny) costUsdRate = Number(t.usd_cny) || costUsdRate;
-
-  // 这三张卡的数字都按当前视图区域取（/usage 等接口带 realm），标题带上区域，
-  // 免得把国际版的用量看成全局的。
-  const realmTag = '（' + (window.VIEW_REALM === 'cn' ? '国内版' : '国际版') + '）';
+  const rate = perf.success_rate_pct;
+  const sample = perf.sampled ? '最近 ' + fmt(perf.sampled) + ' 条请求' : '暂无样本';
+  const firstToken = perf.ttft_ms?.p50;
   document.getElementById('cards').innerHTML =
-    card('网关调用量' + realmTag, fmt(t.requests) + ' <span class="unit">次</span>', '', '') +
-    card('积分消耗' + realmTag, (t.credit != null ? Number(t.credit).toFixed(2) : '0.00') + ' <span class="unit">积分</span>', ((PRICING_ON && t.cost_cny != null) ? ('估算价值: ' + fmtCostBoth(t.cost_cny, 12)) : ''), 'warn') +
-    card('请求成功率' + realmTag, '<span class="' + (perf.errors ? 'v-warn' : 'v-ok') + '">' + succStr + '</span>', '', '');
+    card('调用量', fmt(t.requests || 0), '累计请求') +
+    card('Token 用量', fmt(t.total_tokens || 0), '累计 Token') +
+    card('成功率', rate == null ? '—' : pct(rate), sample, perf.errors ? 'warn' : '') +
+    card('首字延迟', firstToken == null ? '—' : fmt(firstToken) + ' <span class="unit">ms</span>', '中位数 · ' + sample);
 
   const total = recent.total || 0;
   RECENT_PAGE = recent.page || 1;
@@ -16183,7 +16755,7 @@ async function refreshInner(gen, polled){
   // 让"切换币种"这类操作被指纹挡住、表格停在旧币种上）。相同就整段跳过：
   // 不重拼 HTML、不重排、不重挂悬停明细。
   const recentFp = [
-    total, RECENT_PAGE, RECENT_LIMIT, window.VIEW_REALM,
+    total, RECENT_PAGE, RECENT_LIMIT, scope,
     PRICING_ON ? '1' : '0', costCurrency, costUsdRate,
     rows.map(r => acctName(r.account) + '\u0000' + (r.key_name || '')).join('\u0001'),
     JSON.stringify(rows),
@@ -16200,7 +16772,9 @@ async function refreshInner(gen, polled){
         if(costKey) COST_TIP_ROWS.set(costKey, r);
         return '<tr>'
         + '<td class="mono c-time t" data-label="时间">' + esc((r.iso||'').replace('T',' ').slice(5)) + '</td>'
-        + '<td class="mono c-model t" data-label="模型" title="' + esc(r.model) + '">' + esc(r.model) + '</td>'
+        + '<td class="mono c-model t" data-label="模型" title="' + esc(r.model) + '">' + esc(r.model)
+        + (scope === 'all' && ['intl', 'cn', 'minimax', 'codearts'].includes(r.realm)
+          ? '<span class="badge mini runtime-request-route">' + realmLabel(r.realm) + '</span>' : '') + '</td>'
         + '<td class="t c-effort" data-label="推理强度">' + (r.reasoning_effort ? ('<span class="badge-effort">' + esc(r.reasoning_effort) + '</span>') : '<span class="dim">—</span>') + '</td>'
         + '<td class="mono c-acct t" data-label="账号" title="' + esc(r.account||'') + '">' + esc(acctName(r.account)) + '</td>'
         + '<td class="mono c-key t" data-label="API Key" title="' + esc(r.key||'') + '">' + esc(r.key_name || '—') + '</td>'
@@ -16267,7 +16841,7 @@ function recentServerFilters(){
 }
 function recentUrl(){
   let url = '/usage/recent?limit=' + RECENT_LIMIT + '&page=' + RECENT_PAGE
-    + '&realm=' + encodeURIComponent(window.VIEW_REALM);
+    + '&realm=' + encodeURIComponent(RUNTIME_REALM);
   recentServerFilters().forEach(k => {
     url += '&' + k + '=' + encodeURIComponent(RECENT_FILTERS[k]);
   });
@@ -16541,225 +17115,26 @@ function panelClearToken(){
   try { sessionStorage.removeItem(PANEL_STORE); } catch(e){}
 }
 
-/* ---- 登录闸门动画：左品牌区的点阵噪声场（实现取自 qoder2api-hub 登录页，
-   点色读当前主题的 --fg，深浅色切换即自动换色）。 ---- */
-function wbReduced(){
-  try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
-  catch(e){ return false; }
-}
-function wbLoginField(){
-"use strict";
-const ROWS_PER_HEIGHT = 84;
-const MIN_PITCH = 9;
-const MAX_PITCH = 14;
-/** 点径 / 点距 */
-const DOT_RATIO = 0.62;
-const TONE_DIM = 0.22;
-const TONE_MID = 0.47;
-/** 向左漂移速度（格/秒） */
-const DRIFT_SPEED = 2;
-const WAVE_DURATION = 0.72;
-const WAVE_JITTER = 0.1;
-const FLASH_RISE = 0.05;
-const FLASH_SETTLE = 0.33;
-const FLASH_BOOST = 0.45;
-const DEFAULT_SEED = 0x0b17;
-const FIELD_CONTRAST = 2.2;
-const DENSITY_LOW = 0.38;
-const DENSITY_HIGH = 0.9;
-const DENSITY_MAX = 0.82;
-const SCATTER = 0.035;
-const MID_THRESHOLD = 0.8;
-const MID_CHANCE = 0.28;
-/** 每个点闪烁节拍的周期范围（秒） */
-const PERIOD_MIN = 1.2;
-const PERIOD_MAX = 3.2;
-const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
-const easeOutCubic = (t) => 1 - (1 - t) ** 3;
-const smoothstep = (edge0, edge1, value) => {
-    const t = clamp((value - edge0) / (edge1 - edge0), 0, 1);
-    return t * t * (3 - 2 * t);
-};
-/** 整数格点哈希，返回 [0, 1) */
-const hash2 = (ix, iy, seed) => {
-    let h = Math.imul(ix, 0x27d4eb2d) ^ Math.imul(iy, 0x165667b1) ^ Math.imul(seed, 0x9e3779b1);
-    h = Math.imul(h ^ (h >>> 15), 0x85ebca6b);
-    h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
-    h ^= h >>> 16;
-    return (h >>> 0) / 4294967296;
-};
-const valueNoise = (x, y, seed) => {
-    const ix = Math.floor(x);
-    const iy = Math.floor(y);
-    const fx = x - ix;
-    const fy = y - iy;
-    const sx = fx * fx * (3 - 2 * fx);
-    const sy = fy * fy * (3 - 2 * fy);
-    const a = hash2(ix, iy, seed);
-    const b = hash2(ix + 1, iy, seed);
-    const c = hash2(ix, iy + 1, seed);
-    const d = hash2(ix + 1, iy + 1, seed);
-    const top = a + (b - a) * sx;
-    const bottom = c + (d - c) * sx;
-    return top + (bottom - top) * sy;
-};
-const fieldAt = (col, row, time, seed) => {
-    // col 以右侧为 0 向左递增，"内容向左移动" 即采样点向右（col 减小方向）回溯
-    const x = col - DRIFT_SPEED * time;
-    const primary = valueNoise(x / 11, row / 11, seed) * 0.62 + valueNoise(x / 5, row / 5, seed + 1) * 0.38;
-    const secondary = valueNoise(x / 7 + time * 0.6, row / 7 - time * 0.8, seed + 2);
-    // 叠加后分布集中在 0.5 附近，拉伸对比度让云团轮廓和暗区更分明
-    return clamp((primary * 0.62 + secondary * 0.38 - 0.5) * FIELD_CONTRAST + 0.5, 0, 1);
-};
-function pitchForHeight(height) {
-    return clamp(Math.round(height / ROWS_PER_HEIGHT), MIN_PITCH, MAX_PITCH);
-}
-function createDotGrid(width, height, options = {}) {
-    const seed = options.seed ?? DEFAULT_SEED;
-    const origin = options.origin ?? 'bottom-right';
-    const valid = width > 0 && height > 0;
-    const pitch = options.pitch ?? pitchForHeight(height);
-    const dotSize = Math.max(2, Math.round(pitch * DOT_RATIO));
-    const columns = valid ? Math.floor(width / pitch) + 1 : 0;
-    const rows = valid ? Math.floor(height / pitch) + 1 : 0;
-    const count = columns * rows;
-    const grid = {
-        width,
-        height,
-        pitch,
-        dotSize,
-        columns,
-        rows,
-        xs: new Float32Array(count),
-        ys: new Float32Array(count),
-        cols: new Int32Array(count),
-        rowsIndex: new Int32Array(count),
-        revealAt: new Float32Array(count),
-        period: new Float32Array(count),
-        phase: new Float32Array(count),
-        introDuration: 0,
-    };
-    if (!valid)
-        return grid;
-    const diagonal = Math.hypot(width, height);
-    const inset = (pitch - dotSize) / 2;
-    let index = 0;
-    for (let row = 0; row < rows; row += 1) {
-        for (let col = 0; col < columns; col += 1) {
-            // 以右下角为原点向左上排布；最左/最上一圈允许部分出界以铺满边缘
-            const x = width - (col + 1) * pitch + inset;
-            const y = height - (row + 1) * pitch + inset;
-            grid.xs[index] = x;
-            grid.ys[index] = y;
-            grid.cols[index] = col;
-            grid.rowsIndex[index] = row;
-            const originY = origin === 'top-right' ? 0 : height;
-            const distance = clamp(Math.hypot(width - x, originY - y) / diagonal, 0, 1);
-            const revealAt = WAVE_DURATION * distance + WAVE_JITTER * hash2(col, row, seed + 13);
-            grid.revealAt[index] = revealAt;
-            grid.period[index] = PERIOD_MIN + (PERIOD_MAX - PERIOD_MIN) * hash2(col, row, seed + 17);
-            grid.phase[index] = hash2(col, row, seed + 19);
-            grid.introDuration = Math.max(grid.introDuration, revealAt + FLASH_RISE + FLASH_SETTLE);
-            index += 1;
-        }
-    }
-    return grid;
-}
-/** 将各点的目标透明度写入 out；同一时刻结果确定。 */
-function sampleDotTargets(grid, time, out, seed = DEFAULT_SEED) {
-    const count = grid.columns * grid.rows;
-    for (let i = 0; i < count; i += 1) {
-        const col = grid.cols[i];
-        const row = grid.rowsIndex[i];
-        // 每个点在自己的节拍上重新掷骰：节拍之间状态保持不变，切换是瞬时的
-        const epoch = Math.floor(time / grid.period[i] + grid.phase[i]);
-        const roll = hash2(col * 131 + epoch, row, seed + 23);
-        const field = fieldAt(col, row, time, seed);
-        const probability = SCATTER + DENSITY_MAX * smoothstep(DENSITY_LOW, DENSITY_HIGH, field);
-        if (roll >= probability) {
-            out[i] = 0;
-            continue;
-        }
-        const toneRoll = hash2(col * 131 + epoch, row, seed + 29);
-        out[i] = field > MID_THRESHOLD && toneRoll < MID_CHANCE ? TONE_MID : TONE_DIM;
-    }
-}
-function applyReveal(alpha, revealAt, elapsed) {
-    const local = elapsed - revealAt;
-    if (local <= 0)
-        return 0;
-    if (alpha <= 0)
-        return 0;
-    const peak = Math.min(1, alpha + FLASH_BOOST);
-    if (local < FLASH_RISE)
-        return peak * (local / FLASH_RISE);
-    const settle = (local - FLASH_RISE) / FLASH_SETTLE;
-    if (settle >= 1)
-        return alpha;
-    return peak + (alpha - peak) * easeOutCubic(settle);
+document.addEventListener('DOMContentLoaded',function(){
+ if(location.protocol === 'http:' || location.protocol === 'https:'){
+   document.querySelectorAll('#panelGate [data-login-path]').forEach(row => {
+     row.querySelector('code').textContent = location.origin + row.dataset.loginPath;
+     row.querySelector('button').disabled = false;
+   });
+ }
+});
+async function copyPanelEndpoint(id){
+  const address = document.getElementById(id);
+  const status = document.getElementById('panelEndpointCopyStatus');
+  if(!address || !status) return;
+  try{
+    await writeClipboard(address.textContent);
+    status.textContent = '已复制到剪贴板';
+  } catch(e){
+    status.textContent = '复制失败，请手动复制地址';
+  }
 }
 
-return {createDotGrid,sampleDotTargets,applyReveal};
-}
-let WB_LOGIN_STOP=null;
-function wbStartLogin(){
- if(WB_LOGIN_STOP)return;
- const canvas=document.getElementById('wbLoginCanvas');
- if(!canvas||!canvas.getContext)return;
- const ctx=canvas.getContext('2d');if(!ctx)return;
- const field=wbLoginField();
- let grid,targets,frame=0,started=performance.now(),last=0;
- const reduced=wbReduced();
- // 闸门的可见性与 #panelGate 一致：内联 display:none 或首帧判定的
- // wb-panel-session 类都算隐藏，隐藏就停帧，不给后台留空转的 rAF。
- function gateHidden(){
-   const gate=document.getElementById('panelGate');
-   return !gate||gate.style.display==='none'||document.documentElement.classList.contains('wb-panel-session');
- }
- function resize(){
-   const box=canvas.getBoundingClientRect();
-   const dpr=Math.min(window.devicePixelRatio||1,2);
-   canvas.width=box.width*dpr;canvas.height=box.height*dpr;
-   ctx.setTransform(dpr,0,0,dpr,0,0);
-   grid=field.createDotGrid(box.width,box.height);
-   targets=new Float32Array(grid.xs.length);
- }
- function draw(now){
-   if(gateHidden()){stop();return;}
-   if(now-last>=1000/30||reduced){
-     last=now;const seconds=reduced?4:(now-started)/1000;
-     if(!document.hidden){
-       field.sampleDotTargets(grid,seconds,targets);
-       ctx.clearRect(0,0,grid.width,grid.height);
-       ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--fg').trim()||'#1f1e1b';
-       for(let i=0;i<targets.length;i++){
-         const alpha=reduced?targets[i]:field.applyReveal(targets[i],grid.revealAt[i],seconds);
-         if(alpha<=0)continue;
-         ctx.globalAlpha=alpha;
-         ctx.fillRect(grid.xs[i],grid.ys[i],grid.dotSize,grid.dotSize);
-       }
-       ctx.globalAlpha=1;
-     }
-   }
-   if(!reduced)frame=requestAnimationFrame(draw);
- }
- function stop(){cancelAnimationFrame(frame);window.removeEventListener('resize',resize);WB_LOGIN_STOP=null;}
- resize();window.addEventListener('resize',resize);WB_LOGIN_STOP=stop;draw(started);
-}
-function wbLoginVeil(){
- if(typeof document.createElement!=='function'||wbReduced())return;
- const veil=document.createElement('div');veil.className='wb-login-reveal-veil';
- document.body.appendChild(veil);
- setTimeout(()=>{try{veil.remove();}catch(e){}},720);
-}
-// 首次加载（无令牌，闸门默认可见）就要把动画跑起来；有令牌时闸门被首帧判定
-// 隐藏，这里不动，交给 bootPanel → panelNeedsLogin / panelHideGate 处理。
-document.addEventListener('DOMContentLoaded',function(){
- const gate=document.getElementById('panelGate');
- if(!gate||gate.style.display==='none')return;
- if(document.documentElement.classList.contains('wb-panel-session'))return;
- if(typeof requestAnimationFrame==='function')requestAnimationFrame(wbStartLogin);else wbStartLogin();
-});
 function panelSyncRemember(){
   const el = document.getElementById('panelRemember');
   if(el) el.checked = PANEL_REMEMBER;
@@ -16775,20 +17150,16 @@ function panelNeedsLogin(){
   // html.wb-panel-session（!important）。必须先摘掉那个类，否则闸门永远出不来
   // ——会话过期、登录失败都靠这个函数把登录框放回屏幕。
   const gate = document.getElementById('panelGate');
-  // 从隐藏态亮回屏幕（会话过期 / 登录失败）时放一层面纱淡出，配合入场动画。
-  const wasHidden = document.documentElement.classList.contains('wb-panel-session')
-    || !!(gate && gate.style.display === 'none');
   document.documentElement.classList.remove('wb-panel-session');
   if(gate) gate.style.display = 'flex';
   panelSyncRemember();
   const input = document.getElementById('panelPwdInput');
   if(input){
     input.disabled = false;
-    input.focus();
+    input.focus({preventScroll: true});
   }
-  if(typeof requestAnimationFrame === 'function') requestAnimationFrame(wbStartLogin);
-  else wbStartLogin();
-  if(wasHidden) wbLoginVeil();
+  const submit = document.getElementById('panelLoginSubmit');
+  if(submit) submit.disabled = document.getElementById('panelLoginForm')?.getAttribute('aria-busy') === 'true';
 }
 
 function panelSessionLost(){
@@ -16821,10 +17192,6 @@ function panelHideGate(){
   // 首帧判定的类只在「复核还没回来」时有用；一旦确认已登录就清掉，
   // 让「有类 ⇔ 闸门被首帧判定隐藏」这条不变式只作用于启动阶段。
   const gate = document.getElementById('panelGate');
-  // 登录成功、闸门真的亮在屏幕上时放一层退出面纱（背景色淡出露出工作台）；
-  // 已登录用户每次刷新走首帧隐藏分支，不该跟着闪一层。
-  const gateWasShown = !document.documentElement.classList.contains('wb-panel-session')
-    && !!(gate && gate.style.display !== 'none');
   document.documentElement.classList.remove('wb-panel-session');
   if(gate) gate.style.display = 'none';
   const input = document.getElementById('panelPwdInput');
@@ -16832,11 +17199,13 @@ function panelHideGate(){
     input.disabled = true;
     input.value = '';
   }
-  if(WB_LOGIN_STOP) WB_LOGIN_STOP();
-  if(gateWasShown) wbLoginVeil();
+  const submit = document.getElementById('panelLoginSubmit');
+  if(submit) submit.disabled = true;
 }
 
 async function submitPanelLogin(){
+  const form = document.getElementById('panelLoginForm');
+  if(form?.getAttribute('aria-busy') === 'true') return;
   const input = document.getElementById('panelPwdInput');
   const msg = document.getElementById('panelLoginMsg');
   const password = (input && input.value) || '';
@@ -16846,6 +17215,12 @@ async function submitPanelLogin(){
     if(msg) msg.textContent = '请通过 http://127.0.0.1:8788/ 打开面板，不要直接双击 dashboard.html';
     panelNeedsLogin();
     return;
+  }
+  const submit = document.getElementById('panelLoginSubmit');
+  form?.setAttribute('aria-busy', 'true');
+  if(submit){
+    submit.disabled = true;
+    submit.textContent = '登录中…';
   }
   try {
     const r = await fetch('/panel/login', {
@@ -16876,6 +17251,12 @@ async function submitPanelLogin(){
     if(msg) msg.textContent = '登录失败: ' + e.message;
     // 网络层失败（网关没起来、反代 502）同样要把闸门留在屏幕上。
     panelNeedsLogin();
+  } finally {
+    form?.removeAttribute('aria-busy');
+    if(submit){
+      submit.disabled = !!input?.disabled;
+      submit.textContent = '进入面板';
+    }
   }
 }
 
@@ -16892,6 +17273,11 @@ async function bootPanel(){
   try {
     const r = await fetch('/panel/status', {cache: 'no-store', headers: authHeaders()});
     PANEL_STATUS = await r.json().catch(() => ({}));
+    const label = document.getElementById('panelGatewayVersion');
+    // Older backends report their running version only in the Server header.
+    const server = r.headers?.get('Server') || '';
+    const version = PANEL_STATUS.version || /\bwb-proxy\/([0-9][\w.+-]*)/.exec(server)?.[1];
+    if(label && typeof version === 'string' && version) label.textContent = 'v' + version;
   } catch(e) { PANEL_STATUS = {}; }
   const hint = document.getElementById('panelDefaultHint');
   if(hint && PANEL_STATUS.panel_password_is_default) hint.style.display = 'block';
@@ -17021,7 +17407,7 @@ let pageNavTimer = 0;
    display 而不是 offsetParent —— 后者在整页隐藏（切到其它标签页）时会把所有
    区块都判成不可见，导航会整个空掉。 */
 function pageNavSections(page){
-  if(!page) return [];
+  if(!page || page.id === 'pageAccounts') return [];
   return Array.from(page.querySelectorAll('section')).filter(function(sec){
     if(getComputedStyle(sec).display === 'none') return false;
     if(!sec.querySelector('h2')) return false;
@@ -17814,6 +18200,8 @@ async function loadSettings(showToast, opts){
     // 顶部页签显示：字段缺失或存坏了都按「全部显示」算，见 normaliseHiddenPages。
     applyHiddenPages(data.hidden_pages);
     applyMediaSettings(data.media, data);
+    renderChannelSettings(data.channels);
+    renderMiniMaxPlan(data.minimax, data.minimax_accounts);
 
     // 面板窗口限高：字段缺失（后端旧一点）或存坏了都按默认 640px 算，0 = 不限。
     // 坏值回落默认状态这条口径与「顶部页签显示」「账号区折叠」一致，见
@@ -20378,9 +20766,7 @@ function renderDeletedKeyRows(){
   if(!box) return;
   if(!DELETED_KEY_ROWS.length){ box.innerHTML = ''; return; }
   const rows = DELETED_KEY_ROWS.map(k => {
-    const realmLbl = (k.realm === 'intl') ? '固定国际版出口'
-      : ((k.realm === 'cn') ? '固定国内版出口'
-        : ((k.realm === 'codearts') ? '固定 CodeArts 出口' : '按模型前缀路由'));
+    const realmLbl = k.realm ? '固定 ' + realmLabel(k.realm) + '出口' : '按模型前缀路由';
     return '<div style="font-size:12px;color:var(--dim);display:flex;gap:14px;flex-wrap:wrap;padding:7px 0;border-top:1px solid var(--line)">'
       + '<span style="color:var(--fg);font-weight:600">' + esc(k.name || '未命名') + '</span>'
       + '<span>' + esc(realmLbl) + '</span>'
@@ -20405,6 +20791,7 @@ function keyRealmBadge(realm, px){
   if(realm === 'intl') return '<span class="realm-badge-intl" style="' + size + '">固定国际版出口</span>';
   if(realm === 'cn') return '<span class="realm-badge-cn" style="' + size + '">固定国内版出口</span>';
   if(realm === 'codearts') return '<span class="realm-badge-codearts" style="' + size + '">固定 CodeArts 出口</span>';
+  if(realm === 'minimax') return '<span class="realm-badge-minimax" style="' + size + '">固定 MiniMax 出口</span>';
   return '<span class="badge s" style="' + size + '">按模型前缀路由</span>';
 }
 
@@ -20419,9 +20806,9 @@ function renderKeyRows(){
   }
   box.innerHTML = API_KEY_ROWS.map((row, i) => {
     if(row._editing){
-      const realmChoices = REALM_CHOICES.concat(
-        (window.REALM_OPTIONS || []).includes('codearts')
-          ? [['codearts', '固定 CodeArts 出口']] : []);
+      const realmChoices = REALM_CHOICES.concat(['minimax', 'codearts']
+        .filter(realm => row.realm === realm || channelEnabled(realm))
+        .map(realm => [realm, '固定 ' + realmLabel(realm) + ' 出口']));
       const options = realmChoices.map(([val, lbl]) =>
         '<option value="' + val + '"' + ((row.realm || '') === val ? ' selected' : '') + '>' + lbl + '</option>'
       ).join('');
@@ -20438,7 +20825,7 @@ function renderKeyRows(){
         +   '</div>'
         +   '<div>'
         +     '<div style="font-size:12px;color:var(--dim);margin-bottom:4px;font-weight:500">出口绑定</div>'
-        +     '<select id="editKeyRealm_' + i + '" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit;color:var(--fg)">'
+        +     '<select id="editKeyRealm_' + i + '" onchange="renderKeyPickers(' + i + ')" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit;color:var(--fg)">'
         +       options
         +       '</select>'
         +   '</div>'
@@ -20629,7 +21016,12 @@ function updateKeyAccountSummary(i){
 function toggleKeyPicker(kind, i){
   const id = kind === 'model' ? 'editKeyModelPicker_' + i : 'editKeyAccountPicker_' + i;
   const el = document.getElementById(id);
-  if(el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if(!el) return;
+  const opening = el.style.display === 'none';
+  el.style.display = opening ? 'block' : 'none';
+  const loadedRealm = el.dataset.realm;
+  const realm = document.getElementById('editKeyRealm_' + i)?.value || '';
+  if(opening && kind === 'model' && loadedRealm !== realm) renderKeyPickers(i);
 }
 /* 使用客户端目录中的完整 ID 保存 Key 的模型权限。 */
 async function loadKeyModelCatalog(row){
@@ -20640,18 +21032,21 @@ async function loadKeyModelCatalog(row){
 async function renderKeyPickers(i){
   const row = API_KEY_ROWS[i];
   if(!row) return;
+  const realm = document.getElementById('editKeyRealm_' + i)?.value ?? row.realm;
   const modelList = document.getElementById('editKeyModelList_' + i);
   if(modelList){
     modelList.innerHTML = '<div style="font-size:12px;color:var(--dim);padding:4px">正在加载模型清单…</div>';
     let models = [];
-    try { models = await loadKeyModelCatalog(row); } catch(e) { models = []; }
+    try { models = await loadKeyModelCatalog({realm}); } catch(e) { models = []; }
+    const picker = document.getElementById('editKeyModelPicker_' + i);
+    if(picker) picker.dataset.realm = realm || '';
     if(!(models || []).length){
       modelList.innerHTML = '<div style="font-size:12px;color:var(--warn);padding:4px">模型清单为空或加载失败，<a href="javascript:void(0)" onclick="renderKeyPickers(' + i + ')">重试</a></div>';
     } else {
       // 绑定了出口的 Key 只列该出口的目录：用已有的出口徽章说明范围，不新增
       // 需要翻译的句子（词典按整句匹配，新句在英文 / 正體界面会回落中文）。
-      const boundHint = row.realm
-        ? '<div style="padding:2px 4px 6px">' + keyRealmBadge(row.realm, 10) + '</div>'
+      const boundHint = realm
+        ? '<div style="padding:2px 4px 6px">' + keyRealmBadge(realm, 10) + '</div>'
         : '';
       modelList.innerHTML = boundHint + models.map(m => {
         const id = String((m && m.id) || '');
@@ -20700,6 +21095,14 @@ async function renderKeyPickers(i){
           group: 'CodeArts'
         });
       });
+    }
+    for(const a of window.MINIMAX_ACCOUNTS || []){
+      if(!seenUids.has(a.uid)) accts.push({uid: a.uid, nickname: a.name, realm: 'minimax', group: 'MiniMax'});
+    }
+    if(realm === 'minimax'){
+      for(let index = accts.length - 1; index >= 0; index--){
+        if(accts[index].realm !== 'minimax') accts.splice(index, 1);
+      }
     }
     const groupSelect = document.getElementById('editKeyAccountGroup_' + i);
     if(groupSelect){
@@ -21556,6 +21959,9 @@ function switchMainTab(tab){
     if(on) initPageNav(page);
   });
   if(tab === 'runtime') renderConsoleUsageChart(CONSOLE_INSIGHT_ROWS);
+  if(tab === 'accounts' || tab === 'gateway' || tab === 'agents') updateUI();
+  if(tab === 'gateway') loadModels();
+  if(tab === 'accounts' && window.VIEW_REALM === 'codearts') loadCodeartsOverview();
   if(tab === 'tasks'){ loadGrowthTasks(); loadActivityBoard(); }
   if(tab === 'analytics'){ loadAnalytics(); loadAnalyticsMatrix(); }
   if(tab === 'settings'){ loadSettings(); loadProxySlots(); }
@@ -21796,12 +22202,12 @@ function renderExternalApiDoc(id){
   if(!detail) return;
   document.querySelectorAll('#apiDocList .api-doc-item').forEach(function(item){ item.classList.toggle('active', item.getAttribute('data-doc') === window.EXTERNAL_API_DOC_SELECTED); });
   const rows = (doc.params || []).map(function(row){ return '<tr><td class="mono">' + esc(row[0]) + '</td><td>' + esc(row[1]) + '</td><td>' + esc(row[2]) + '</td><td>' + esc(row[3]) + '</td></tr>'; }).join('');
-  detail.innerHTML = '<div class="api-section-head"><div><h3>' + esc(doc.title) + '</h3><p><span class="api-doc-method">' + esc(doc.method) + '</span> <span class="mono">' + esc(doc.path) + '</span></p></div><span class="api-scope-chip">需要 ' + esc(doc.scope) + '</span></div>'
+  detail.innerHTML = '<div class="api-section-head"><div><h3>' + esc(doc.title) + '</h3><p><span class="api-doc-method" data-method="' + esc(doc.method) + '">' + esc(doc.method) + '</span> <span class="mono">' + esc(doc.path) + '</span></p></div><span class="api-scope-chip">需要 ' + esc(doc.scope) + '</span></div>'
     + '<section><h3>接口约定</h3><div class="api-doc-contract">' + esc(doc.contract) + '</div></section>'
     + '<section><h3>请求参数</h3><table class="api-param-table"><thead><tr><th>参数</th><th>类型</th><th>必填</th><th>说明</th></tr></thead><tbody>' + rows + '</tbody></table></section>'
     + '<section><h3>完整 cURL 示例</h3><pre class="api-doc-pre">' + esc(doc.curl()) + '</pre></section>'
-    + '<section><h3>请求实例</h3><pre class="api-doc-pre">' + esc(JSON.stringify(doc.request, null, 2)) + '</pre></section>'
-    + '<section><h3>响应示例</h3><pre class="api-doc-pre">' + esc(JSON.stringify(doc.response, null, 2)) + '</pre></section>';
+    + '<div class="api-doc-examples"><section><h3>请求实例</h3><pre class="api-doc-pre">' + esc(JSON.stringify(doc.request, null, 2)) + '</pre></section>'
+    + '<section><h3>响应示例</h3><pre class="api-doc-pre">' + esc(JSON.stringify(doc.response, null, 2)) + '</pre></section></div>';
 }
 
 function selectExternalApiDoc(id, button){
@@ -21853,10 +22259,10 @@ function agentRequestRealm(){
   if(keyId){
     const k = (AGENT_KEYS || []).find(x => String(x.id) === String(keyId));
     const kr = k && k.realm;
-    if(kr === 'intl' || kr === 'cn') return kr;
+    if(Object.hasOwn(CHANNEL_INPUTS, kr)) return kr;
   }
   const v = window.VIEW_REALM || 'intl';
-  return (v === 'cn' || v === 'intl') ? v : 'intl';
+  return Object.hasOwn(CHANNEL_INPUTS, v) ? v : 'intl';
 }
 
 async function loadAgents(showToast){
@@ -21867,7 +22273,10 @@ async function loadAgents(showToast){
   try {
     // 带上出口：后端据此挑目录，否则下拉框永远跟着「默认出口」走，切到国际版
     // 视图、或把 Key 绑成国际版，都拿不到国际版模型。
-    const data = await getJSON('/agents?realm=' + encodeURIComponent(agentRequestRealm()));
+    const keyId = document.getElementById('agentKeySelect')?.value;
+    const query = new URLSearchParams({realm: agentRequestRealm()});
+    if(keyId) query.set('key_id', keyId);
+    const data = await getJSON('/agents?' + query);
     AGENTS_DATA = data || {};
     AGENT_MODELS = AGENTS_DATA.models || [];
     AGENT_KEYS = AGENTS_DATA.keys || AGENTS_DATA.api_keys || [];
@@ -21911,7 +22320,7 @@ function renderAgentConnForm(){
       const id = k.id != null ? String(k.id) : '';
       const name = k.name || id || 'Key';
       html += '<option value="' + esc(id) + '"' + (k.enabled === false ? ' disabled' : '')
-        + '>' + esc(name) + (k.realm ? ' (' + esc(k.realm) + ')' : '') + '</option>';
+        + '>' + esc(name) + (k.realm ? ' (' + esc(realmLabel(k.realm)) + ')' : '') + '</option>';
     });
     keySel.innerHTML = html;
     if(prev && keySel.querySelector('option[value="' + prev.replace(/"/g, '\\"') + '"]')) keySel.value = prev;
@@ -21921,7 +22330,8 @@ function renderAgentConnForm(){
   const realmHint = document.getElementById('agentModelRealmHint');
   if(realmHint){
     const r = (AGENTS_DATA && AGENTS_DATA.realm) || agentRequestRealm();
-    realmHint.textContent = '（' + realmLabel(r) + '目录）';
+    const miniMax = r !== 'minimax' && AGENT_MODELS.some(m => m?.route_id === 'minimax');
+    realmHint.textContent = '（' + realmLabel(r) + '目录' + (miniMax ? ' · MiniMax' : '') + '）';
   }
   const modelSel = document.getElementById('agentModelSelect');
   if(modelSel){
@@ -23547,6 +23957,7 @@ function keyRealmCell(k){
   if(k.source === 'bucket') return '<span style="color:var(--dim)">—</span>';
   if(k.realm === 'cn') return '<span class="badge warn" style="font-size:10px">国内版</span>';
   if(k.realm === 'intl') return '<span class="badge s" style="font-size:10px">国际版</span>';
+  if(k.realm === 'minimax' || k.realm === 'codearts') return keyRealmBadge(k.realm, 10);
   // realm 为空的 Key 不绑出口，而是跟着模型走：它可能两个出口都用过，
   // 那时代理返回的积分是两个价格体系相加的结果，必须说出来。
   if(k.cross_realm) return '<span class="badge warn" style="font-size:10px">跟随 · 混合</span>';
@@ -23782,7 +24193,7 @@ let recentListRows = [];
 const recentListKeys = new WeakMap();
 async function loadRecent(){
   try{
-    const r = await api('/usage/recent?limit=12&watch=1&rev=' + recentListRevision, {});
+    const r = await api('/usage/recent?realm=all&limit=12&watch=1&rev=' + recentListRevision, {});
     const list = $('recentList');
     if(!r.unchanged){
       recentListRevision = r.revision || '';
@@ -23804,7 +24215,9 @@ async function loadRecent(){
     const displayed = new Set();
     recentListRows.forEach((x, i) => {
       const ok = x.outcome === 'completed';
-      const nm = nicknameOf(x.account);
+      const isMiniMax = x.route_id === 'minimax';
+      const nm = isMiniMax ? 'MiniMax' : nicknameOf(x.account);
+      const shownModel = (isMiniMax && x.requested_model) || x.model || '';
       // 失败行原来只有一个 [failed] 标签；把 HTTP 码带上、上游原话挂进悬停气泡，
       // 概览页看到「失败了」的时候当场就能知道为什么，不用切回最近请求表。
       const why = String(x.message == null ? '' : x.message).replace(/\s+/g, ' ').trim();
@@ -23814,7 +24227,7 @@ async function loadRecent(){
         : ' <span class="err"' + (whyText ? ' data-tip="' + esc(whyText) + '"' : '')
           + '>[' + esc(x.outcome || '失败') + (code ? ' ' + esc(code) : '') + ']</span>';
       const html = `<span class="t">${esc(recentStamp(x.iso))}</span>
-        <span class="m"><b>${esc(x.model || '')}</b> → ${esc(nm.length > 16 ? nm.slice(0, 16) + '…' : nm)}${tag}</span>
+        <span class="m"><b>${esc(shownModel)}</b> → ${esc(nm.length > 16 ? nm.slice(0, 16) + '…' : nm)}${tag}</span>
         <span class="r"><b>${fmtCompact(x.total_tokens || 0)}</b> tok · ${((x.elapsed_ms || 0) / 1000).toFixed(1)}s</span>`;
       let node = previous.get(html)?.shift();
       if(!node){
@@ -23842,7 +24255,6 @@ if(typeof MutationObserver !== 'undefined'){
   new MutationObserver(() => {
     if (state.series) drawSeries();
     drawSparks();
-    if (state.heat) buildHeatGrid(state.heat);
   }).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
 }
 
@@ -24188,73 +24600,121 @@ function drawSeries(){
 }
 
 /* ---------------- 热力图 ---------------- */
-function buildHeatGrid(heat){
-  const grid = $('hmGrid'), monthsEl = $('hmMonths');
-  if (!heat || !heat.series){ return; }
-  const today = new Date(); today.setHours(0,0,0,0);
-  const start = new Date(today); start.setDate(start.getDate() - 365);
-  // 对齐到周一
-  const dow = (start.getDay() + 6) % 7;
-  start.setDate(start.getDate() - dow);
-  const startKey = fmtDate(start.getTime()/1000), todayKey = fmtDate(today.getTime()/1000);
+const heatMobile = window.matchMedia('(max-width: 860px)');
+let heatRange = null;
+let heatSelectedDay = null;
+
+function buildHeatGrid(heat, alignLatest = false){
+  if (!heat || !Array.isArray(heat.series)) return;
+  const grid = $('hmGrid'), months = $('hmMonths'), scroll = $('hmScroll');
+  const focused = grid.contains(document.activeElement);
+  const atLatest = scroll.scrollWidth - scroll.clientWidth - scroll.scrollLeft <= 1;
+  const previousToday = grid.querySelector('[aria-current="date"]')?.dataset.d;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayKey = fmtDate(today.getTime() / 1000);
+  const yearStart = new Date(today);
+  yearStart.setDate(yearStart.getDate() - 365);
+  const yearStartKey = fmtDate(yearStart.getTime() / 1000);
+  const range = heatRange || (heatMobile.matches ? 'recent' : 'year');
+  const start = new Date(yearStart);
+  if (range === 'recent'){
+    start.setTime(today.getTime());
+    start.setDate(start.getDate() - (start.getDay() + 6) % 7 - 12 * 7);
+  }
+  const startKey = fmtDate(start.getTime() / 1000);
   const map = new Map(heat.series.filter(b => b.at > 0).map(b => [fmtDate(b.at), b])
-    .filter(([day]) => day >= startKey && day <= todayKey));
-  const maxReq = Math.max(1, ...Array.from(map.values(), b => b.requests || 0));
-  const cells = [];
-  let totalReq = 0, totalTok = 0, activeDays = 0;
-  let peakRequests = 0, peakDate = '';
-  const monthSpans = []; let lastMonth = -1, weekIdx = 0;
-  for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)){
-    const key = fmtDate(d.getTime()/1000);
-    const b = map.get(key);
-    const req = b ? (b.requests || 0) : 0;
-    totalReq += req; totalTok += b ? (b.total_tokens||0) : 0;
-    if (req > 0){
-      activeDays++;
-      if (req >= peakRequests){ peakRequests = req; peakDate = key; }
+    .filter(([day]) => day >= yearStartKey && day <= todayKey));
+  let totalReq = 0, totalTok = 0, activeDays = 0, peakRequests = 0, peakDate = '';
+  for (const [day, bucket] of map){
+    const requests = Number(bucket.requests) || 0;
+    totalReq += requests;
+    totalTok += Number(bucket.total_tokens) || 0;
+    if (requests <= 0) continue;
+    activeDays++;
+    if (requests > peakRequests || (requests === peakRequests && day > peakDate)){
+      peakRequests = requests;
+      peakDate = day;
     }
-    const lv = req === 0 ? 0 : req < maxReq*.08 ? 1 : req < maxReq*.25 ? 2 : req < maxReq*.6 ? 3 : 4;
-    const m = d.getMonth();
-    if (m !== lastMonth){ monthSpans.push({m, col: weekIdx}); lastMonth = m; }
-    cells.push(`<div class="hm-cell l${lv}" data-d="${key}" data-r="${req}" data-t="${b?(b.total_tokens||0):0}"${key === todayKey ? ' aria-current="date"' : ''}></div>`);
-    if (d.getDay() === 0) weekIdx++;
+  }
+
+  const padding = (start.getDay() + 6) % 7;
+  const cells = Array(padding).fill('<span aria-hidden="true"></span>');
+  const monthSpans = [];
+  if (heatSelectedDay && (heatSelectedDay < startKey || heatSelectedDay > todayKey)) heatSelectedDay = null;
+  const selected = heatSelectedDay || todayKey;
+  let lastMonth = -1;
+  for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)){
+    const key = fmtDate(d.getTime() / 1000);
+    const bucket = map.get(key);
+    const requests = Number(bucket?.requests) || 0;
+    const tokens = Number(bucket?.total_tokens) || 0;
+    const level = requests === 0 ? 0 : requests < 10 ? 1 : requests < 50 ? 2 : requests < 200 ? 3 : 4;
+    const month = d.getMonth();
+    if (month !== lastMonth){
+      monthSpans.push({month, col: Math.floor(cells.length / 7)});
+      lastMonth = month;
+    }
+    const pressed = key === selected;
+    cells.push(`<button type="button" class="hm-cell l${level}" data-d="${key}" data-r="${requests}" data-t="${tokens}" tabindex="${pressed ? 0 : -1}" aria-label="${key}" title="${key} · 请求数 ${requests} · Token ${tokens}" aria-pressed="${pressed}"${key === todayKey ? ' aria-current="date"' : ''}></button>`);
   }
   const totalCols = Math.ceil(cells.length / 7);
-  const columns = `repeat(${totalCols}, var(--hm-cell-size, 10px))`;
-  grid.style.gridTemplateColumns = columns;
+  const columns = `repeat(${totalCols}, var(--hm-cell-size))`;
+  const wrap = $('hmWrap');
+  wrap.style.setProperty('--hm-weeks', totalCols);
+  grid.style.gridTemplateColumns = months.style.gridTemplateColumns = columns;
   grid.innerHTML = cells.join('');
-  // 月份标签：按列定位
-  monthsEl.style.gridTemplateColumns = columns;
-  monthsEl.style.gap = 'var(--hm-gap, 2px)';
-  monthsEl.innerHTML = monthSpans.map((s, i) => {
-    const nextCol = i + 1 < monthSpans.length ? monthSpans[i+1].col : totalCols;
-    const w = nextCol - s.col;
-    if (w < 2) return '';
-    return `<span style="grid-column:${s.col+1} / span ${w}">${s.m+1}月</span>`;
+  months.innerHTML = monthSpans.map(({month, col}, i) => {
+    const nextCol = monthSpans[i + 1]?.col ?? totalCols;
+    const width = nextCol - col;
+    if (width < 2 && i !== monthSpans.length - 1) return '';
+    // A trailing partial month can use the space before its last column.
+    const labelCol = i === monthSpans.length - 1 && width < 2 ? Math.max(0, col - 1) : col;
+    return `<span style="grid-column:${labelCol + 1} / ${nextCol + 1}">${month + 1}月</span>`;
   }).join('');
-  $('hmMeta').textContent = `${activeDays} 天有活动 · 共 ${fmtCompact(totalReq)} 次请求`;
-  $('hmSummary').textContent = `近一年 ${fmtCompact(totalTok)} tokens`;
-  // B 版：年度统计数字组
+  $('hmMeta').textContent = `${startKey} – ${todayKey}`;
   $('hmStats').innerHTML = `
     <div class="hm-stat"><b>${activeDays}</b><span>天有活动</span></div>
     <div class="hm-stat"><b>${fmtCompact(totalReq)}</b><span>总请求</span></div>
     <div class="hm-stat"><b>${fmtCompact(totalTok)}</b><span>总 Token</span></div>
-    <div class="hm-stat"><b>${peakDate ? fmtCompact(peakRequests) : '—'}</b><span>峰值单日${peakDate ? ' · ' + peakDate.slice(5) : ''}</span></div>`;
-  // tooltip
-  const tip = $('hmTip');
-  const showTip = ev => {
-    const c = ev.target.closest('.hm-cell');
-    if (!c) return;
-    tip.style.opacity = 1;
-    tip.innerHTML = `<div class="tt-t">${c.dataset.d}</div>` +
-      `<div class="tt-r"><span>请求</span><b>${fmtCompact(+c.dataset.r)}</b></div>` +
-      `<div class="tt-r"><span>Token</span><b>${fmtCompact(+c.dataset.t)}</b></div>`;
-    tip.style.left = Math.max(8, Math.min(window.innerWidth - tip.offsetWidth - 8, ev.clientX + 12)) + 'px';
-    tip.style.top = Math.max(8, ev.clientY - tip.offsetHeight - 8) + 'px';
-  };
-  const hideTip = () => { tip.style.opacity = 0; };
-  grid.onmouseover = showTip;
-  grid.onmouseleave = hideTip;
+    <div class="hm-stat"><b>${peakDate ? fmtCompact(peakRequests) : '—'}</b><span>峰值单日</span>${peakDate ? ` <span>${peakDate.slice(5)}</span>` : ''}</div>`;
+  $('hmRange').querySelectorAll('button').forEach(button => {
+    button.setAttribute('aria-pressed', String(button.dataset.heatRange === range));
+  });
+  const firstRender = wrap.hidden;
+  wrap.hidden = $('hmFoot').hidden = $('hmAnnual').hidden = false;
+  $('hmEmpty').hidden = true;
+  const selectedCell = grid.querySelector('[aria-pressed="true"]');
+  showHeatDay(selectedCell);
+  if (focused) selectedCell.focus({preventScroll: true});
+  if (firstRender || alignLatest || (atLatest && !heatSelectedDay && previousToday !== todayKey)){
+    scroll.scrollLeft = scroll.scrollWidth;
+  }
+}
+
+function showHeatDay(cell){
+  const {d, r, t} = cell.dataset;
+  $('hmDate').textContent = d;
+  $('hmRequests').textContent = Number(r).toLocaleString();
+  $('hmTokens').textContent = Number(t).toLocaleString();
+}
+
+function selectHeatDay(cell, focus = false){
+  const grid = $('hmGrid');
+  const previous = grid.querySelector('[aria-pressed="true"]');
+  previous.tabIndex = -1;
+  previous.setAttribute('aria-pressed', 'false');
+  cell.tabIndex = 0;
+  cell.setAttribute('aria-pressed', 'true');
+  heatSelectedDay = cell.dataset.d;
+  showHeatDay(cell);
+  if (!focus) return;
+  cell.focus({preventScroll: true});
+  const scroll = $('hmScroll');
+  const bounds = scroll.getBoundingClientRect();
+  const day = cell.getBoundingClientRect();
+  if (day.left < bounds.left + 2) scroll.scrollLeft += day.left - bounds.left - 2;
+  if (day.right > bounds.right - 2) scroll.scrollLeft += day.right - bounds.right + 2;
 }
 
 /* ---------------- 用量明细（维度切换） ---------------- */
@@ -24278,7 +24738,7 @@ const dimDefs = {
         tokSub: `思考 ${fmtCompact(m.window.reasoning_tokens ?? m.window.reasoning ?? 0)} · 缓存 ${fmtCompact(m.window.cached_tokens ?? 0)}`,
         speed: m.window.speed_avg,
         cache: m.window.cache_hit_pct,
-        credit: m.window.credit != null ? Number(m.window.credit).toFixed(2) : '—',
+        credit: m.model?.startsWith('minimax/') || m.window.credit == null ? '—' : Number(m.window.credit).toFixed(2),
         cost: m.window.cost_cny,
       }));
     }
@@ -24293,17 +24753,28 @@ const dimDefs = {
     ],
     rows(){
       const a = state.analytics; if (!a) return [];
-      return (a.accounts || []).map(acc => ({
-        key: acc.uid,
-        who: `<div class="who"><b>${acc.nickname || acc.uid.slice(0,8)} <span class="realm-tag ${acc.realm === 'intl' ? 'realm-intl' : 'realm-cn'}">${acc.realm === 'intl' ? '国际版' : '国内版'}</span></b><span data-tip="UID：${acc.uid}">${(acc.uid||'').slice(0,13)}…</span></div>`,
-        req: acc.window.requests,
-        tok: acc.window.total_tokens,
-        tokSub: `思考 ${fmtCompact(acc.window.reasoning_tokens)} · 缓存 ${fmtCompact(acc.window.cached_tokens)}`,
-        speed: acc.window.speed_avg,
-        cache: acc.window.cache_hit_pct,
-        credit: acc.window.credit != null ? Number(acc.window.credit).toFixed(2) : '—',
-        cost: acc.window.cost_cny,
-      }));
+      return (a.accounts || []).map(acc => {
+        const realm = acc.realm || 'cn';
+        const isMiniMax = realm === 'minimax';
+        const name = isMiniMax
+          ? ((window.MINIMAX_ACCOUNTS || []).find(account => account.uid === acc.uid)?.name
+            || (acc.uid === 'minimax-plan' ? 'MiniMax 官方套餐' : acc.nickname || acc.uid))
+          : (acc.nickname || acc.uid.slice(0, 8));
+        const badgeClass = realm === 'intl' || realm === 'cn' ? ' realm-' + realm : '';
+        const badge = isMiniMax ? '' : ` <span class="realm-tag${badgeClass}">${realmLabel(realm)}</span>`;
+        return {
+          key: acc.uid,
+          who: isMiniMax ? `<div class="who"><b>${esc(name)}</b></div>`
+            : `<div class="who"><b>${esc(name)}${badge}</b><span data-tip="UID：${esc(acc.uid)}">${esc(acc.uid.slice(0, 13))}…</span></div>`,
+          req: acc.window.requests,
+          tok: acc.window.total_tokens,
+          tokSub: `思考 ${fmtCompact(acc.window.reasoning_tokens)} · 缓存 ${fmtCompact(acc.window.cached_tokens)}`,
+          speed: acc.window.speed_avg,
+          cache: acc.window.cache_hit_pct,
+          credit: isMiniMax || acc.window.credit == null ? '—' : Number(acc.window.credit).toFixed(2),
+          cost: acc.window.cost_cny,
+        };
+      });
     }
   },
   key: {
@@ -24560,6 +25031,32 @@ $('rangeSeg').addEventListener('click', ev => {
 });
 $('rangeCustomBox').addEventListener('change', () => loadRange(false));
 $('usageBoardRefresh').addEventListener('click', () => loadRange(false, true));
+$('hmRange').addEventListener('click', event => {
+  const button = event.target.closest('[data-heat-range]');
+  if (!button || button.getAttribute('aria-pressed') === 'true') return;
+  heatRange = button.dataset.heatRange;
+  heatSelectedDay = null;
+  buildHeatGrid(state.heat, true);
+});
+heatMobile.addEventListener('change', () => {
+  if (!heatRange) buildHeatGrid(state.heat, true);
+});
+$('hmGrid').addEventListener('click', event => {
+  const cell = event.target.closest('.hm-cell');
+  if (cell) selectHeatDay(cell);
+});
+$('hmGrid').addEventListener('keydown', event => {
+  const cell = event.target.closest('.hm-cell');
+  if (!cell) return;
+  const offsets = {ArrowLeft: -7, ArrowRight: 7, ArrowUp: -1, ArrowDown: 1};
+  if (!Object.hasOwn(offsets, event.key) && event.key !== 'Home' && event.key !== 'End') return;
+  event.preventDefault();
+  const cells = [...$('hmGrid').querySelectorAll('.hm-cell')];
+  const last = cells.length - 1;
+  const index = event.key === 'Home' ? 0 : event.key === 'End' ? last :
+    Math.max(0, Math.min(last, cells.indexOf(cell) + offsets[event.key]));
+  selectHeatDay(cells[index], true);
+});
 $('metricSeg').addEventListener('click', ev => {
   const btn = ev.target.closest('button'); if (!btn) return;
   [...$('metricSeg').children].forEach(b => b.classList.toggle('on', b === btn));
@@ -25128,21 +25625,18 @@ if (typeof SORT_DENY_TABLES !== 'undefined' && SORT_DENY_TABLES && SORT_DENY_TAB
   }
 
   function nextRealmLabel(){
-    var realm = window.VIEW_REALM || 'intl';
-    if(realm === 'codearts') return 'CodeArts';
-    if(realm === 'cn') return '国内版';
-    return '国际版';
+    return realmLabel(window.VIEW_REALM);
   }
 
   var NEXT_META = {
     overview: { title: '总览', desc: '' },
-    runtime: { title: '运行详情', desc: '出口状态、账号健康和请求记录。' },
-    gateway: { title: '网关', desc: '模型目录、能力、思考档位与在售倍率。' },
-    accounts: { title: '账号', desc: 'WorkBuddy 与 CodeArts 账号、积分与出口绑定。' },
-    api: { title: '接口', desc: '管理外部 API Key、调用记录和账号接口文档。' },
+    runtime: { title: '运行详情', desc: '按模型 ID 自动选路。查看上游状态、用量和请求记录。' },
+    gateway: { title: '网关', desc: '按上游出口查看模型、能力、思考档位和倍率。' },
+    accounts: { title: '账号', desc: '按上游出口管理账号、凭证和使用额度。' },
+    api: { title: '接口', desc: '管理账号接口的 API Key、调用记录和请求示例。' },
     analytics: { title: '用量', desc: 'Token、请求、缓存、成本和剩余额度。' },
     tasks: { title: '自动化任务', desc: '后台调度器、每日任务、一次性福利与签到活跃记录。' },
-    agents: { title: '智能体', desc: '把本机 AI 客户端一键指向当前网关。' },
+    agents: { title: '智能体', desc: '选择接入协议，配置客户端调用网关。' },
     media: { title: '媒体', desc: '图片与视频生成任务、额度、价格和账号分配。' },
     settings: { title: '设置', desc: 'API Key、出口、模型、调度和系统选项。' },
     logs: { title: '日志', desc: '实时运行日志、筛选、导出和落库状态。' }
@@ -25220,15 +25714,13 @@ if (typeof SORT_DENY_TABLES !== 'undefined' && SORT_DENY_TABLES && SORT_DENY_TAB
     if(realmName) realmName.textContent = realm;
     var gatewayRealm = document.getElementById('nextGatewayRealm');
     if(gatewayRealm) gatewayRealm.textContent = realm;
-    Array.prototype.forEach.call(document.querySelectorAll('#nextGatewayRealmSwitch [data-realm]'), function(btn){
-      btn.classList.toggle('active', btn.getAttribute('data-realm') === realmKey);
+    Array.prototype.forEach.call(document.querySelectorAll('#nextGatewayRealmSwitch [data-realm], #agentsRealmSwitch [data-realm]'), function(btn){
+      var route = btn.getAttribute('data-realm');
+      var active = route === realmKey;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', String(active));
+      btn.hidden = !channelEnabled(route);
     });
-    var caBtn = document.getElementById('nextGatewayRealmCodearts');
-    var caCard = document.getElementById('tabCodearts');
-    if(caBtn){
-      var caVisible = !!(caCard && getComputedStyle(caCard).display !== 'none');
-      caBtn.hidden = !caVisible;
-    }
     var agentsOff = false;
     try { agentsOff = (typeof AGENTS_AVAILABLE !== 'undefined' && !AGENTS_AVAILABLE); } catch(e){}
     Array.prototype.forEach.call(document.querySelectorAll('[data-next-tab="agents"]'), function(el){
@@ -25289,8 +25781,8 @@ if (typeof SORT_DENY_TABLES !== 'undefined' && SORT_DENY_TABLES && SORT_DENY_TAB
     },
     api: {
       title: 'API 与出口',
-      desc: 'API Key、CodeArts、代理槽、账号限额和出站身份。',
-      items: ['API Key', 'CodeArts 接入', '出站 TLS 状态', '账号代理槽', '账号限额', '自动切换出站身份', '出站身份版本号', '设备 Token 文件', '桌面 chat 兼容头', '跨出口回退']
+      desc: '模型调用 Key、上游平台接入、账号代理槽与出站设置。',
+      items: ['文本渠道', '模型调用 API Key', '旧客户端路由', 'CodeArts 高级参数', '出站 TLS 状态', '账号代理槽', '账号限额', '自动切换出站身份', '出站身份版本号', '设备 Token 文件', '桌面 chat 兼容头', '跨出口回退']
     },
     model: {
       title: '模型与定价',
@@ -25361,7 +25853,9 @@ if (typeof SORT_DENY_TABLES !== 'undefined' && SORT_DENY_TABLES && SORT_DENY_TAB
       sec.hidden = nextSettingsSectionGroup(sec) !== key;
     });
     Array.prototype.forEach.call(document.querySelectorAll('#nextSettingsGroups .next-settings-group'), function(b){
-      b.classList.toggle('active', b.getAttribute('data-settings-group') === key);
+      var active = b.getAttribute('data-settings-group') === key;
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-pressed', String(active));
     });
     var def = NEXT_SETTINGS_GROUPS[key];
     var title = document.getElementById('nextSettingsTitle');
@@ -25908,12 +26402,20 @@ if (typeof SORT_DENY_TABLES !== 'undefined' && SORT_DENY_TABLES && SORT_DENY_TAB
     if(account.inCooldown || account.reserveBlocked || account.dailyLimitBlocked || account.creditLimitReached) return 'cool';
     return busy > 0 ? 'busy' : 'ok';
   }
-  function accountStarsOf(accounts, model){
+  function accountStarsOf(accounts, model, miniMaxAccounts, miniMaxEnabled = true){
     var busy = new Map();
     model.live.forEach(function(c){
       if(c.account) busy.set(c.account, (busy.get(c.account) || 0) + 1);
     });
-    var list = (Array.isArray(accounts) ? accounts : []).map(function(a){
+    var sources = Array.isArray(accounts) ? accounts : [];
+    if(Array.isArray(miniMaxAccounts)){
+      sources = sources.concat(miniMaxAccounts.map(function(a){
+        var name = String(a.name || 'MiniMax');
+        return {uid: a.uid, nickname: name.includes('MiniMax') ? name : 'MiniMax · ' + name,
+          enabled: a.enabled && miniMaxEnabled};
+      }));
+    }
+    var list = sources.map(function(a){
       var uid = String((a && (a.uid || a.id)) || '');
       var n = busy.get(uid) || 0;
       var label = String((a && (a.nickname || a.name)) || uid.slice(0, 8) || '?');
@@ -27098,7 +27600,7 @@ if (typeof SORT_DENY_TABLES !== 'undefined' && SORT_DENY_TABLES && SORT_DENY_TAB
     }
     renderActiveFlow(lang);
     var accounts = Array.isArray(window.ACCOUNTS) ? window.ACCOUNTS : [];
-    var pack = accountStarsOf(accounts, view.model);
+    var pack = accountStarsOf(accounts, view.model, window.MINIMAX_ACCOUNTS, !!window.MINIMAX_PLAN?.enabled);
     view.accountStars = pack.stars;
     view.overflow = pack.overflow;
     view.accountStarIndex = new Map(pack.stars.map(function(star, index){ return [star.uid, index]; }));

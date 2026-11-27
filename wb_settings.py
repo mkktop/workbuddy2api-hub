@@ -473,7 +473,152 @@ def ensure_launcher_key(accounts_dir):
 # Each key can be bound to one upstream realm, so several clients can hit
 # different exits at the same time instead of sharing the global switch.
 
-REALMS = ("", "intl", "cn", "codearts")
+REALMS = ("", "intl", "cn", "codearts", "minimax")
+TEXT_CHANNELS = ("intl", "cn", "minimax", "codearts")
+
+
+def channel_states(accounts_dir):
+    data = load(accounts_dir)
+    workbuddy = data.get("workbuddy_channels")
+    workbuddy = workbuddy if isinstance(workbuddy, dict) else {}
+    states = {realm: workbuddy.get(realm) is not False for realm in ("intl", "cn")}
+    for realm in ("minimax", "codearts"):
+        config = data.get(realm)
+        states[realm] = isinstance(config, dict) and config.get("enabled") is True
+    return states
+
+
+def set_channel_states(accounts_dir, patch):
+    if not isinstance(patch, dict) or any(
+            realm not in TEXT_CHANNELS or not isinstance(enabled, bool)
+            for realm, enabled in patch.items()):
+        raise ValueError("channels must map known channel IDs to booleans")
+    with _lock:
+        data = load(accounts_dir)
+        for realm, enabled in patch.items():
+            field = "workbuddy_channels" if realm in ("intl", "cn") else realm
+            key = realm if field == "workbuddy_channels" else "enabled"
+            current = data.get(field)
+            data[field] = dict(current) if isinstance(current, dict) else {}
+            data[field][key] = enabled
+        save(accounts_dir, data)
+    return channel_states(accounts_dir)
+
+
+MINIMAX_REGIONS = ("cn", "global")
+MINIMAX_DEFAULT_MODELS = ("MiniMax-M3.1-Flash",)
+MINIMAX_PRIMARY_UID = "minimax-plan"
+_MINIMAX_MODEL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}")
+_MINIMAX_KEY = re.compile(r"sk-cp-[A-Za-z0-9_-]{1,248}")
+
+
+def minimax_config(accounts_dir):
+    value = load(accounts_dir).get("minimax")
+    row = value if isinstance(value, dict) else {}
+    region = row.get("region") if row.get("region") in MINIMAX_REGIONS else "cn"
+    accounts = row.get("accounts")
+    if not isinstance(accounts, list):
+        accounts = [{"uid": MINIMAX_PRIMARY_UID, "name": "MiniMax 官方套餐", "region": region,
+                     "enabled": True, "api_key": row.get("api_key")}]
+    accounts = [dict(account) for account in accounts
+                if isinstance(account, dict) and isinstance(account.get("uid"), str)
+                and account.get("region") in MINIMAX_REGIONS
+                and isinstance(account.get("api_key"), str)
+                and _MINIMAX_KEY.fullmatch(account["api_key"])]
+    primary = next((account for account in accounts if account.get("enabled") is not False),
+                   accounts[0] if accounts else {})
+    models = row.get("models")
+    if not isinstance(models, list):
+        models = MINIMAX_DEFAULT_MODELS
+    models = [model for model in models
+              if isinstance(model, str) and _MINIMAX_MODEL.fullmatch(model)]
+    return {
+        "enabled": row.get("enabled") is True,
+        "region": primary.get("region", region),
+        "api_key": primary.get("api_key", ""),
+        "accounts": accounts,
+        "models": list(dict.fromkeys(models)),
+    }
+
+
+def _update_minimax_account(accounts, patch, *, new_uid=None):
+    if not isinstance(patch, dict):
+        raise ValueError("minimax account must be an object")
+    uid = patch.get("uid") or ""
+    existing = next((account for account in accounts if account["uid"] == uid), None)
+    if uid and existing is None:
+        raise ValueError("MiniMax account was not found")
+    if patch.get("action") == "delete":
+        if existing is None:
+            raise ValueError("Select a MiniMax account to remove")
+        accounts.remove(existing)
+        return
+    current = existing or {}
+    name = str(patch.get("name", current.get("name")) or "").strip()
+    region = patch.get("region", current.get("region", "cn"))
+    enabled = patch.get("enabled", current.get("enabled", True))
+    key = patch.get("api_key", "")
+    if isinstance(key, str):
+        key = key.strip() or current.get("api_key", "")
+    if not isinstance(key, str) or not _MINIMAX_KEY.fullmatch(key):
+        raise ValueError("Use an official MiniMax Subscription Key (sk-cp-)")
+    if region not in MINIMAX_REGIONS or not isinstance(enabled, bool) or len(name) > 80:
+        raise ValueError("Invalid MiniMax account details")
+    if any(a is not existing and a["region"] == region and a["api_key"] == key for a in accounts):
+        raise ValueError("This MiniMax Subscription Key is already saved for this region")
+    account = {"uid": uid or new_uid or "minimax-" + secrets.token_hex(8),
+               "name": name or "MiniMax 官方套餐", "region": region, "enabled": enabled, "api_key": key}
+    if existing is None:
+        accounts.append(account)
+    else:
+        existing.update(account)
+
+
+def set_minimax_config(accounts_dir, patch):
+    if not isinstance(patch, dict):
+        raise ValueError("minimax must be an object")
+    with _lock:
+        data = load(accounts_dir)
+        config = minimax_config(accounts_dir)
+        enabled = patch.get("enabled", config["enabled"])
+        region = patch.get("region", config["region"])
+        models = patch.get("models", config["models"])
+        accounts = config["accounts"]
+        if not isinstance(enabled, bool) or region not in MINIMAX_REGIONS:
+            raise ValueError("Invalid MiniMax route or region")
+        if not isinstance(models, list) or len(models) > 32 or any(
+                not isinstance(model, str) or not _MINIMAX_MODEL.fullmatch(model) for model in models):
+            raise ValueError("Enter valid MiniMax text model IDs")
+        models = list(dict.fromkeys(models))
+        if "model_toggle" in patch:
+            toggle = patch["model_toggle"]
+            model = toggle.get("id") if isinstance(toggle, dict) else None
+            if (not isinstance(model, str) or not _MINIMAX_MODEL.fullmatch(model)
+                    or not isinstance(toggle.get("enabled"), bool)):
+                raise ValueError("Invalid MiniMax model selection")
+            if toggle["enabled"] and model not in models:
+                if len(models) >= 32:
+                    raise ValueError("MiniMax can enable up to 32 models")
+                models.append(model)
+            elif not toggle["enabled"] and model in models:
+                models.remove(model)
+        if "account" in patch:
+            _update_minimax_account(accounts, patch["account"])
+        elif "api_key" in patch or "region" in patch:
+            primary = next((a for a in accounts if a["uid"] == MINIMAX_PRIMARY_UID), None)
+            key = patch.get("api_key", "")
+            if key is None:
+                if primary:
+                    accounts.remove(primary)
+                if not accounts:
+                    enabled = False
+            elif key or primary:
+                _update_minimax_account(accounts, {"uid": primary["uid"] if primary else "",
+                                                   "region": region, "api_key": key},
+                                        new_uid=MINIMAX_PRIMARY_UID)
+        data["minimax"] = {"enabled": enabled, "region": region, "models": models, "accounts": accounts}
+        save(accounts_dir, data)
+        return minimax_config(accounts_dir)
 
 
 def codearts_config(accounts_dir):

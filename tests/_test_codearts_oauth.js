@@ -20,7 +20,7 @@ assert.ok(html.includes('/codearts/accounts/oauth/callback'), '缺少 OAuth call
 assert.ok(/r\.next_url/.test(script), 'OAuth 中转必须处理 next_url');
 assert.ok(/pollCodeartsOAuth\(true\)/.test(script), 'continue 后应继续轮询');
 
-assert.ok(html.includes('id="setCodeartsEnabled"'), '缺少启用开关');
+assert.ok(html.includes('id="channelCodearts"'), '缺少统一的渠道开关');
 assert.ok(html.includes('id="setCodeartsMaxConcurrent"'), '缺少单账号并发');
 assert.ok(html.includes('id="setCodeartsTimeout"'), '缺少管理超时');
 assert.ok(html.includes('id="setCodeartsStreamTimeout"'), '缺少流式超时');
@@ -36,7 +36,7 @@ console.log = () => {};
 let api;
 try {
   api = new Function(script + `
-    return {renderCodeartsSettings: renderCodeartsSettings};
+    return {renderCodeartsSettings, renderChannelSettings};
   `)();
 } catch (e) {
   console.log = realLog;
@@ -50,8 +50,11 @@ api.renderCodeartsSettings({
   timeout_seconds: 30, stream_timeout_seconds: 600,
   models_ttl_seconds: 300, accounts: 2, healthy: 1,
 });
-assert.equal(document.getElementById('setCodeartsEnabled').checked, true,
+api.renderChannelSettings({intl: false, cn: true, minimax: true, codearts: true});
+assert.equal(document.getElementById('channelCodearts').checked, true,
   '启用开关应回填');
+assert.equal(document.getElementById('channelIntl').checked, false,
+  'WorkBuddy 国际版开关应独立回填');
 assert.equal(document.getElementById('setCodeartsMaxConcurrent').value, 3,
   '并发数应回填');
 assert.ok(document.getElementById('setCodeartsHint').textContent.includes('2 个账号'),

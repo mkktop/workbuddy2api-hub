@@ -313,6 +313,17 @@ ok('忙碌账号优先入图，忙闲切换时恒星的轨位保持稳定', () =
 });
 
 /* ---- 8. 调用序列的一行 ---------------------------------------------- */
+ok('MiniMax 套餐账号各自进入圣轮并关联在途请求', () => {
+  const model = S.createModel();
+  S.apply(model, {type: 'start', seq: 1, id: 'm1'}, T0);
+  S.apply(model, {type: 'bind', seq: 2, id: 'm1', account: 'minimax-plan'}, T0);
+  const subscriptions = [{uid: 'minimax-plan', name: '中国站', enabled: true},
+                         {uid: 'minimax-2', name: '国际站', enabled: true}];
+  const stars = S.accountStarsOf([{uid: 'wb', nickname: 'WorkBuddy', enabled: true}], model, subscriptions).stars;
+  same(stars.map(star => [star.label, star.state]),
+    [['MiniMax · 国际站', 'ok'], ['MiniMax · 中国站', 'busy'], ['WorkBuddy', 'ok']]);
+});
+
 ok('序列的一行：结果符号、状态码和各项明细', () => {
   const line = S.ledgerLine('zh', {outcome: 'completed', model: 'gpt-5', account: 'acc-1', key: 'k-dev', kind: 'chat', stream: true,
     elapsedMs: 4100, ttftMs: 620, total: 2352, prompt: 1840, completion: 512}, () => '紫电');

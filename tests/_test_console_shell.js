@@ -213,8 +213,9 @@ check(/function renderConsoleUsageChart\(rows\)/.test(script), '缺少 Token 分
 // 健康卡展示两个 WorkBuddy 出口，同时沿用账号列表的健康判断。
 const health = script.slice(script.indexOf('function renderConsoleAccountHealth('),
                             script.indexOf('function renderConsoleUsageChart('));
-check(/realmAccounts\.filter\(accountIsHealthy\)/.test(health), '健康度应复用 accountIsHealthy()');
-check(/console-health-unconfigured[^\n]*未接入/.test(health), '未接入账号的出口要与账号不可用区分');
+check(/accounts\.filter\(accountIsHealthy\)/.test(health), '健康度应复用 accountIsHealthy()');
+check(/console-health-unconfigured[\s\S]{0,120}未接入/.test(health), '未接入账号的出口要与账号不可用区分');
+check(/MINIMAX_ACCOUNTS/.test(health), '运行详情应展示 MiniMax 套餐账号的启用状态');
 
 // 基础样式表：从 :root 起到它自己的 </style> 为止（控制台样式表已删除）。
 const sharedStyles = html.slice(html.indexOf('<style>\n:root'), html.indexOf('</style>', html.indexOf('<style>\n:root')));

@@ -8,7 +8,7 @@
  *      卡片同一份状态，所以两边永远一起亮（updateUI 一处改，两边都跟着变）；
  *   2. 控件固定在账号页的页头（#accountsHeader）里：旧的「账号独立成一个页签」
  *      开关连同它那套搬家逻辑一起删除了，脚本不再移动它；
- *   3. 它切的是**视图**，不是网关默认出口——后者只由网关页那张卡片上的按钮改。
+ *   3. 账号与网关共用浏览视图。运行详情使用独立的请求筛选，旧路径的默认上游在设置里保存。
  *
  * 这些错法在页面上都只是「切了没反应」「两边显示的不是同一版」，单看代码看不出来，
  * 所以既查结构也把整段脚本配假 DOM 跑起来。
@@ -52,28 +52,22 @@ assert.ok(/id="accountsRealmCn"[^>]*onclick="switchViewRealm\('cn'\)"/.test(html
   '「国内版」按钮应接上 switchViewRealm(\'cn\')');
 assert.ok(/id="accountsRealmCodearts"[^>]*onclick="switchViewRealm\('codearts'\)"/.test(html),
   '「CodeArts」按钮应接上 switchViewRealm(\'codearts\')');
-// 两组按钮（网关页卡片 + 账号页控件）都必须走同一个入口，否则两边会各记一份状态
-assert.equal(html.split("onclick=\"switchViewRealm('intl')\"").length, 1 + 3,
-  '切 intl 的入口应恰好三个：网关页卡片 + 新壳网关选择器 + 账号页控件');
-assert.equal(html.split("onclick=\"switchViewRealm('cn')\"").length, 1 + 3,
-  '切 cn 的入口应恰好三个：网关页卡片 + 新壳网关选择器 + 账号页控件');
+for(const realm of ['intl', 'cn', 'minimax']){
+  assert.equal(html.split('onclick="switchViewRealm(\'' + realm + '\')"').length - 1, 3,
+    '网关、账号和智能体应共用 ' + realm + ' 的切换入口');
+  assert.equal(html.split('onclick="switchRuntimeRealm(\'' + realm + '\')"').length - 1, 1,
+    '运行详情应能单独按 ' + realm + ' 筛选');
+}
 
-// 高亮与 aria 由 updateUI 一处写，两边不能各写一份
-assert.ok(/rsIntl\.classList\.toggle\("active", isIntlView\)/.test(script),
-  'updateUI 应按 VIEW_REALM 点亮账号页控件');
-assert.ok(/rsCn\.classList\.toggle\("active", isCnView\)/.test(script),
-  'updateUI 应按 VIEW_REALM 点亮账号页控件');
-assert.ok(/rsCa\.classList\.toggle\("active", isCodeartsView\)/.test(script),
-  'updateUI 应按 VIEW_REALM 点亮 CodeArts 控件');
 // 控件不再被脚本搬动：旧的页签合并模式（把账号区块连控件搬到网关页）已删除，
 // 脚本里不该再有任何地方按 id 抓住它再 insertBefore / appendChild。
 assert.ok(!/getElementById\('accountsRealmSwitch'\)/.test(script),
   '控件应固定在账号页页头里，脚本不应再搬动它');
 
 // 英文词条：aria-label 也在被翻译的属性里，缺了就会漏出中文
-for(const [zh, en] of [['版本视图', 'Realm view'],
-                       ['国际版', 'Global'],
-                       ['国内版', 'China']]){
+for(const [zh, en] of [['按上游出口查看', 'View by upstream route'],
+                       ['WorkBuddy 国际版', 'WorkBuddy Global'],
+                       ['WorkBuddy 国内版', 'WorkBuddy China']]){
   assert.ok(html.includes("'" + zh + "': '" + en + "'"),
     'DICT 里缺少「' + zh + '」的英文词条');
 }
@@ -125,7 +119,9 @@ try {
     return {
       updateUI: updateUI,
       switchViewRealm: switchViewRealm,
-      toggleActiveGatewayRealm: toggleActiveGatewayRealm,
+      switchRuntimeRealm,
+      saveLegacyRealm,
+      recentUrl,
       loadSettings: loadSettings,
       view: () => window.VIEW_REALM,
       active: () => window.ACTIVE_GATEWAY_REALM,
@@ -148,7 +144,7 @@ const activeOf = el => el.classList.contains('active');
   assert.equal(sectionB.parentNode, pageAccounts, '账号区块应留在账号页里');
   assert.ok(header.children.indexOf(realmSwitch) >= 0, '控件应挂在页头下');
 
-  // 2c. 切到国内版：账号页控件与网关页卡片一起亮，两边说的是同一版
+  // 2c. 账号页使用共享视图，运行详情的筛选独立。
   await api.switchViewRealm('cn');
   assert.equal(api.view(), 'cn', '切换后视图应为国内版');
   assert.ok(activeOf(byId('accountsRealmCn')), '账号页「国内版」应高亮');
@@ -157,38 +153,32 @@ const activeOf = el => el.classList.contains('active');
     'aria-pressed 应跟着走');
   assert.equal(byId('accountsRealmIntl').getAttribute('aria-pressed'), 'false',
     'aria-pressed 应跟着走');
-  assert.ok(activeOf(byId('tabCn')), '网关页国内版卡片应高亮');
-  assert.ok(!activeOf(byId('tabIntl')), '网关页国际版卡片应熄灭');
-  assert.equal(byId('tabCnViewBadge').style.display, 'inline-block',
-    '网关页「当前视图」标记应落在国内版');
-  assert.equal(byId('tabIntlViewBadge').style.display, 'none',
-    '网关页国际版不该还挂着「当前视图」');
+  assert.ok(activeOf(byId('runtimeAll')));
+  assert.match(api.recentUrl(), /realm=all/);
 
   // 2d. 切回国际版：对称
   await api.switchViewRealm('intl');
   assert.equal(api.view(), 'intl', '切换后视图应为国际版');
   assert.ok(activeOf(byId('accountsRealmIntl')), '账号页「国际版」应高亮');
   assert.ok(!activeOf(byId('accountsRealmCn')), '账号页「国内版」应熄灭');
-  assert.ok(activeOf(byId('tabIntl')), '网关页国际版卡片应高亮');
 
   // 2e. 同一个入口幂等：已经是这一版时再点一次不炸、也不换版
   await api.switchViewRealm('intl');
   assert.equal(api.view(), 'intl', '重复点当前版本应保持不动');
 
-  // 2f. 从网关页改默认出口：视图与两边控件同样要跟上（反向同步）
+  // 2f. 设置旧路径默认出口只写兼容设置。
   realmState.current = 'intl';
   window.ACTIVE_GATEWAY_REALM = 'intl';
   window.VIEW_REALM = 'intl';
   api.updateUI();
   POSTS = [];
-  await api.toggleActiveGatewayRealm();
+  byId('legacyRealmSelect').value = 'cn';
+  await api.saveLegacyRealm(byId('saveLegacyRealmBtn'));
   assert.equal(api.active(), 'cn', '默认出口应切到国内版');
   assert.equal(POSTS.length, 1, '应只提交一次 /realm');
   assert.ok(/^\/realm/.test(POSTS[0].url), '切换默认出口应打 /realm');
-  assert.equal(api.view(), 'cn', '默认出口切换后视图跟到国内版');
-  assert.ok(activeOf(byId('accountsRealmCn')), '账号页控件应跟上默认出口的切换');
-  assert.equal(byId('tabCnDefaultBadge').style.display, 'inline-block',
-    '网关页「默认出口」标记应落在国内版');
+  assert.equal(api.view(), 'intl', '旧路径设置应独立于账号视图');
+  assert.ok(activeOf(byId('runtimeAll')));
 
   // 2g. 控件只切视图，不该偷偷改默认出口
   realmState.current = 'intl';
@@ -197,6 +187,44 @@ const activeOf = el => el.classList.contains('active');
   await api.switchViewRealm('cn');
   assert.equal(api.active(), 'intl', '在账号页切视图不得改网关默认出口');
   assert.equal(POSTS.length, 0, '切视图不该发任何写请求');
+
+  window.REALM_OPTIONS = ['intl', 'cn', 'minimax'];
+  await api.switchViewRealm('minimax');
+  assert.equal(api.view(), 'minimax');
+  assert.equal(api.active(), 'intl');
+  assert.equal(POSTS.length, 0);
+  assert.equal(byId('accountsRealmMiniMax').getAttribute('aria-pressed'), 'true');
+  assert.equal(byId('minimaxAccountsSection').hidden, false);
+  assert.equal(byId('workbuddyAccountsSection').style.display, 'none');
+  assert.match(byId('recentRealmTag').textContent, /全部请求/);
+  await api.switchRuntimeRealm('minimax');
+  assert.equal(POSTS.length, 0);
+  assert.match(api.recentUrl(), /realm=minimax/);
+  assert.match(byId('recentRealmTag').textContent, /MiniMax/);
+  assert.equal(byId('tabMiniMax').getAttribute('aria-pressed'), 'true');
+  assert.equal(byId('runtimeScheduler').hidden, true);
+  await api.switchViewRealm('intl');
+  assert.equal(byId('minimaxAccountsSection').hidden, true);
+  assert.equal(byId('workbuddyAccountsSection').style.display, '');
+  assert.match(api.recentUrl(), /realm=minimax/);
+  await api.switchRuntimeRealm('all');
+  assert.match(api.recentUrl(), /realm=all/);
+  assert.equal(byId('runtimeScheduler').hidden, false);
+
+  window.CHANNEL_STATES = {intl: false, cn: true, minimax: false, codearts: false};
+  api.updateUI();
+  assert.equal(api.view(), 'cn', '停用当前渠道后自动选择已开启渠道');
+  assert.equal(byId('accountsRealmIntl').hidden, true);
+  assert.equal(byId('accountsRealmMiniMax').hidden, true);
+  assert.equal(byId('accountsRealmCodearts').hidden, true);
+  assert.equal(byId('accountsRealmCn').hidden, false);
+  await api.switchViewRealm('codearts');
+  assert.equal(api.view(), 'cn', '不能切至停用渠道');
+  window.CHANNEL_STATES.cn = false;
+  api.updateUI();
+  assert.equal(byId('accountsHeader').hidden, true);
+  assert.equal(byId('accountsNoChannels').hidden, false);
+  assert.equal(byId('workbuddyAccountsSection').style.display, 'none');
 
   console.log('accounts realm switch assertions passed');
 })().catch(error => { console.log = realLog; console.error(error); process.exit(1); });

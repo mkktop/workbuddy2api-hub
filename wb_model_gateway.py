@@ -131,9 +131,11 @@ class Registry:
             raise RouteError(503, "catalog_unavailable",
                              "model catalogue unavailable for " + provider.id) from exc
 
-    def catalog(self, key=None, pinned_realm=None):
+    def catalog(self, key=None, pinned_realm=None, *, route_id=None):
         models, unavailable = [], []
         for provider in self.providers.values():
+            if route_id is not None and provider.id != route_id:
+                continue
             if not self._allowed_route(provider, key, pinned_realm) or not provider.enabled():
                 continue
             try:

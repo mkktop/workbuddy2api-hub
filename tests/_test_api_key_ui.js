@@ -23,8 +23,8 @@ function check(ok, msg){ assert.ok(ok, msg); checks += 1; }
 
 // 1. 独立入口
 check(html.includes('onclick="openApiKeyModal()"'), '账号区应有独立的 + API Key 按钮');
-check(/openLoginModal\(\)">添加<\/button>\s*\n\s*<!--[\s\S]*?-->\s*\n\s*<button class="sec" onclick="openApiKeyModal\(\)">/.test(html),
-      'API Key 按钮应紧跟在 OAuth 添加按钮之后');
+check(/addChannelAccount\(\)">添加账号<\/button>\s*<button[^>]*id="workbuddyAddApiKey"[^>]*onclick="openApiKeyModal\(\)">/.test(html),
+      'WorkBuddy 的 API Key 入口应与统一的添加账号按钮并排');
 
 // 2. 弹窗结构
 for(const id of ['apiKeyModal', 'apiKeyInput', 'apiKeyNickname', 'apiKeyModalMsg', 'btnApiKeyCommit']){

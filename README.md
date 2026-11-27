@@ -1,6 +1,6 @@
 # WorkBuddy2API-Hub — 国际版 / 国内版多账号网关
 
-> 把 WorkBuddy（国际版 / 国内版）与华为云 CodeArts 封装成 OpenAI 兼容 API 的本地网关：多账号池、独立出口、自动故障转移、可视化看板。
+> 面向多上游平台的本地模型网关，提供 OpenAI 兼容 API、多账号池、独立出口、自动故障转移和可视化看板。目前支持 WorkBuddy（国际版 / 国内版）、华为云 CodeArts 和 MiniMax 官方订阅。
 
 <p align="center">
   <a href="https://github.com/mkktop/workbuddy2api-hub/releases"><img src="https://img.shields.io/github/v/release/mkktop/workbuddy2api-hub?style=flat-square&label=release" alt="Release"></a>
@@ -155,12 +155,26 @@ WB_TLS_FINGERPRINT=node     # 强制桥；桥不可用时报明确错误
 
 1. 打开看板 →「设置 → CodeArts 接入」，勾选「启用 CodeArts 出口」并保存；
 2. 切换至看板顶部「CodeArts」视图，点击「+ 添加账号 (OAuth)」完成华为云授权；
-3. 在「设置 → API Key」中新建 Key 并绑定出口为 `CodeArts`（或全局通用）即可调用。
+3. 在「设置 → API 与出口 → 模型调用 API Key」中新建 Key 并绑定出口为 `CodeArts`（或全局通用）即可调用。
 
 CodeArts 的模型 ID 按上游目录**精确匹配**：`deepseek-v4.1-flash` 与 `deepseek-v4.1-flash-1017` 是两个独立模型，不会互相别名或静默回退。`/v1/models` 中 `codearts/` 前缀的条目来自账号的模型目录；调用时请直接使用返回的完整 ID。
 
 <a id="accounts"></a>
 ## 账号接入与 API Key 权限
+
+### 文本渠道与账号
+
+在「设置 → API 与出口 → 文本渠道」勾选开放的渠道，再到「账号」选择对应渠道添加凭证。WorkBuddy 国际版、WorkBuddy 国内版、MiniMax 和 CodeArts 可以独立启停。停用渠道会保留已有账号和账号设置。
+
+### MiniMax 官方套餐
+
+在「账号 → MiniMax」添加套餐账号。每个账号选择中国站或国际站，使用 MiniMax 开放平台发放的订阅 Key（`sk-cp-` 开头）。多个已启用的账号轮流接收请求，各自可查询官方剩余额度，在圣轮中也有独立节点。
+
+启用后，MiniMax 与 WorkBuddy 国际版、国内版并列显示在网关、运行详情、账号和智能体页面。网关使用套餐 Key 从 MiniMax 对应站点的 `GET /v1/models` 刷新目录，并补充[官方模型规格](https://platform.minimax.cn/docs/api-reference/text-openai-api)。可在模型表的「网关状态」启用或停用模型，左侧复选框用于一键配置。目录暂时不可用时沿用上次同步结果和本地配置。
+
+客户端统一使用网关的 Base URL `http://127.0.0.1:8788/v1` 和模型调用 API Key。将 Key 的出口绑定设为 MiniMax 可限制它只访问该出口，留空则可用模型 ID 前缀选择已授权的出口。通过 `GET /v1/models` 获取完整模型 ID，例如 `minimax/MiniMax-M3.1-Flash`。运行详情汇总所有请求，也可按上游筛选。不带 `/v1` 的旧文本路径可在「设置 → API 与出口 → 旧客户端路由」设置默认上游。
+
+文本接入支持 Chat Completions、Responses 和网关现有的 Messages、Gemini 转换。使用 Messages 时需先开启该协议。
 
 ### 账号添加与代理出口绑定
 
@@ -209,6 +223,8 @@ export ANTHROPIC_API_KEY="你在看板设置中添加并绑定的API_Key"
 <a id="model-gateway"></a>
 ## 统一模型网关
 
+上游平台提供模型，网关通过上游出口访问这些模型。一个平台可以有多个出口，例如 WorkBuddy 国内版与国际版。客户端按自己支持的协议接入网关，用模型调用 API Key 和带出口前缀的模型 ID 发起请求。账号管理 Key 用于「接口」页文档中的账号授权与读取。
+
 OpenAI 兼容客户端统一使用 **Base URL `http://127.0.0.1:8788/v1`**。先请求 `GET /v1/models`，再把目录中的 `id` 原样填到请求的 `model`。模型 ID 格式为 `<出口ID>/<模型ID>`。
 
 | 前缀 | 上游 |
@@ -216,6 +232,7 @@ OpenAI 兼容客户端统一使用 **Base URL `http://127.0.0.1:8788/v1`**。先
 | `wb-cn/` | WorkBuddy 国内版账号池 |
 | `wb-intl/` | WorkBuddy 国际版账号池 |
 | `codearts/` | 已启用的 CodeArts 出口 |
+| `minimax/` | 已启用的 MiniMax 官方套餐出口 |
 
 例如，用同一个 Key 通过 `wb-intl/deepseek-v4.1-flash` 发起调用：
 

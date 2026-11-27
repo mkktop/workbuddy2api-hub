@@ -31,7 +31,7 @@ dom.installDom({
 });
 
 const api = new Function(script + `
-  ; return { renderAvailableModels, renderModelsSourceLine, loadModels,
+  ; return { renderAvailableModels, renderModelsSourceLine, loadModels, allModelPickIds,
     setFilter: value => { MODEL_CATALOG_FILTER = value; renderAvailableModels(); },
   };`)();
 
@@ -231,6 +231,18 @@ async function checkPublicIds(){
     check(realm + ' searches by the public id', Object.keys(rowsById(tbody.innerHTML)).join() === publicId);
     api.setFilter('');
   }
+  window.VIEW_REALM = 'minimax';
+  const activeId = 'minimax/MiniMax-M3.1-Flash';
+  const discoveredId = 'minimax/MiniMax-M3';
+  const rendered = rowsById(render([
+    {id: activeId, client_model_id: activeId, route_id: 'minimax'},
+    {id: discoveredId, route_id: 'minimax', catalog_only: true},
+  ]));
+  check('MiniMax official models appear together in the table', Object.keys(rendered).length === 2);
+  check('an official model shows its gateway status', text(rendered[discoveredId]['网关状态']) === '未启用');
+  check('a catalogue-only model does not get a client configuration checkbox',
+    !rendered[discoveredId]['模型 ID'].includes('type="checkbox"'));
+  check('bulk selection includes only enabled MiniMax models', api.allModelPickIds().join() === activeId);
 }
 
 checkPublicIds().then(() => {

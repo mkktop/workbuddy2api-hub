@@ -82,6 +82,7 @@ import wb_media
 import wb_media_client
 import wb_media_tasks
 import wb_model_gateway
+import wb_minimax
 import wb_pool_media
 import wb_pool_scope
 import wb_pool_text
@@ -1548,7 +1549,9 @@ def row_realm(row):
             return acc.realm
     model = row.get("model")
     if model:
-        return detect_model_realm(model)
+        inferred = detect_model_realm(model)
+        # Rows without an explicit realm predate external text exits.
+        return "intl" if inferred == wb_minimax.ROUTE else inferred
     return "intl"
 
 
@@ -5815,6 +5818,10 @@ def _usage_snapshot_uncached(realm=None, since=None, until=None):
     # without a round trip.
     snap["usd_cny"] = wb_pricing.usd_cny()
     snap["accounts_map"] = {a.uid: {"nickname": a.nickname, "realm": a.realm} for a in POOL.accounts} if POOL else {}
+    snap["accounts_map"].update({
+        a["uid"]: {"nickname": a["name"], "realm": wb_minimax.ROUTE}
+        for a in wb_minimax.public_accounts(wb_settings.minimax_config(ACCOUNTS_DIR))
+    })
     snap["account"] = {
         "uid": (rep.uid if rep else ""),
         "domain": (rep.domain if rep else ""),
@@ -7471,27 +7478,31 @@ def realm_state_file():
 
 
 def _realm_selectable(realm):
-    """这个出口现在能不能被选中。
-
-    intl/cn 永远可用；codearts 只有配置完整时才可用，避免持久化了一个已经
-    被删掉/关闭的出口，进程起来后所有未绑定 Key 都打到 503。
-    """
+    """An enabled text channel can serve models when its provider is ready."""
     if realm in ("intl", "cn"):
-        return True
-    if realm == "codearts":
-        try:
+        return wb_settings.channel_states(ACCOUNTS_DIR)[realm]
+    try:
+        if realm == wb_minimax.ROUTE:
+            return wb_minimax.configured(wb_settings.minimax_config(ACCOUNTS_DIR))
+        if realm == "codearts":
             return wb_settings.codearts_configured(ACCOUNTS_DIR)
-        except Exception:
-            return False
+    except Exception:
+        return False
     return False
 
 
 def realm_options():
-    """看板/`/realm` 的出口选项。CodeArts 未配置时不出现在列表里。"""
-    options = ["intl", "cn"]
-    if _realm_selectable("codearts"):
-        options.append("codearts")
-    return options
+    """List enabled text exits in panel display order."""
+    return [realm for realm in wb_settings.TEXT_CHANNELS
+            if _realm_selectable(realm)]
+
+
+def reconcile_active_realm(options=None):
+    options = realm_options() if options is None else options
+    if options and CURRENT_REALM not in options:
+        save_persisted_realm(options[0])
+        return True
+    return False
 
 
 def reconcile_codearts_realm():
@@ -7499,11 +7510,7 @@ def reconcile_codearts_realm():
 
     返回 True 表示真的发生了收敛；调用方（设置保存）据此给看板带一条 warning。
     """
-    if CURRENT_REALM == "codearts" and not _realm_selectable("codearts"):
-        save_persisted_realm("intl")
-        log("codearts realm disabled; default exit reset to intl")
-        return True
-    return False
+    return CURRENT_REALM == "codearts" and reconcile_active_realm()
 
 
 def load_persisted_realm():
@@ -7514,21 +7521,16 @@ def load_persisted_realm():
             with open(path, "r", encoding="utf-8") as fh:
                 d = json.load(fh)
                 r = d.get("realm")
-                if r in ("intl", "cn", "codearts"):
-                    if r == "codearts" and not _realm_selectable(r):
-                        log("persisted realm 'codearts' is not configured; "
-                            "falling back to intl")
-                        return CURRENT_REALM
+                if _realm_selectable(r):
                     CURRENT_REALM = r
                     return CURRENT_REALM
         except Exception as e:
             log("could not load active realm: %s" % e)
+    reconcile_active_realm()
     return CURRENT_REALM
 def save_persisted_realm(realm):
     global CURRENT_REALM
-    if realm in ("intl", "cn", "codearts"):
-        if realm == "codearts" and not _realm_selectable(realm):
-            return CURRENT_REALM
+    if _realm_selectable(realm):
         CURRENT_REALM = realm
         try:
             os.makedirs(ACCOUNTS_DIR, exist_ok=True)
@@ -8599,6 +8601,8 @@ def _fold_usage_analytics(row, realm, maps, half, pricing_on=None, also=None,
     vals = _analytics_row_values(row)
     acct_uid = row.get("account") or "(unattributed)"
     m_id = row.get("model") or "(unknown)"
+    if row.get("route_id") == wb_minimax.ROUTE:
+        m_id = row.get("requested_model") or m_id
     # A row written before this feature existed has no `key` field at all; a
     # row from a deployment that never configured a key has one, and it is
     # empty.
@@ -12840,6 +12844,9 @@ def runtime_settings_view():
         "identity": wb_settings.identity_config(ACCOUNTS_DIR),
         "identity_version_defaults": wb_identity.default_versions(),
         "codearts": wb_codearts.masked_config(ACCOUNTS_DIR),
+        "minimax": wb_minimax.public_config(wb_settings.minimax_config(ACCOUNTS_DIR)),
+        "minimax_accounts": wb_minimax.public_accounts(wb_settings.minimax_config(ACCOUNTS_DIR)),
+        "channels": wb_settings.channel_states(ACCOUNTS_DIR),
         "daily_activity": wb_settings.daily_activity_enabled(ACCOUNTS_DIR),
         "daily_chat_web": wb_settings.daily_chat_web(ACCOUNTS_DIR),
         "daily_chat_web_timeout":
@@ -18728,6 +18735,9 @@ def open_upstream(payload, session_key=None, target_realm=None, prebuilt_body=No
                                           allowed_accounts=allowed_accounts)
         wb_panel_events.bind(account.uid)
         return stream, account, effort
+    realm = target_realm or detect_model_realm(payload.get("model")) or CURRENT_REALM
+    if realm in ("intl", "cn") and not _realm_selectable(realm):
+        raise PinnedAccountError(503, "WorkBuddy channel is disabled: " + realm)
     # Refresh the daily guards before picking. The scan underneath is
     # incremental and TTL-cached, so this is a stat() plus a cached dict on
     # the hot path, and an account parked by any of the guards is skipped
@@ -18743,7 +18753,6 @@ def open_upstream(payload, session_key=None, target_realm=None, prebuilt_body=No
     if POOL is not None:
         POOL.apply_remaining_weights(
             remaining_schedule_weights() if remaining_priority_enabled() else None)
-    realm = target_realm or detect_model_realm(payload.get("model")) or CURRENT_REALM
     requested_model = str(payload.get("model") or "")
     model = intl_model_alias(requested_model, realm)
     texts, _ = _ensure_pools()
@@ -19513,7 +19522,7 @@ def realm_fallback_target(realm, model):
       * 国内版此刻确实有账号能服务这个模型 —— 否则重试只是一次白跑的上游往返，
         还会把「限流」换成一个「没有可用账号」。
     """
-    if realm != "intl":
+    if realm != "intl" or not _realm_selectable("cn"):
         return ""
     if exclusive_realm(model):
         return ""
@@ -22868,17 +22877,31 @@ TEXT_MODEL_OPERATIONS = {
     "messages": lambda handler, payload: handler._handle_messages(payload),
     "count_tokens": lambda handler, payload: handler._handle_messages_count_tokens(payload),
 }
+def _open_minimax_chat(payload, *, session_key=None, allowed_accounts=None):
+    return wb_minimax.open_chat(wb_settings.minimax_config(ACCOUNTS_DIR), payload,
+                                allowed_accounts=allowed_accounts)
+
+
 MODEL_GATEWAY = wb_model_gateway.Registry((
     wb_model_gateway.Provider("wb-cn", lambda: _routed_workbuddy_models("cn"),
-                              TEXT_MODEL_OPERATIONS, lambda: True, realm="cn",
+                              TEXT_MODEL_OPERATIONS, lambda: _realm_selectable("cn"), realm="cn",
                               account_ids=lambda: _routed_workbuddy_accounts("cn")),
     wb_model_gateway.Provider("wb-intl", lambda: _routed_workbuddy_models("intl"),
-                              TEXT_MODEL_OPERATIONS, lambda: True, realm="intl",
+                              TEXT_MODEL_OPERATIONS, lambda: _realm_selectable("intl"), realm="intl",
                               account_ids=lambda: _routed_workbuddy_accounts("intl")),
     wb_model_gateway.Provider("codearts", _routed_codearts_models, TEXT_MODEL_OPERATIONS,
                               lambda: wb_codearts.configured(ACCOUNTS_DIR), realm="codearts",
                               account_ids=lambda: (a.uid for a in wb_codearts.pool_for(
                                   ACCOUNTS_DIR, trigger_auto=False).accounts)),
+    wb_model_gateway.Provider(
+        wb_minimax.ROUTE,
+        lambda: wb_minimax.model_entries(wb_settings.minimax_config(ACCOUNTS_DIR)),
+        TEXT_MODEL_OPERATIONS,
+        lambda: wb_minimax.configured(wb_settings.minimax_config(ACCOUNTS_DIR)),
+        realm=wb_minimax.ROUTE,
+        account_ids=lambda: (a["uid"] for a in wb_minimax.active_accounts(
+            wb_settings.minimax_config(ACCOUNTS_DIR))),
+        open_chat=_open_minimax_chat),
 ), banned=lambda model: is_model_banned(model))
 
 
@@ -23861,6 +23884,20 @@ class Handler(BaseHTTPRequestHandler):
             return self._get_dashboard()
         if path == "/panel/status":
             return self._get_panel_status()
+        if path == "/panel/minimax/quota":
+            if not self._panel_ok():
+                return self._error(401, "panel password required", "invalid_request_error")
+            config = wb_settings.minimax_config(ACCOUNTS_DIR)
+            uid = query.get("uid", [""])[0]
+            account = next((a for a in config["accounts"] if a["uid"] == uid), None) if uid else config
+            if account is None:
+                return self._error(404, "MiniMax account was not found")
+            try:
+                windows = wb_minimax.quota(account)
+            except urllib.error.HTTPError as exc:
+                with exc:
+                    return self._error(exc.code, exc.reason)
+            return self._json_panel(200, {"windows": windows})
         if path == "/console/state":
             return self._get_console_state()
         if path == "/health":
@@ -23874,7 +23911,8 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/v1/balance-summary":
             return self._get_v1_balance_summary()
         if path in ("/panel/model-catalog", "/models"):
-            return self._get_v1_models()
+            return self._get_v1_models(force_refresh=query.get("refresh") == ["1"],
+                                       include_official=path == "/panel/model-catalog")
         if path == "/v1/media/tasks":
             return self._get_media_tasks(query)
         if path.startswith("/v1/videos/"):
@@ -23945,7 +23983,10 @@ class Handler(BaseHTTPRequestHandler):
             # ?realm=intl|cn：看板把当前视图（以及所选 Key 绑定的出口）带上来，
             # 后端据此挑该出口的目录；不带就退回 Key 绑定、再退回全局出口
             # （见 _agents_realm）。
-            return self._get_agents({"realm": (query.get("realm") or [""])[0]})
+            return self._get_agents({
+                "realm": (query.get("realm") or [""])[0],
+                "key_id": (query.get("key_id") or [""])[0],
+            })
         if path == "/agents/model-selection":
             return self._get_agents_model_selection()
         if path == "/agents/available":
@@ -23961,6 +24002,7 @@ class Handler(BaseHTTPRequestHandler):
         # show the login screen before it can hold a session.
         crypto_ok, crypto_reason = wb_settings.check_pbkdf2_available()
         info = {
+            "version": running_version(),
             "panel_password_required": True,
             "panel_password_is_default": wb_settings.panel_password_is_default(ACCOUNTS_DIR),
             "authenticated": self._panel_ok(),
@@ -24412,11 +24454,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def _get_realm(self):
         options = realm_options()
-        if CURRENT_REALM not in options:
-            # 配置被删/关闭后，持久化的出口可能已经不在选项里。收敛到 intl，
-            # 否则看板会显示一个自己都解释不了的 current。
-            save_persisted_realm("intl")
-        return self._json(200, {"current": CURRENT_REALM, "options": options})
+        reconcile_active_realm(options)
+        return self._json(200, {"current": CURRENT_REALM if options else "", "options": options})
 
     def _get_codearts_models(self):
         """CodeArts 出口的模型目录：实时拉 codearts2api，失败回退缓存。"""
@@ -24451,6 +24490,9 @@ class Handler(BaseHTTPRequestHandler):
         blocked = self._key_account_error(account)
         if blocked:
             return self._error(403, blocked, "permission_error")
+        if (account is None and self._key_realm() in ("", wb_minimax.ROUTE)
+                and wb_settings.key_allowed_accounts(self.key_entry) is None):
+            wb_minimax.refresh_catalog(wb_settings.minimax_config(ACCOUNTS_DIR))
         models, unavailable = MODEL_GATEWAY.catalog(
             self.key_entry, account.realm if account else None)
         if account is not None:
@@ -24469,12 +24511,38 @@ class Handler(BaseHTTPRequestHandler):
         return MODEL_GATEWAY.resolve(model, operation, self.key_entry,
                                      account.realm if account else None)
 
-    def _get_v1_models(self):
+    def _get_v1_models(self, *, force_refresh=False, include_official=False):
         if not self._authorized():
             return
         req_realm = self._request_realm() or CURRENT_REALM
+        if req_realm in ("intl", "cn") and not _realm_selectable(req_realm):
+            return self._json(200, {"object": "list", "data": [], "realm": req_realm})
         if req_realm == "codearts":
             return self._get_codearts_models()
+        if req_realm == wb_minimax.ROUTE:
+            config = wb_settings.minimax_config(ACCOUNTS_DIR)
+            wb_minimax.refresh_catalog(config, force=force_refresh)
+            account = pinned_account()
+            data, _ = MODEL_GATEWAY.catalog(
+                self.key_entry, account.realm if account else None, route_id=wb_minimax.ROUTE)
+            for entry in data:
+                entry["name"] = entry["upstream_model"]
+                entry["client_model_id"] = entry["id"]
+            if include_official:
+                enabled = {entry["upstream_model"]: entry for entry in data}
+                data = []
+                for entry in wb_minimax.official_model_entries(config):
+                    model = entry["id"]
+                    if model in enabled:
+                        data.append(enabled.pop(model))
+                    else:
+                        data.append(dict(entry, id=wb_minimax.ROUTE + "/" + model,
+                                         name=model, upstream_model=model,
+                                         route_id=wb_minimax.ROUTE, route_realm=wb_minimax.ROUTE,
+                                         catalog_only=True))
+                data.extend(enabled.values())
+            return self._json(200, {"object": "list", "data": data,
+                                    "realm": req_realm, "catalog": wb_minimax.catalog_meta(config)})
         try:
             entries = fetch_models(realm=req_realm)
         except Exception as exc:
@@ -25572,7 +25640,8 @@ class Handler(BaseHTTPRequestHandler):
     def _handle_audio_post(self, path, payload):
         """Serve OpenAI-compatible TTS and ASR through a WorkBuddy account."""
         is_tts = path.endswith("/speech")
-        realm = self._request_realm() or CURRENT_REALM
+        default_realm = "intl" if CURRENT_REALM == wb_minimax.ROUTE else CURRENT_REALM
+        realm = self._request_realm() or default_realm
         excluded = set()
         refreshed = set()
         tried = 0
@@ -27275,6 +27344,19 @@ class Handler(BaseHTTPRequestHandler):
                 return self._error(400, str(exc), "invalid_request_error")
             wb_settings.set_media_config(ACCOUNTS_DIR, patch)
             reply["media"] = wb_settings.media_config(ACCOUNTS_DIR)
+        if "channels" in payload:
+            try:
+                wb_settings.set_channel_states(ACCOUNTS_DIR, payload["channels"])
+            except ValueError as exc:
+                return self._error(400, str(exc), "invalid_request_error")
+            wb_codearts.invalidate_overview()
+        if "minimax" in payload:
+            try:
+                config = wb_settings.set_minimax_config(ACCOUNTS_DIR, payload["minimax"])
+            except ValueError as exc:
+                return self._error(400, str(exc), "invalid_request_error")
+            reply["minimax"] = wb_minimax.public_config(config)
+            reply["minimax_accounts"] = wb_minimax.public_accounts(config)
         if "codearts" in payload:
             raw = payload.get("codearts")
             if not isinstance(raw, dict):
@@ -27287,9 +27369,8 @@ class Handler(BaseHTTPRequestHandler):
             wb_codearts.invalidate_models()
             wb_codearts.invalidate_overview()
             reply["codearts"] = wb_codearts.masked_config(ACCOUNTS_DIR)
-            if reconcile_codearts_realm():
-                reply["warning"] = ("CodeArts 出口已停用，默认出口已切回国际版；"
-                                    "绑定 CodeArts 的 Key 需要改绑后才能继续使用。")
+        if {"channels", "minimax", "codearts"} & payload.keys() and reconcile_active_realm():
+            reply["warning"] = "原旧路径默认上游已不可用，已改用 " + CURRENT_REALM
         new_key = payload.get("api_key")
         if new_key is not None:
             new_key = str(new_key).strip()
@@ -27543,15 +27624,18 @@ class Handler(BaseHTTPRequestHandler):
         """
         if isinstance(payload, dict):
             explicit = str(payload.get("realm") or "").strip().lower()
-            if explicit in ("intl", "cn"):
+            if explicit in wb_settings.TEXT_CHANNELS:
                 return explicit
         try:
             bound = self._key_realm()
         except Exception:
             bound = ""
-        if bound in ("intl", "cn"):
+        if bound in wb_settings.TEXT_CHANNELS:
             return bound
-        return CURRENT_REALM if CURRENT_REALM in ("intl", "cn") else "intl"
+        if _realm_selectable(CURRENT_REALM):
+            return CURRENT_REALM
+        options = realm_options()
+        return options[0] if options else "intl"
 
     def _agents_models(self, realm=None):
         """Flat model list for the picker; bundled intl+cn catalog, deduped.
@@ -27566,6 +27650,11 @@ class Handler(BaseHTTPRequestHandler):
         "intl+cn" in the line above only holds for the bundled fallback
         below, which is what runs when the live catalogue is unavailable.
         """
+        if realm in (wb_minimax.ROUTE, "codearts"):
+            models, _ = MODEL_GATEWAY.catalog(route_id=realm)
+            return models
+        if realm in ("intl", "cn") and not _realm_selectable(realm):
+            return []
         models = []
         seen = set()
         try:
@@ -27668,6 +27757,14 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
         return
 
+    @staticmethod
+    def _agents_minimax_models(api_key):
+        key = identify_key(api_key) if api_key else None
+        if key is None and auth_required():
+            return []
+        models, _ = MODEL_GATEWAY.catalog(key, route_id=wb_minimax.ROUTE)
+        return models
+
     def _get_agents(self, payload=None):
         if not self._agents_client_allowed():
             # 远程看板（服务端 / Docker / OpenWrt）：一键配置改的是网关所在
@@ -27694,13 +27791,21 @@ class Handler(BaseHTTPRequestHandler):
             keys = []
         selection = wb_settings.agent_model_selection(ACCOUNTS_DIR)
         realm = self._agents_realm(payload)
+        try:
+            api_key = self._agents_resolve_key(payload or {}, [])
+            if (identify_key(api_key) or {}).get("realm") == wb_minimax.ROUTE:
+                realm = wb_minimax.ROUTE
+            subscription_models = self._agents_minimax_models(api_key)
+        except wb_agents.AgentConfigError:
+            subscription_models = []
         return self._json(200, {
             "enabled": True,
             # 这份目录属于哪个出口：面板据此在标题旁标注，避免「以为在配
             # 国际版、实际拿到国内版清单」这种看不见的错位。
             "realm": realm,
             "clients": list(wb_agents.overview(ACCOUNTS_DIR).values()),
-            "models": self._agents_models(realm),
+            "models": (subscription_models if realm == wb_minimax.ROUTE
+                       else self._agents_models(realm) + subscription_models),
             # 「网关模型清单」里勾选的模型：一键配置只把这些写进客户端。
             # None（从未保存）时给空列表，由 models_configured 区分「没选过」
             # 与「选了 0 个」——前者 apply 退回完整目录，后者 apply 拒绝。
@@ -27764,6 +27869,14 @@ class Handler(BaseHTTPRequestHandler):
         # 出口的目录：否则国际版模型在这里查不到规格，写进客户端的清单里只剩
         # 一个 id，DSH / Crush 这类客户端拿不到档位控件。
         realm = self._agents_realm(payload)
+        warnings = []
+        try:
+            api_key = self._agents_resolve_key(payload, warnings)
+        except wb_agents.AgentConfigError as exc:
+            return self._error(400, str(exc), "invalid_request_error")
+        minimax_bound = (identify_key(api_key) or {}).get("realm") == wb_minimax.ROUTE
+        if minimax_bound:
+            realm = wb_minimax.ROUTE
         models = payload.get("models")
         if models is None:
             # 前端没带清单（老看板 / 直接调接口）：优先用「网关模型清单」里
@@ -27784,7 +27897,8 @@ class Handler(BaseHTTPRequestHandler):
                     ):
                         models = [model for model in models if not model.get("entitlement")]
             else:
-                models = [{"id": mid} for mid in selection]
+                models = [{"id": mid} for mid in selection
+                          if realm != wb_minimax.ROUTE or mid.startswith(wb_minimax.ROUTE + "/")]
         if not isinstance(models, list):
             return self._error(400, "models must be a list",
                                "invalid_request_error")
@@ -27814,11 +27928,6 @@ class Handler(BaseHTTPRequestHandler):
                 "请先在「网关模型清单」中勾选至少一个模型：只有勾选的模型"
                 "才会写入客户端配置",
                 "invalid_request_error")
-        warnings = []
-        try:
-            api_key = self._agents_resolve_key(payload, warnings)
-        except wb_agents.AgentConfigError as exc:
-            return self._error(400, str(exc), "invalid_request_error")
         if not api_key:
             if auth_required():
                 return self._error(
@@ -27835,6 +27944,17 @@ class Handler(BaseHTTPRequestHandler):
 
         model = qualify_model(model)
         cleaned_models = [dict(item, id=qualify_model(item["id"])) for item in cleaned_models]
+        minimax_prefix = wb_minimax.ROUTE + "/"
+        model_ids = {mid for mid in [model] + [item["id"] for item in cleaned_models] if mid}
+        if minimax_bound and any(not mid.startswith(minimax_prefix) for mid in model_ids):
+            return self._error(403, "The selected gateway key is bound to MiniMax",
+                               "permission_error")
+        requested = {mid for mid in model_ids if mid.startswith(minimax_prefix)}
+        if requested:
+            allowed = {entry["id"] for entry in self._agents_minimax_models(api_key)}
+            if not requested.issubset(allowed):
+                return self._error(403, "The selected gateway key cannot use the requested MiniMax models",
+                                   "permission_error")
         try:
             result = wb_agents.integrate(
                 ACCOUNTS_DIR, client_id, base_url, api_key,
@@ -27971,10 +28091,6 @@ class Handler(BaseHTTPRequestHandler):
 
     def _get_codearts_overview(self):
         cfg = wb_codearts.load_config(ACCOUNTS_DIR)
-        if not wb_codearts.configured_config(cfg):
-            return self._error(
-                503, "CodeArts 出口未启用：请到设置页填写 Base URL 和 API Key。",
-                "invalid_request_error")
         try:
             data = wb_codearts.overview(cfg)
         except wb_codearts.CodeArtsError as exc:
@@ -27988,10 +28104,6 @@ class Handler(BaseHTTPRequestHandler):
 
     def _get_codearts_accounts(self):
         cfg = wb_codearts.load_config(ACCOUNTS_DIR)
-        if not wb_codearts.configured_config(cfg):
-            return self._error(
-                503, "CodeArts 出口未启用：请到设置页填写 Base URL 和 API Key。",
-                "invalid_request_error")
         try:
             data = wb_codearts.overview(cfg)
         except wb_codearts.CodeArtsError as exc:
@@ -28025,10 +28137,6 @@ class Handler(BaseHTTPRequestHandler):
             return self._error(400, "expected a JSON object",
                                "invalid_request_error")
         cfg = wb_codearts.load_config(ACCOUNTS_DIR)
-        if not wb_codearts.configured_config(cfg):
-            return self._error(
-                503, "CodeArts 出口未启用：请到设置页填写 Base URL 和 API Key。",
-                "invalid_request_error")
         uid = str(payload.get("uid") or "").strip()
         try:
             if path == "/codearts/test":
@@ -28642,12 +28750,12 @@ class Handler(BaseHTTPRequestHandler):
                                     "panel session, not an API key",
                                "invalid_request_error")
         new_realm = payload.get("realm")
-        if new_realm not in ("intl", "cn", "codearts"):
-            return self._error(400, "realm must be intl, cn or codearts",
+        if new_realm not in ("intl", "cn", "codearts", wb_minimax.ROUTE):
+            return self._error(400, "realm must be intl, cn, minimax or codearts",
                                "invalid_request_error")
-        if new_realm == "codearts" and not _realm_selectable("codearts"):
+        if not _realm_selectable(new_realm):
             return self._error(
-                400, "codearts realm is not configured; enable it in settings first",
+                400, "%s realm is not configured; enable it in settings first" % new_realm,
                 "invalid_request_error")
         save_persisted_realm(new_realm)
         return self._json(200, {"ok": True, "current": CURRENT_REALM, "persisted": True})
@@ -30136,6 +30244,9 @@ class Handler(BaseHTTPRequestHandler):
         if not is_account_route:
             _panel_trace(self, path)
         if is_audio_route:
+            if wb_minimax.ROUTE in (self._key_realm(), self._request_realm()):
+                return self._error(400, "MiniMax subscription serves text models on this gateway",
+                                   "invalid_request_error")
             kind = "tts" if path.endswith("/speech") else "asr"
             if not wb_settings.audio_enabled(ACCOUNTS_DIR, kind):
                 return self._error(
@@ -30176,9 +30287,26 @@ class Handler(BaseHTTPRequestHandler):
         wb_panel_events.meta(
             payload.get("model") if isinstance(payload, dict) else None,
             payload.get("stream") if isinstance(payload, dict) else None)
+        model = payload.get("model") if isinstance(payload, dict) else None
+        legacy_text = gateway_operation is None and not (is_account_route or is_media_route or is_audio_route)
+        legacy_realm = (self._key_realm() or self._request_realm() or CURRENT_REALM) if legacy_text else None
+        legacy_minimax = legacy_realm == wb_minimax.ROUTE
+        if legacy_realm in wb_settings.TEXT_CHANNELS and not _realm_selectable(legacy_realm):
+            message = "Text channel is disabled or unavailable: " + legacy_realm
+            if is_messages_route:
+                return self._anthropic_error(503, message, "overloaded_error")
+            return self._error(503, message, "server_error")
+        if legacy_minimax:
+            # Canonical /v1 paths still require an explicit provider-qualified ID.
+            gateway_operation = wb_model_gateway.POST_OPERATIONS["/v1" + path]
+            if isinstance(model, str):
+                model = MODEL_GATEWAY.qualify(wb_minimax.ROUTE, model)
         if gateway_operation is not None:
             try:
-                route = self._resolve_routed_model(payload.get("model"), gateway_operation)
+                route = self._resolve_routed_model(model, gateway_operation)
+                if legacy_minimax and route.usage_realm != wb_minimax.ROUTE:
+                    raise wb_model_gateway.RouteError(
+                        403, "model_not_allowed", "model does not belong to the MiniMax exit")
             except wb_model_gateway.RouteError as exc:
                 if is_messages_route:
                     return self._anthropic_error(exc.status, str(exc))
@@ -31183,10 +31311,13 @@ def _log_startup_summary(args, api_key_generated):
         log("catalog    : app cache not found - will use the model API instead")
     log(f"account    : {rep.uid if rep else chr(45)} @ {rep.domain if rep else chr(45)}")
     log(f"issuer     : {wb_accounts.jwt_issuer(rep.access_token) if rep else chr(45)}")
-    log("realm      : %s (%s)" % (
-        CURRENT_REALM,
-        "www.workbuddy.ai" if CURRENT_REALM == "intl"
-        else urllib.parse.urlsplit(wb_identity.CN_CHAT_BASE).netloc))
+    realm_host = {"intl": "www.workbuddy.ai",
+                  "cn": urllib.parse.urlsplit(wb_identity.CN_CHAT_BASE).netloc}
+    if CURRENT_REALM == wb_minimax.ROUTE:
+        config = wb_settings.minimax_config(ACCOUNTS_DIR)
+        realm_host[CURRENT_REALM] = urllib.parse.urlsplit(wb_minimax.CHAT_HOSTS[config["region"]]).netloc
+    log("realm      : %s" % (("%s (%s)" % (CURRENT_REALM, realm_host[CURRENT_REALM]))
+                            if CURRENT_REALM in realm_host else CURRENT_REALM))
     if wb_identity.CN_CHAT_BASE != wb_identity.CN_CHAT_BASE_DEFAULT:
         log("cn upstream: %s (WB_CN_CHAT_UPSTREAM)" % wb_identity.CN_CHAT_BASE)
     elif wb_identity.CN_CHAT_BASE_IGNORED:

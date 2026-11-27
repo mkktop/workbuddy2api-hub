@@ -275,6 +275,9 @@ const nestedB = sectionEl('嵌套乙');
 group.appendChild(nestedA);
 group.appendChild(nestedB);
 const gateway = pageEl('pageGateway', [secAccount, secRecent, secGrowth, secUntitled, group]);
+const accounts = pageEl('pageAccounts', [sectionEl('账号列表'), sectionEl('当前禁用')]);
+assert.deepStrictEqual(api.pageNavSections(accounts), [],
+  '账号页只用渠道切换，账号区块不生成页内导航');
 
 assert.deepStrictEqual(
   api.pageNavSections(gateway).map(sec => api.pageNavLabel(sec, 0)),

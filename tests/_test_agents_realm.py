@@ -12,7 +12,7 @@
 
   - `wb_proxy._agents_models(realm)`  把 realm 透传给 fetch_models
   - `wb_proxy._agents_realm()`        payload > Key 绑定 > 全局出口
-  - `GET /agents?realm=`              只认 intl / cn，其余一律回落
+  - `GET /agents?realm=`              识别已注册的渠道，未知 ID 回落
   - `POST /agents/apply`              补规格时用同一个出口的目录
 
     python tests/_test_agents_realm.py
@@ -120,8 +120,10 @@ try:
           P.Handler._agents_realm(h_intl, {"realm": "cn"}))
 
     check("payload 的未知值被忽略，落到 Key 绑定",
-          P.Handler._agents_realm(h_intl, {"realm": "codearts"}) == "intl",
-          P.Handler._agents_realm(h_intl, {"realm": "codearts"}))
+          P.Handler._agents_realm(h_intl, {"realm": "unknown"}) == "intl",
+          P.Handler._agents_realm(h_intl, {"realm": "unknown"}))
+    check("payload 可显式选择 CodeArts",
+          P.Handler._agents_realm(h_intl, {"realm": "codearts"}) == "codearts")
 
     check("payload 是 None 时不炸",
           P.Handler._agents_realm(FakeHandler(key_realm="intl"), None) == "intl",
