@@ -83,10 +83,14 @@ class RetryBackoffTests(unittest.TestCase):
         acc = make_account("create")
         expected = max(wb_accounts.WEB_MIN_ROUNDS,
                        len(acc.daily_chat_candidates()))
-        sleeps, rounds, res = self.run_rounds(acc, [CREATE_FAIL] * 3)
+        sleeps, rounds, res = self.run_rounds(acc, [CREATE_FAIL] * expected)
         self.assertFalse(res["ok"])
         self.assertEqual(len(rounds), expected)
-        self.assertEqual(sleeps, [5.0, 10.0][:expected - 1])
+        # 轮数跟着实时目录的免费模型数走（目录漂移会变多），睡眠序列按
+        # 生产公式推，不硬编码——硬编码 3 项在上游加模型后必然越界。
+        self.assertEqual(sleeps,
+                         [wb_accounts.web_retry_backoff(i)
+                          for i in range(expected - 1)])
 
     def test_backoff_doubles_and_stops_at_the_cap(self):
         acc = make_account("capped", rounds=5)
@@ -103,7 +107,9 @@ class RetryBackoffTests(unittest.TestCase):
     def test_turn_failures_do_not_sleep(self):
         # 跑过 turn 的轮次已经用等待预算付过账了，不该再睡一次。
         acc = make_account("turn")
-        sleeps, _rounds, res = self.run_rounds(acc, [TURN_FAIL] * 3)
+        expected = max(wb_accounts.WEB_MIN_ROUNDS,
+                       len(acc.daily_chat_candidates()))
+        sleeps, _rounds, res = self.run_rounds(acc, [TURN_FAIL] * expected)
         self.assertFalse(res["ok"])
         self.assertEqual(sleeps, [])
 
@@ -111,7 +117,9 @@ class RetryBackoffTests(unittest.TestCase):
         # 旧调用方 / 测试桩返回的结果里没有 phase：按「已跑到 turn」处理。
         acc = make_account("legacy")
         legacy = {"ok": False, "retryable": True}
-        sleeps, _rounds, res = self.run_rounds(acc, [legacy] * 3)
+        expected = max(wb_accounts.WEB_MIN_ROUNDS,
+                       len(acc.daily_chat_candidates()))
+        sleeps, _rounds, res = self.run_rounds(acc, [legacy] * expected)
         self.assertFalse(res["ok"])
         self.assertEqual(sleeps, [])
 
@@ -138,7 +146,7 @@ class RetryBackoffTests(unittest.TestCase):
         acc = make_account("disabled")
         expected = max(wb_accounts.WEB_MIN_ROUNDS,
                        len(acc.daily_chat_candidates()))
-        sleeps, rounds, _res = self.run_rounds(acc, [CREATE_FAIL] * 3, base=0.0)
+        sleeps, rounds, _res = self.run_rounds(acc, [CREATE_FAIL] * expected, base=0.0)
         self.assertEqual(len(rounds), expected)
         self.assertEqual(sleeps, [])
 
@@ -172,8 +180,10 @@ class RetryBackoffSettingTests(unittest.TestCase):
                        len(acc.daily_chat_candidates()))
         wb_settings.set_daily_chat_web_retry_backoff(
             os.path.dirname(acc.path), 2)
-        sleeps, _rounds, _res = self.run_rounds(acc, [CREATE_FAIL] * 3)
-        self.assertEqual(sleeps, [2.0, 4.0][:expected - 1])
+        sleeps, _rounds, _res = self.run_rounds(acc, [CREATE_FAIL] * expected)
+        self.assertEqual(sleeps,
+                         [wb_accounts.web_retry_backoff(i, base=2.0)
+                          for i in range(expected - 1)])
 
     def test_setting_zero_disables_the_backoff(self):
         acc = make_account("setting-0")
@@ -181,7 +191,7 @@ class RetryBackoffSettingTests(unittest.TestCase):
                        len(acc.daily_chat_candidates()))
         wb_settings.set_daily_chat_web_retry_backoff(
             os.path.dirname(acc.path), 0)
-        sleeps, rounds, _res = self.run_rounds(acc, [CREATE_FAIL] * 3)
+        sleeps, rounds, _res = self.run_rounds(acc, [CREATE_FAIL] * expected)
         self.assertEqual(len(rounds), expected)
         self.assertEqual(sleeps, [])
 
@@ -192,8 +202,10 @@ class RetryBackoffSettingTests(unittest.TestCase):
                        len(acc.daily_chat_candidates()))
         wb_settings.set_daily_chat_web_retry_backoff(
             os.path.dirname(acc.path), 40)
-        sleeps, _rounds, _res = self.run_rounds(acc, [CREATE_FAIL] * 3)
-        self.assertEqual(sleeps, [40.0, 40.0][:expected - 1])
+        sleeps, _rounds, _res = self.run_rounds(acc, [CREATE_FAIL] * expected)
+        self.assertEqual(sleeps,
+                         [wb_accounts.web_retry_backoff(i, base=40.0)
+                          for i in range(expected - 1)])
 
     def test_unset_setting_falls_back_to_the_builtin_default(self):
         acc = make_account("setting-unset")
