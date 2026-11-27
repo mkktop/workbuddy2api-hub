@@ -195,6 +195,15 @@ def _error(url, status, message, *, retry_account=False):
     return error
 
 
+def _close_quietly(response):
+    # Python 3.9's urllib.response.addbase inherits tempfile._TemporaryFileWrapper,
+    # whose close() reads the instance state that addbase.__init__ sets. An
+    # HTTPError built without a body skips that init, so close() raises
+    # KeyError('file') there (3.12+ no longer inherits the wrapper).
+    if getattr(response, "fp", None) is not None:
+        response.close()
+
+
 def _open(url, config, payload=None, timeout=20):
     key = config["api_key"]
     if not key:
@@ -205,7 +214,7 @@ def _open(url, config, payload=None, timeout=20):
         return _http.open(Request(url, data=data, headers=headers), timeout=timeout)
     except HTTPError as exc:
         status = exc.code
-        exc.close()
+        _close_quietly(exc)
         if status in (401, 403):
             raise _error(url, 502, "MiniMax rejected the Subscription Key or request access",
                          retry_account=True) from None
@@ -267,7 +276,7 @@ def open_chat(config, payload, *, allowed_accounts=None):
         except HTTPError as exc:
             if not accounts or not getattr(exc, "retry_account", False):
                 raise
-            exc.close()
+            _close_quietly(exc)
 
 
 def _remaining(row, interval):
