@@ -3052,6 +3052,9 @@ button.page-nav-top:hover{background:var(--panel2);border-color:var(--accent);co
     '请确认已安装并登录 WorkBuddy 客户端后点「重新扫描」。': 'Make sure the WorkBuddy client is installed and signed in, then click Rescan.',
     '请输入面板密码': 'Enter the panel password',
     '请输入面板访问密码': 'Enter the panel access password',
+    'WorkBuddy 网关看板': 'WorkBuddy gateway console',
+    '保持登录': 'Stay signed in',
+    '仅在本机保存会话令牌': 'The session token stays on this device only',
     '读取失败:': 'Read failed:',
     '读取设置失败:': 'Reading settings failed:',
     '调度器': 'Scheduler',
@@ -4776,10 +4779,98 @@ html[data-ui="next"] body{
   font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
   font-size:13px; line-height:1.5;
 }
-html[data-ui="next"] #panelGate{background:var(--bg)!important}
-html[data-ui="next"] #panelGate > div{
-  border-radius:16px!important; border-color:var(--line)!important;
-  box-shadow:var(--shadow-md)!important;
+/* 登录闸门：左侧品牌动画区 + 右侧登录表单的分屏布局（样式取自 qoder2api-hub 的
+   登录页，配色换成本主题的 --bg/--fg/--dim，深浅色随主题自动切换）。 */
+html[data-ui="next"] #panelGate{
+  padding:0!important;background:var(--bg)!important;overflow:auto;
+  align-items:stretch!important;justify-content:stretch!important;
+}
+html[data-ui="next"] .wb-login-brand{
+  width:53.5%;position:relative;overflow:hidden;
+  min-height:100vh;min-height:100dvh;
+}
+html[data-ui="next"] #wbLoginCanvas{
+  position:absolute;inset:0;width:100%;height:100%;
+  mask-image:linear-gradient(to right,#000 calc(100% - 120px),transparent);
+  -webkit-mask-image:linear-gradient(to right,#000 calc(100% - 120px),transparent);
+}
+html[data-ui="next"] .wb-login-brand h2{
+  position:absolute;right:9%;bottom:13%;margin:0;
+  font-size:clamp(28px,3.6vw,48px);font-weight:600;line-height:1.15;
+  text-align:right;letter-spacing:-.025em;color:var(--fg);
+  text-shadow:0 0 18px var(--bg);
+  animation:wbReveal .6s cubic-bezier(.23,1,.32,1) .4s both;
+}
+html[data-ui="next"] .wb-login-brand>span{
+  position:absolute;left:32px;top:32px;
+  font:10px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  letter-spacing:.15em;color:var(--dim-light);
+}
+html[data-ui="next"] .wb-login-form{
+  width:46.5%;max-width:none;border:0;box-shadow:none;border-radius:0;
+  padding:clamp(32px,5vw,72px);background:transparent;
+  display:flex;flex-direction:column;justify-content:center;gap:12px;
+  min-height:100vh;min-height:100dvh;
+}
+html[data-ui="next"] .wb-login-title{
+  font-size:32px;font-weight:600;letter-spacing:-.03em;line-height:1.25;color:var(--fg);
+  animation:wbReveal .48s cubic-bezier(.23,1,.32,1) .16s both;
+}
+html[data-ui="next"] .wb-login-sub{font-size:13px;color:var(--dim)}
+html[data-ui="next"] .wb-login-input{
+  width:100%;height:48px;border-radius:10px;padding:0 14px;
+  background:var(--panel2);border:1px solid var(--line);
+  color:var(--fg);font:inherit;font-size:15px;
+}
+html[data-ui="next"] .wb-login-input:focus{
+  outline:none;border-color:var(--fg);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--fg) 12%,transparent);
+}
+html[data-ui="next"] .wb-login-remember{
+  display:flex;align-items:center;gap:8px;margin-top:8px;
+  font-size:13px;color:var(--dim);cursor:pointer;
+}
+html[data-ui="next"] .wb-login-remember input{
+  width:15px;height:15px;margin:0;accent-color:var(--accent);cursor:pointer;
+}
+html[data-ui="next"] .wb-login-remember span{font-size:11px;color:var(--dim-light)}
+html[data-ui="next"] .wb-login-msg{
+  font-size:12px;color:var(--bad);min-height:17px;
+  word-break:break-word;line-height:1.4;
+}
+html[data-ui="next"] .wb-login-btn{
+  width:100%;height:46px;margin-top:4px;padding:0 20px;
+  border-radius:9999px;border:1px solid transparent;
+  background:var(--fg);color:var(--bg);
+  font-family:inherit;font-size:14px;font-weight:600;letter-spacing:.02em;cursor:pointer;
+  transition:transform .16s cubic-bezier(.23,1,.32,1),box-shadow .22s ease,filter .2s ease;
+  box-shadow:0 4px 14px color-mix(in srgb,var(--fg) 16%,transparent);
+}
+html[data-ui="next"] .wb-login-btn:hover{filter:brightness(1.08)}
+html[data-ui="next"] .wb-login-btn:active{transform:scale(.97)}
+html[data-ui="next"] .wb-login-hint{font-size:11px;color:var(--warn);margin-top:12px;line-height:1.5}
+html[data-ui="next"] .wb-login-reveal-veil{
+  position:fixed;inset:0;z-index:590;background:var(--bg);pointer-events:none;
+  animation:wbVeilOut .6s cubic-bezier(.32,.72,0,1) .04s both;
+}
+@keyframes wbReveal{from{opacity:0;transform:translate3d(0,10px,0)}to{opacity:1;transform:none}}
+@keyframes wbVeilOut{from{opacity:1}to{opacity:0}}
+@media(max-width:768px){
+  html[data-ui="next"] #panelGate{flex-direction:column}
+  html[data-ui="next"] .wb-login-brand{width:100%;min-height:180px;height:25dvh;max-height:240px}
+  html[data-ui="next"] #wbLoginCanvas{
+    mask-image:linear-gradient(to bottom,#000,transparent);
+    -webkit-mask-image:linear-gradient(to bottom,#000,transparent);
+  }
+  html[data-ui="next"] .wb-login-brand h2{display:none}
+  html[data-ui="next"] .wb-login-form{width:100%;min-height:0;max-width:460px;margin:0 auto;padding:28px!important}
+  html[data-ui="next"] .wb-login-title{font-size:24px}
+  html[data-ui="next"] .wb-login-remember span{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+  html[data-ui="next"] .wb-login-brand h2,
+  html[data-ui="next"] .wb-login-title{animation:none}
+  html[data-ui="next"] .wb-login-reveal-veil{display:none}
 }
 html[data-ui="next"] #nextShell{display:flex;min-height:100vh;align-items:stretch}
 html[data-ui="next"] #nextSidebar{
@@ -6261,26 +6352,29 @@ html[data-ui="next"]:not([data-main-tab="overview"]) .log-empty{color:#6f6f6f}
      都能看到「登录后的界面」闪一下。有会话令牌时由 <head> 里那段首帧判定先隐藏
      （html.wb-panel-session），复核失败再由 panelNeedsLogin() 显示。 -->
 <div id="panelGate" style="position:fixed;inset:0;z-index:600;display:flex;
-     align-items:center;justify-content:center;padding:20px;background:var(--bg)">
-  <div style="width:min(380px,100%);background:var(--panel);border:1px solid var(--line);
-              border-radius:14px;padding:26px 24px;box-shadow:0 10px 30px rgba(15,23,42,.12)">
-    <div style="font-size:16px;font-weight:700;margin-bottom:6px">WorkBuddy</div>
-    <div style="font-size:12px;color:var(--dim);margin-bottom:18px">请输入面板访问密码</div>
+     align-items:stretch;justify-content:stretch;padding:0;background:var(--bg)">
+  <div class="wb-login-brand">
+    <canvas id="wbLoginCanvas" aria-hidden="true"></canvas>
+    <h2>Welcome to<br>WorkBuddy Gateway.</h2>
+    <span>YOUR GATEWAY. YOUR CONTROL.</span>
+  </div>
+  <div class="wb-login-form">
+    <div class="wb-login-title">WorkBuddy 网关看板</div>
+    <div class="wb-login-sub">请输入面板访问密码</div>
     <input id="panelPwdInput" type="password" placeholder="面板密码" autocomplete="current-password" disabled
-           onkeydown="if(event.key==='Enter') submitPanelLogin()"
-           style="width:100%;background:var(--panel2);border:1px solid var(--line);
-                  border-radius:8px;padding:9px 12px;color:var(--fg);font:inherit">
-    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim);margin:10px 0 0">
-      <input id="panelRemember" type="checkbox" style="width:15px;height:15px"
+           class="wb-login-input"
+           onkeydown="if(event.key==='Enter') submitPanelLogin()">
+    <label class="wb-login-remember">
+      <input id="panelRemember" type="checkbox"
              onchange="panelRememberChanged(this)">
-      保持登录
+      保持登录 <span>仅在本机保存会话令牌</span>
     </label>
-    <div id="panelLoginMsg" style="font-size:12px;color:var(--bad);min-height:17px;margin:8px 0 12px;word-break:break-word;line-height:1.4"></div>
-    <button onclick="submitPanelLogin()" style="width:100%;padding:9px 12px;font-size:13px">进入面板</button>
-    <div id="panelDefaultHint" style="display:none;font-size:11px;color:var(--warn);margin-top:12px">
+    <div id="panelLoginMsg" class="wb-login-msg"></div>
+    <button type="button" class="wb-login-btn" onclick="submitPanelLogin()">进入面板</button>
+    <div id="panelDefaultHint" class="wb-login-hint" style="display:none">
       当前仍在使用默认密码 <b>admin</b>，登录后请在「设置」中修改。
     </div>
-    <div id="panelCryptoWarning" style="display:none;font-size:11px;color:var(--bad);margin-top:12px;line-height:1.4;word-break:break-word">
+    <div id="panelCryptoWarning" class="wb-login-hint" style="display:none;color:var(--bad);line-height:1.4;word-break:break-word">
       警告：当前 Python 解释器缺少 <code>hashlib.pbkdf2_hmac</code> 支持。若使用 Windows 便携版 Python，可能因系统安全策略（如 Smart App Control）拦截了 <code>DLLs/_hashlib.pyd</code>。自定义密码将无法登录，请更换为完整 Python 或放行该 DLL。
     </div>
   </div>
@@ -16447,6 +16541,225 @@ function panelClearToken(){
   try { sessionStorage.removeItem(PANEL_STORE); } catch(e){}
 }
 
+/* ---- 登录闸门动画：左品牌区的点阵噪声场（实现取自 qoder2api-hub 登录页，
+   点色读当前主题的 --fg，深浅色切换即自动换色）。 ---- */
+function wbReduced(){
+  try { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+  catch(e){ return false; }
+}
+function wbLoginField(){
+"use strict";
+const ROWS_PER_HEIGHT = 84;
+const MIN_PITCH = 9;
+const MAX_PITCH = 14;
+/** 点径 / 点距 */
+const DOT_RATIO = 0.62;
+const TONE_DIM = 0.22;
+const TONE_MID = 0.47;
+/** 向左漂移速度（格/秒） */
+const DRIFT_SPEED = 2;
+const WAVE_DURATION = 0.72;
+const WAVE_JITTER = 0.1;
+const FLASH_RISE = 0.05;
+const FLASH_SETTLE = 0.33;
+const FLASH_BOOST = 0.45;
+const DEFAULT_SEED = 0x0b17;
+const FIELD_CONTRAST = 2.2;
+const DENSITY_LOW = 0.38;
+const DENSITY_HIGH = 0.9;
+const DENSITY_MAX = 0.82;
+const SCATTER = 0.035;
+const MID_THRESHOLD = 0.8;
+const MID_CHANCE = 0.28;
+/** 每个点闪烁节拍的周期范围（秒） */
+const PERIOD_MIN = 1.2;
+const PERIOD_MAX = 3.2;
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+const easeOutCubic = (t) => 1 - (1 - t) ** 3;
+const smoothstep = (edge0, edge1, value) => {
+    const t = clamp((value - edge0) / (edge1 - edge0), 0, 1);
+    return t * t * (3 - 2 * t);
+};
+/** 整数格点哈希，返回 [0, 1) */
+const hash2 = (ix, iy, seed) => {
+    let h = Math.imul(ix, 0x27d4eb2d) ^ Math.imul(iy, 0x165667b1) ^ Math.imul(seed, 0x9e3779b1);
+    h = Math.imul(h ^ (h >>> 15), 0x85ebca6b);
+    h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+    h ^= h >>> 16;
+    return (h >>> 0) / 4294967296;
+};
+const valueNoise = (x, y, seed) => {
+    const ix = Math.floor(x);
+    const iy = Math.floor(y);
+    const fx = x - ix;
+    const fy = y - iy;
+    const sx = fx * fx * (3 - 2 * fx);
+    const sy = fy * fy * (3 - 2 * fy);
+    const a = hash2(ix, iy, seed);
+    const b = hash2(ix + 1, iy, seed);
+    const c = hash2(ix, iy + 1, seed);
+    const d = hash2(ix + 1, iy + 1, seed);
+    const top = a + (b - a) * sx;
+    const bottom = c + (d - c) * sx;
+    return top + (bottom - top) * sy;
+};
+const fieldAt = (col, row, time, seed) => {
+    // col 以右侧为 0 向左递增，"内容向左移动" 即采样点向右（col 减小方向）回溯
+    const x = col - DRIFT_SPEED * time;
+    const primary = valueNoise(x / 11, row / 11, seed) * 0.62 + valueNoise(x / 5, row / 5, seed + 1) * 0.38;
+    const secondary = valueNoise(x / 7 + time * 0.6, row / 7 - time * 0.8, seed + 2);
+    // 叠加后分布集中在 0.5 附近，拉伸对比度让云团轮廓和暗区更分明
+    return clamp((primary * 0.62 + secondary * 0.38 - 0.5) * FIELD_CONTRAST + 0.5, 0, 1);
+};
+function pitchForHeight(height) {
+    return clamp(Math.round(height / ROWS_PER_HEIGHT), MIN_PITCH, MAX_PITCH);
+}
+function createDotGrid(width, height, options = {}) {
+    const seed = options.seed ?? DEFAULT_SEED;
+    const origin = options.origin ?? 'bottom-right';
+    const valid = width > 0 && height > 0;
+    const pitch = options.pitch ?? pitchForHeight(height);
+    const dotSize = Math.max(2, Math.round(pitch * DOT_RATIO));
+    const columns = valid ? Math.floor(width / pitch) + 1 : 0;
+    const rows = valid ? Math.floor(height / pitch) + 1 : 0;
+    const count = columns * rows;
+    const grid = {
+        width,
+        height,
+        pitch,
+        dotSize,
+        columns,
+        rows,
+        xs: new Float32Array(count),
+        ys: new Float32Array(count),
+        cols: new Int32Array(count),
+        rowsIndex: new Int32Array(count),
+        revealAt: new Float32Array(count),
+        period: new Float32Array(count),
+        phase: new Float32Array(count),
+        introDuration: 0,
+    };
+    if (!valid)
+        return grid;
+    const diagonal = Math.hypot(width, height);
+    const inset = (pitch - dotSize) / 2;
+    let index = 0;
+    for (let row = 0; row < rows; row += 1) {
+        for (let col = 0; col < columns; col += 1) {
+            // 以右下角为原点向左上排布；最左/最上一圈允许部分出界以铺满边缘
+            const x = width - (col + 1) * pitch + inset;
+            const y = height - (row + 1) * pitch + inset;
+            grid.xs[index] = x;
+            grid.ys[index] = y;
+            grid.cols[index] = col;
+            grid.rowsIndex[index] = row;
+            const originY = origin === 'top-right' ? 0 : height;
+            const distance = clamp(Math.hypot(width - x, originY - y) / diagonal, 0, 1);
+            const revealAt = WAVE_DURATION * distance + WAVE_JITTER * hash2(col, row, seed + 13);
+            grid.revealAt[index] = revealAt;
+            grid.period[index] = PERIOD_MIN + (PERIOD_MAX - PERIOD_MIN) * hash2(col, row, seed + 17);
+            grid.phase[index] = hash2(col, row, seed + 19);
+            grid.introDuration = Math.max(grid.introDuration, revealAt + FLASH_RISE + FLASH_SETTLE);
+            index += 1;
+        }
+    }
+    return grid;
+}
+/** 将各点的目标透明度写入 out；同一时刻结果确定。 */
+function sampleDotTargets(grid, time, out, seed = DEFAULT_SEED) {
+    const count = grid.columns * grid.rows;
+    for (let i = 0; i < count; i += 1) {
+        const col = grid.cols[i];
+        const row = grid.rowsIndex[i];
+        // 每个点在自己的节拍上重新掷骰：节拍之间状态保持不变，切换是瞬时的
+        const epoch = Math.floor(time / grid.period[i] + grid.phase[i]);
+        const roll = hash2(col * 131 + epoch, row, seed + 23);
+        const field = fieldAt(col, row, time, seed);
+        const probability = SCATTER + DENSITY_MAX * smoothstep(DENSITY_LOW, DENSITY_HIGH, field);
+        if (roll >= probability) {
+            out[i] = 0;
+            continue;
+        }
+        const toneRoll = hash2(col * 131 + epoch, row, seed + 29);
+        out[i] = field > MID_THRESHOLD && toneRoll < MID_CHANCE ? TONE_MID : TONE_DIM;
+    }
+}
+function applyReveal(alpha, revealAt, elapsed) {
+    const local = elapsed - revealAt;
+    if (local <= 0)
+        return 0;
+    if (alpha <= 0)
+        return 0;
+    const peak = Math.min(1, alpha + FLASH_BOOST);
+    if (local < FLASH_RISE)
+        return peak * (local / FLASH_RISE);
+    const settle = (local - FLASH_RISE) / FLASH_SETTLE;
+    if (settle >= 1)
+        return alpha;
+    return peak + (alpha - peak) * easeOutCubic(settle);
+}
+
+return {createDotGrid,sampleDotTargets,applyReveal};
+}
+let WB_LOGIN_STOP=null;
+function wbStartLogin(){
+ if(WB_LOGIN_STOP)return;
+ const canvas=document.getElementById('wbLoginCanvas');
+ if(!canvas||!canvas.getContext)return;
+ const ctx=canvas.getContext('2d');if(!ctx)return;
+ const field=wbLoginField();
+ let grid,targets,frame=0,started=performance.now(),last=0;
+ const reduced=wbReduced();
+ // 闸门的可见性与 #panelGate 一致：内联 display:none 或首帧判定的
+ // wb-panel-session 类都算隐藏，隐藏就停帧，不给后台留空转的 rAF。
+ function gateHidden(){
+   const gate=document.getElementById('panelGate');
+   return !gate||gate.style.display==='none'||document.documentElement.classList.contains('wb-panel-session');
+ }
+ function resize(){
+   const box=canvas.getBoundingClientRect();
+   const dpr=Math.min(window.devicePixelRatio||1,2);
+   canvas.width=box.width*dpr;canvas.height=box.height*dpr;
+   ctx.setTransform(dpr,0,0,dpr,0,0);
+   grid=field.createDotGrid(box.width,box.height);
+   targets=new Float32Array(grid.xs.length);
+ }
+ function draw(now){
+   if(gateHidden()){stop();return;}
+   if(now-last>=1000/30||reduced){
+     last=now;const seconds=reduced?4:(now-started)/1000;
+     if(!document.hidden){
+       field.sampleDotTargets(grid,seconds,targets);
+       ctx.clearRect(0,0,grid.width,grid.height);
+       ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--fg').trim()||'#1f1e1b';
+       for(let i=0;i<targets.length;i++){
+         const alpha=reduced?targets[i]:field.applyReveal(targets[i],grid.revealAt[i],seconds);
+         if(alpha<=0)continue;
+         ctx.globalAlpha=alpha;
+         ctx.fillRect(grid.xs[i],grid.ys[i],grid.dotSize,grid.dotSize);
+       }
+       ctx.globalAlpha=1;
+     }
+   }
+   if(!reduced)frame=requestAnimationFrame(draw);
+ }
+ function stop(){cancelAnimationFrame(frame);window.removeEventListener('resize',resize);WB_LOGIN_STOP=null;}
+ resize();window.addEventListener('resize',resize);WB_LOGIN_STOP=stop;draw(started);
+}
+function wbLoginVeil(){
+ if(typeof document.createElement!=='function'||wbReduced())return;
+ const veil=document.createElement('div');veil.className='wb-login-reveal-veil';
+ document.body.appendChild(veil);
+ setTimeout(()=>{try{veil.remove();}catch(e){}},720);
+}
+// 首次加载（无令牌，闸门默认可见）就要把动画跑起来；有令牌时闸门被首帧判定
+// 隐藏，这里不动，交给 bootPanel → panelNeedsLogin / panelHideGate 处理。
+document.addEventListener('DOMContentLoaded',function(){
+ const gate=document.getElementById('panelGate');
+ if(!gate||gate.style.display==='none')return;
+ if(document.documentElement.classList.contains('wb-panel-session'))return;
+ if(typeof requestAnimationFrame==='function')requestAnimationFrame(wbStartLogin);else wbStartLogin();
+});
 function panelSyncRemember(){
   const el = document.getElementById('panelRemember');
   if(el) el.checked = PANEL_REMEMBER;
@@ -16461,8 +16774,11 @@ function panelNeedsLogin(){
   // 闸门的可见性有两处来源：markup 上的 display:flex，和 <head> 首帧判定加的
   // html.wb-panel-session（!important）。必须先摘掉那个类，否则闸门永远出不来
   // ——会话过期、登录失败都靠这个函数把登录框放回屏幕。
-  document.documentElement.classList.remove('wb-panel-session');
   const gate = document.getElementById('panelGate');
+  // 从隐藏态亮回屏幕（会话过期 / 登录失败）时放一层面纱淡出，配合入场动画。
+  const wasHidden = document.documentElement.classList.contains('wb-panel-session')
+    || !!(gate && gate.style.display === 'none');
+  document.documentElement.classList.remove('wb-panel-session');
   if(gate) gate.style.display = 'flex';
   panelSyncRemember();
   const input = document.getElementById('panelPwdInput');
@@ -16470,6 +16786,9 @@ function panelNeedsLogin(){
     input.disabled = false;
     input.focus();
   }
+  if(typeof requestAnimationFrame === 'function') requestAnimationFrame(wbStartLogin);
+  else wbStartLogin();
+  if(wasHidden) wbLoginVeil();
 }
 
 function panelSessionLost(){
@@ -16501,14 +16820,20 @@ function panelSessionLost(){
 function panelHideGate(){
   // 首帧判定的类只在「复核还没回来」时有用；一旦确认已登录就清掉，
   // 让「有类 ⇔ 闸门被首帧判定隐藏」这条不变式只作用于启动阶段。
-  document.documentElement.classList.remove('wb-panel-session');
   const gate = document.getElementById('panelGate');
+  // 登录成功、闸门真的亮在屏幕上时放一层退出面纱（背景色淡出露出工作台）；
+  // 已登录用户每次刷新走首帧隐藏分支，不该跟着闪一层。
+  const gateWasShown = !document.documentElement.classList.contains('wb-panel-session')
+    && !!(gate && gate.style.display !== 'none');
+  document.documentElement.classList.remove('wb-panel-session');
   if(gate) gate.style.display = 'none';
   const input = document.getElementById('panelPwdInput');
   if(input){
     input.disabled = true;
     input.value = '';
   }
+  if(WB_LOGIN_STOP) WB_LOGIN_STOP();
+  if(gateWasShown) wbLoginVeil();
 }
 
 async function submitPanelLogin(){

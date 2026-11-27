@@ -157,6 +157,9 @@ function makeElement(tag, options) {
     scrollHeight: 0,
     scrollWidth: 0,
     isConnected: true,
+    // 登录闸门的点阵动画会探测 canvas（wbLoginCanvas.getContext）。Node 里没有
+    // 2D 上下文，按真 DOM 的形状建模成员、返回 null：页面代码据此早退，不跑动画。
+    getContext: () => null,
   };
 
   // className and classList are two views of one set, the way the DOM works:
