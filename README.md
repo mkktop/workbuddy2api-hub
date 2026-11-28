@@ -106,7 +106,7 @@ docker compose up -d            # 首次启动
 docker compose pull && docker compose up -d   # 更新镜像
 ```
 
-- 建议生产环境把 `:latest` 换成固定版本标签（如 `:v2.4.3`），回滚时改回旧标签并 `docker compose up -d` 即可。
+- 建议生产环境把 `:latest` 换成固定版本标签（如 `:v2.4.4`），回滚时改回旧标签并 `docker compose up -d` 即可。
 - Compose 默认以 root（`0:0`）运行；如需以宿主用户运行，设置 `PUID` / `PGID` 并确保 `accounts/`、`usage/` 可写。
 - Docker 镜像在构建阶段已经编译好当前架构的 Go/uTLS 桥，容器内不需要 Go。未设置 `WB_TLS_FINGERPRINT` 时默认 `auto`；如需彻底关闭桥，可加 `- WB_TLS_FINGERPRINT=python`，卷中的账号、设置和用量不会因此改变。
 - 启动后访问 **Web 看板** `http://<主机>:8788/`（默认密码 `admin`，首次登录请修改）与 **API 地址** `http://<主机>:8788/v1`。
