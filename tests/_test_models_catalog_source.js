@@ -235,14 +235,28 @@ async function checkPublicIds(){
   const activeId = 'minimax/MiniMax-M3.1-Flash';
   const discoveredId = 'minimax/MiniMax-M3';
   const rendered = rowsById(render([
-    {id: activeId, client_model_id: activeId, route_id: 'minimax'},
+    {id: activeId, client_model_id: activeId, route_id: 'minimax', max_output_tokens: 524288},
     {id: discoveredId, route_id: 'minimax', catalog_only: true},
   ]));
   check('MiniMax official models appear together in the table', Object.keys(rendered).length === 2);
-  check('an official model shows its gateway status', text(rendered[discoveredId]['网关状态']) === '未启用');
-  check('a catalogue-only model does not get a client configuration checkbox',
-    !rendered[discoveredId]['模型 ID'].includes('type="checkbox"'));
+  const active = rendered[activeId];
+  const discovered = rendered[discoveredId];
+  check('MiniMax uses the common billing column', text(active['计费 / 优惠']) === '官方套餐');
+  check('MiniMax output uses the compact units with the exact count in the tooltip',
+    /title="524,?288"/.test(active['最大输出']) && text(active['最大输出']) === '524K');
+  check('a catalogue-only model has an explicit route action next to its name',
+    /data-enable-model="true"/.test(discovered['名称']));
+  check('an enabled model has a disable action next to its name',
+    /data-enable-model="false"/.test(active['名称']));
+  check('catalogue-only models show a visibly disabled configuration checkbox',
+    /<input[^>]+type="checkbox"[^>]+ disabled/.test(discovered['模型 ID'])
+    && !/\bchecked\b/.test(discovered['模型 ID']));
+  check('enabled models still show a selectable configuration checkbox',
+    /<input[^>]+type="checkbox"[^>]+ checked/.test(active['模型 ID']));
+  check('unknown capabilities are not shown as text-only', text(discovered['能力']) === '—');
   check('bulk selection includes only enabled MiniMax models', api.allModelPickIds().join() === activeId);
+  check('the international default-selection hint is hidden outside its channel',
+    document.getElementById('modelPickGlobalHint').hidden && !document.getElementById('modelPickMiniMaxHint').hidden);
 }
 
 checkPublicIds().then(() => {

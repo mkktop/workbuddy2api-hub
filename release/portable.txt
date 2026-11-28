@@ -77,6 +77,7 @@ wb_media.py
 wb_media_client.py
 wb_media_tasks.py
 wb_minimax.py
+wb_api_channels.py
 wb_model_gateway.py
 wb_pool_media.py
 wb_pool_scope.py

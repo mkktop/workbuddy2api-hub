@@ -83,6 +83,7 @@ import wb_media_client
 import wb_media_tasks
 import wb_model_gateway
 import wb_minimax
+import wb_api_channels
 import wb_pool_media
 import wb_pool_scope
 import wb_pool_text
@@ -1789,7 +1790,10 @@ def record_usage(model, usage, stream=None, elapsed_ms=None, ttft_ms=None, gen_m
         row["cost_policy"] = (
             "media" if kind in ("image", "video") else "audio")
     else:
-        row["cost_policy"] = ("codearts:unpriced" if realm == "codearts"
+        route = wb_model_gateway.current_route()
+        pricing_realm = route.usage_realm if route else row["realm"]
+        row["cost_policy"] = (pricing_realm + ":unpriced"
+                              if pricing_realm in ("codearts",) + wb_settings.API_TEXT_CHANNELS
                               else wb_pricing.current_policy_id(model))
     # Only when the request had one: the panel shows a chip for rows that carry
     # the field, and a model without reasoning controls has nothing to report.
@@ -1965,9 +1969,11 @@ def record_error(model, status, message, elapsed_ms=None, account=None,
         row["cost_policy"] = (
             "media" if kind in ("image", "video") else "audio")
     else:
-        row["cost_policy"] = (
-            "codearts:unpriced" if realm == "codearts"
-            else wb_pricing.current_policy_id(model))
+        route = wb_model_gateway.current_route()
+        pricing_realm = route.usage_realm if route else row.get("realm")
+        row["cost_policy"] = (pricing_realm + ":unpriced"
+                              if pricing_realm in ("codearts",) + wb_settings.API_TEXT_CHANNELS
+                              else wb_pricing.current_policy_id(model))
     _persist_usage(row, "error persist failed")
     dur = f" {elapsed_ms:.0f}ms" if elapsed_ms is not None else ""
     # 账号与终态也带上看板日志。上面那段本来就把 account 写进了 JSONL，但日志
@@ -5822,6 +5828,11 @@ def _usage_snapshot_uncached(realm=None, since=None, until=None):
         a["uid"]: {"nickname": a["name"], "realm": wb_minimax.ROUTE}
         for a in wb_minimax.public_accounts(wb_settings.minimax_config(ACCOUNTS_DIR))
     })
+    for channel in wb_settings.API_TEXT_CHANNELS:
+        snap["accounts_map"].update({
+            a["uid"]: {"nickname": a["name"], "realm": channel}
+            for a in wb_api_channels.public_accounts(wb_settings.api_text_config(ACCOUNTS_DIR, channel))
+        })
     snap["account"] = {
         "uid": (rep.uid if rep else ""),
         "domain": (rep.domain if rep else ""),
@@ -7486,6 +7497,8 @@ def _realm_selectable(realm):
             return wb_minimax.configured(wb_settings.minimax_config(ACCOUNTS_DIR))
         if realm == "codearts":
             return wb_settings.codearts_configured(ACCOUNTS_DIR)
+        if realm in wb_settings.API_TEXT_CHANNELS:
+            return wb_api_channels.configured(wb_settings.api_text_config(ACCOUNTS_DIR, realm))
     except Exception:
         return False
     return False
@@ -8601,7 +8614,7 @@ def _fold_usage_analytics(row, realm, maps, half, pricing_on=None, also=None,
     vals = _analytics_row_values(row)
     acct_uid = row.get("account") or "(unattributed)"
     m_id = row.get("model") or "(unknown)"
-    if row.get("route_id") == wb_minimax.ROUTE:
+    if row.get("route_id") in (wb_minimax.ROUTE,) + wb_settings.API_TEXT_CHANNELS:
         m_id = row.get("requested_model") or m_id
     # A row written before this feature existed has no `key` field at all; a
     # row from a deployment that never configured a key has one, and it is
@@ -12823,6 +12836,7 @@ def runtime_settings_view():
         "credits_refresh_hours": wb_settings.credits_refresh_hours(ACCOUNTS_DIR),
         "section_max_height": wb_settings.section_max_height(ACCOUNTS_DIR),
         "schedule": dict(wb_settings.schedule_hours(ACCOUNTS_DIR),
+                         buddy_checkin=wb_settings.buddy_checkin_schedule(ACCOUNTS_DIR),
                          daily_chat=wb_settings.daily_chat_times(ACCOUNTS_DIR),
                          daily_chat_effective=wb_settings.daily_chat_effective_times(
                              ACCOUNTS_DIR),
@@ -12846,6 +12860,9 @@ def runtime_settings_view():
         "codearts": wb_codearts.masked_config(ACCOUNTS_DIR),
         "minimax": wb_minimax.public_config(wb_settings.minimax_config(ACCOUNTS_DIR)),
         "minimax_accounts": wb_minimax.public_accounts(wb_settings.minimax_config(ACCOUNTS_DIR)),
+        "api_channel_accounts": {
+            channel: wb_api_channels.public_accounts(wb_settings.api_text_config(ACCOUNTS_DIR, channel))
+            for channel in wb_settings.API_TEXT_CHANNELS},
         "channels": wb_settings.channel_states(ACCOUNTS_DIR),
         "daily_activity": wb_settings.daily_activity_enabled(ACCOUNTS_DIR),
         "daily_chat_web": wb_settings.daily_chat_web(ACCOUNTS_DIR),
@@ -12948,7 +12965,7 @@ def runtime_settings_view():
         "accounts_dir": ACCOUNTS_DIR,
         "usage_dir": USAGE_DIR,
         "settings_file": wb_settings.settings_path(ACCOUNTS_DIR),
-        "version": "2.4.3",
+        "version": "2.4.4",
     }
 def current_account():
     """Account used for display purposes (health / usage summaries)."""
@@ -22882,6 +22899,20 @@ def _open_minimax_chat(payload, *, session_key=None, allowed_accounts=None):
                                 allowed_accounts=allowed_accounts)
 
 
+def _api_channel_provider(realm):
+    def config():
+        return wb_settings.api_text_config(ACCOUNTS_DIR, realm)
+
+    def open_chat(payload, *, session_key=None, allowed_accounts=None):
+        return wb_api_channels.open_chat(realm, config(), payload, allowed_accounts=allowed_accounts)
+
+    return wb_model_gateway.Provider(
+        realm, lambda: wb_api_channels.model_catalog(realm, config())[0],
+        TEXT_MODEL_OPERATIONS, lambda: wb_api_channels.configured(config()), realm=realm,
+        account_ids=lambda: (row["uid"] for row in wb_api_channels.active_accounts(config())),
+        open_chat=open_chat)
+
+
 MODEL_GATEWAY = wb_model_gateway.Registry((
     wb_model_gateway.Provider("wb-cn", lambda: _routed_workbuddy_models("cn"),
                               TEXT_MODEL_OPERATIONS, lambda: _realm_selectable("cn"), realm="cn",
@@ -22902,7 +22933,8 @@ MODEL_GATEWAY = wb_model_gateway.Registry((
         account_ids=lambda: (a["uid"] for a in wb_minimax.active_accounts(
             wb_settings.minimax_config(ACCOUNTS_DIR))),
         open_chat=_open_minimax_chat),
-), banned=lambda model: is_model_banned(model))
+) + tuple(_api_channel_provider(channel) for channel in wb_settings.API_TEXT_CHANNELS),
+    banned=lambda model: is_model_banned(model))
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -22998,7 +23030,7 @@ class Handler(BaseHTTPRequestHandler):
             super().finish()
         except (ConnectionResetError, BrokenPipeError, ConnectionAbortedError):
             pass
-    server_version = "wb-proxy/2.4.3"
+    server_version = "wb-proxy/2.4.4"
     def log_message(self, fmt, *args):
         # 静默过滤前端看板高频定时心跳的正常 200 GET 请求（/logs、/usage、/accounts 轮询等）
         # 避免自增死循环刷屏与日志污染。遇 4xx/5xx 异常或所有非 GET 业务操作依然如实记录。
@@ -23749,7 +23781,7 @@ class Handler(BaseHTTPRequestHandler):
         Model listings stay reachable with the API key alone so that plain
         OpenAI clients can keep discovering models.
         """
-        if path == "/panel/model-catalog" or path.startswith("/accounts"):
+        if path in ("/panel/model-catalog", "/panel/deepseek/balance") or path.startswith("/accounts"):
             return True
         if path.startswith("/usage") or path.startswith("/v1/usage"):
             return True
@@ -23884,6 +23916,20 @@ class Handler(BaseHTTPRequestHandler):
             return self._get_dashboard()
         if path == "/panel/status":
             return self._get_panel_status()
+        if path == "/panel/deepseek/balance":
+            uid = query.get("uid", [""])[0]
+            config = wb_settings.api_text_config(ACCOUNTS_DIR, "deepseek")
+            account = next((row for row in config["accounts"] if row["uid"] == uid), None)
+            if account is None:
+                return self._error(404, "DeepSeek account was not found")
+            try:
+                return self._json_panel(200, wb_api_channels.deepseek_balance(account))
+            except urllib.error.HTTPError as exc:
+                if exc.fp is not None:
+                    exc.close()
+                return self._error(502, "DeepSeek rejected the balance query")
+            except (OSError, ValueError):
+                return self._error(502, "Could not retrieve the DeepSeek balance")
         if path == "/panel/minimax/quota":
             if not self._panel_ok():
                 return self._error(401, "panel password required", "invalid_request_error")
@@ -24519,6 +24565,16 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(200, {"object": "list", "data": [], "realm": req_realm})
         if req_realm == "codearts":
             return self._get_codearts_models()
+        if req_realm in wb_settings.API_TEXT_CHANNELS:
+            config = wb_settings.api_text_config(ACCOUNTS_DIR, req_realm)
+            _, meta = wb_api_channels.model_catalog(req_realm, config, force=force_refresh)
+            account = pinned_account()
+            data, _ = MODEL_GATEWAY.catalog(self.key_entry, account.realm if account else None,
+                                            route_id=req_realm)
+            for entry in data:
+                entry["client_model_id"] = entry["id"]
+            return self._json(200, {"object": "list", "data": data,
+                                    "realm": req_realm, "catalog": meta})
         if req_realm == wb_minimax.ROUTE:
             config = wb_settings.minimax_config(ACCOUNTS_DIR)
             wb_minimax.refresh_catalog(config, force=force_refresh)
@@ -25640,7 +25696,7 @@ class Handler(BaseHTTPRequestHandler):
     def _handle_audio_post(self, path, payload):
         """Serve OpenAI-compatible TTS and ASR through a WorkBuddy account."""
         is_tts = path.endswith("/speech")
-        default_realm = "intl" if CURRENT_REALM == wb_minimax.ROUTE else CURRENT_REALM
+        default_realm = "intl" if CURRENT_REALM in (wb_minimax.ROUTE,) + wb_settings.API_TEXT_CHANNELS else CURRENT_REALM
         realm = self._request_realm() or default_realm
         excluded = set()
         refreshed = set()
@@ -26800,7 +26856,12 @@ class Handler(BaseHTTPRequestHandler):
                                                      raw.get("daily_chat"))
                 except ValueError as exc:
                     return self._error(400, str(exc), "invalid_request_error")
-            hours_patch = {k: v for k, v in raw.items() if k != "daily_chat"}
+            if "buddy_checkin" in raw:
+                try:
+                    wb_settings.set_buddy_checkin_schedule(ACCOUNTS_DIR, raw["buddy_checkin"])
+                except ValueError as exc:
+                    return self._error(400, str(exc), "invalid_request_error")
+            hours_patch = {k: v for k, v in raw.items() if k not in ("daily_chat", "buddy_checkin")}
             if hours_patch:
                 try:
                     wb_settings.set_schedule_hours(ACCOUNTS_DIR, hours_patch)
@@ -26808,6 +26869,7 @@ class Handler(BaseHTTPRequestHandler):
                     return self._error(400, str(exc), "invalid_request_error")
             reply["schedule"] = dict(
                 wb_settings.schedule_hours(ACCOUNTS_DIR),
+                buddy_checkin=wb_settings.buddy_checkin_schedule(ACCOUNTS_DIR),
                 daily_chat=wb_settings.daily_chat_times(ACCOUNTS_DIR))
         if "ui_language" in payload:
             # Instance-wide default language. The dashboard overrides this per
@@ -27357,6 +27419,16 @@ class Handler(BaseHTTPRequestHandler):
                 return self._error(400, str(exc), "invalid_request_error")
             reply["minimax"] = wb_minimax.public_config(config)
             reply["minimax_accounts"] = wb_minimax.public_accounts(config)
+        if "api_channel_account" in payload:
+            patch = payload["api_channel_account"]
+            try:
+                if not isinstance(patch, dict):
+                    raise ValueError("Channel account details must be an object")
+                channel = patch.get("channel")
+                config = wb_settings.set_api_text_account(ACCOUNTS_DIR, channel, patch.get("account"))
+            except ValueError as exc:
+                return self._error(400, str(exc), "invalid_request_error")
+            reply["api_channel_accounts"] = {channel: wb_api_channels.public_accounts(config)}
         if "codearts" in payload:
             raw = payload.get("codearts")
             if not isinstance(raw, dict):
@@ -27369,7 +27441,7 @@ class Handler(BaseHTTPRequestHandler):
             wb_codearts.invalidate_models()
             wb_codearts.invalidate_overview()
             reply["codearts"] = wb_codearts.masked_config(ACCOUNTS_DIR)
-        if {"channels", "minimax", "codearts"} & payload.keys() and reconcile_active_realm():
+        if {"channels", "minimax", "codearts", "api_channel_account"} & payload.keys() and reconcile_active_realm():
             reply["warning"] = "原旧路径默认上游已不可用，已改用 " + CURRENT_REALM
         new_key = payload.get("api_key")
         if new_key is not None:
@@ -27650,7 +27722,7 @@ class Handler(BaseHTTPRequestHandler):
         "intl+cn" in the line above only holds for the bundled fallback
         below, which is what runs when the live catalogue is unavailable.
         """
-        if realm in (wb_minimax.ROUTE, "codearts"):
+        if realm in (wb_minimax.ROUTE, "codearts") + wb_settings.API_TEXT_CHANNELS:
             models, _ = MODEL_GATEWAY.catalog(route_id=realm)
             return models
         if realm in ("intl", "cn") and not _realm_selectable(realm):
@@ -27758,11 +27830,14 @@ class Handler(BaseHTTPRequestHandler):
         return
 
     @staticmethod
-    def _agents_minimax_models(api_key):
+    def _agents_api_models(api_key, channels=None):
         key = identify_key(api_key) if api_key else None
         if key is None and auth_required():
             return []
-        models, _ = MODEL_GATEWAY.catalog(key, route_id=wb_minimax.ROUTE)
+        models = []
+        for channel in channels or (wb_minimax.ROUTE,) + wb_settings.API_TEXT_CHANNELS:
+            entries, _ = MODEL_GATEWAY.catalog(key, route_id=channel)
+            models.extend(entries)
         return models
 
     def _get_agents(self, payload=None):
@@ -27791,21 +27866,22 @@ class Handler(BaseHTTPRequestHandler):
             keys = []
         selection = wb_settings.agent_model_selection(ACCOUNTS_DIR)
         realm = self._agents_realm(payload)
+        api_channels = (wb_minimax.ROUTE,) + wb_settings.API_TEXT_CHANNELS
         try:
             api_key = self._agents_resolve_key(payload or {}, [])
-            if (identify_key(api_key) or {}).get("realm") == wb_minimax.ROUTE:
-                realm = wb_minimax.ROUTE
-            subscription_models = self._agents_minimax_models(api_key)
+            bound = (identify_key(api_key) or {}).get("realm")
+            if bound in api_channels:
+                realm = bound
+            api_models = self._agents_api_models(api_key, (realm,) if realm in api_channels else None)
         except wb_agents.AgentConfigError:
-            subscription_models = []
+            api_models = []
         return self._json(200, {
             "enabled": True,
             # 这份目录属于哪个出口：面板据此在标题旁标注，避免「以为在配
             # 国际版、实际拿到国内版清单」这种看不见的错位。
             "realm": realm,
             "clients": list(wb_agents.overview(ACCOUNTS_DIR).values()),
-            "models": (subscription_models if realm == wb_minimax.ROUTE
-                       else self._agents_models(realm) + subscription_models),
+            "models": (api_models if realm in api_channels else self._agents_models(realm) + api_models),
             # 「网关模型清单」里勾选的模型：一键配置只把这些写进客户端。
             # None（从未保存）时给空列表，由 models_configured 区分「没选过」
             # 与「选了 0 个」——前者 apply 退回完整目录，后者 apply 拒绝。
@@ -27874,9 +27950,11 @@ class Handler(BaseHTTPRequestHandler):
             api_key = self._agents_resolve_key(payload, warnings)
         except wb_agents.AgentConfigError as exc:
             return self._error(400, str(exc), "invalid_request_error")
-        minimax_bound = (identify_key(api_key) or {}).get("realm") == wb_minimax.ROUTE
-        if minimax_bound:
-            realm = wb_minimax.ROUTE
+        api_channels = (wb_minimax.ROUTE,) + wb_settings.API_TEXT_CHANNELS
+        bound = (identify_key(api_key) or {}).get("realm")
+        if bound in api_channels:
+            realm = bound
+        api_models = {entry["id"]: entry for entry in Handler._agents_api_models(api_key)}
         models = payload.get("models")
         if models is None:
             # 前端没带清单（老看板 / 直接调接口）：优先用「网关模型清单」里
@@ -27884,7 +27962,8 @@ class Handler(BaseHTTPRequestHandler):
             # 完整目录。
             selection = wb_settings.agent_model_selection(ACCOUNTS_DIR)
             if selection is None:
-                models = self._agents_models(realm)
+                models = ([entry for entry in api_models.values() if entry["route_id"] == realm]
+                          if realm in api_channels else self._agents_models(realm))
                 if realm == "intl":
                     def _account_paid(account):
                         paid = account.tier_paid() if hasattr(account, "tier_paid") else None
@@ -27898,7 +27977,7 @@ class Handler(BaseHTTPRequestHandler):
                         models = [model for model in models if not model.get("entitlement")]
             else:
                 models = [{"id": mid} for mid in selection
-                          if realm != wb_minimax.ROUTE or mid.startswith(wb_minimax.ROUTE + "/")]
+                          if realm not in api_channels or mid.startswith(realm + "/")]
         if not isinstance(models, list):
             return self._error(400, "models must be a list",
                                "invalid_request_error")
@@ -27916,12 +27995,11 @@ class Handler(BaseHTTPRequestHandler):
         # 写出来的模型列表只有 id，客户端就只能吃自己的内置默认值。
         try:
             specs = {}
-            for spec in self._agents_models(realm):
+            for spec in self._agents_models(realm) if realm not in api_channels else ():
                 if isinstance(spec, dict) and spec.get("id"):
                     specs[str(spec["id"])] = spec
         except Exception:
             specs = {}
-        cleaned_models = enrich_agent_models(cleaned_models, specs)
         if not cleaned_models and client_id in MODEL_EMBEDDING_CLIENTS:
             return self._error(
                 400,
@@ -27943,18 +28021,17 @@ class Handler(BaseHTTPRequestHandler):
             return MODEL_GATEWAY.qualify(realm, aliases.get(name, name))
 
         model = qualify_model(model)
+        cleaned_models = enrich_agent_models(cleaned_models, specs)
         cleaned_models = [dict(item, id=qualify_model(item["id"])) for item in cleaned_models]
-        minimax_prefix = wb_minimax.ROUTE + "/"
+        cleaned_models = enrich_agent_models(cleaned_models, api_models)
         model_ids = {mid for mid in [model] + [item["id"] for item in cleaned_models] if mid}
-        if minimax_bound and any(not mid.startswith(minimax_prefix) for mid in model_ids):
-            return self._error(403, "The selected gateway key is bound to MiniMax",
+        if bound in api_channels and any(not mid.startswith(bound + "/") for mid in model_ids):
+            return self._error(403, "The selected gateway key is bound to " + bound,
                                "permission_error")
-        requested = {mid for mid in model_ids if mid.startswith(minimax_prefix)}
-        if requested:
-            allowed = {entry["id"] for entry in self._agents_minimax_models(api_key)}
-            if not requested.issubset(allowed):
-                return self._error(403, "The selected gateway key cannot use the requested MiniMax models",
-                                   "permission_error")
+        requested = {mid for mid in model_ids if mid.partition("/")[0] in api_channels}
+        if not requested.issubset(api_models):
+            return self._error(403, "The selected gateway key cannot use the requested channel models",
+                               "permission_error")
         try:
             result = wb_agents.integrate(
                 ACCOUNTS_DIR, client_id, base_url, api_key,
@@ -28750,8 +28827,8 @@ class Handler(BaseHTTPRequestHandler):
                                     "panel session, not an API key",
                                "invalid_request_error")
         new_realm = payload.get("realm")
-        if new_realm not in ("intl", "cn", "codearts", wb_minimax.ROUTE):
-            return self._error(400, "realm must be intl, cn, minimax or codearts",
+        if new_realm not in wb_settings.TEXT_CHANNELS:
+            return self._error(400, "realm must be a configured text channel",
                                "invalid_request_error")
         if not _realm_selectable(new_realm):
             return self._error(
@@ -30244,8 +30321,9 @@ class Handler(BaseHTTPRequestHandler):
         if not is_account_route:
             _panel_trace(self, path)
         if is_audio_route:
-            if wb_minimax.ROUTE in (self._key_realm(), self._request_realm()):
-                return self._error(400, "MiniMax subscription serves text models on this gateway",
+            if any(realm in (wb_minimax.ROUTE,) + wb_settings.API_TEXT_CHANNELS
+                   for realm in (self._key_realm(), self._request_realm())):
+                return self._error(400, "This channel serves text models on this gateway",
                                    "invalid_request_error")
             kind = "tts" if path.endswith("/speech") else "asr"
             if not wb_settings.audio_enabled(ACCOUNTS_DIR, kind):
@@ -30290,23 +30368,25 @@ class Handler(BaseHTTPRequestHandler):
         model = payload.get("model") if isinstance(payload, dict) else None
         legacy_text = gateway_operation is None and not (is_account_route or is_media_route or is_audio_route)
         legacy_realm = (self._key_realm() or self._request_realm() or CURRENT_REALM) if legacy_text else None
-        legacy_minimax = legacy_realm == wb_minimax.ROUTE
+        legacy_api = legacy_realm in (wb_minimax.ROUTE,) + wb_settings.API_TEXT_CHANNELS
         if legacy_realm in wb_settings.TEXT_CHANNELS and not _realm_selectable(legacy_realm):
             message = "Text channel is disabled or unavailable: " + legacy_realm
             if is_messages_route:
                 return self._anthropic_error(503, message, "overloaded_error")
             return self._error(503, message, "server_error")
-        if legacy_minimax:
+        if legacy_api:
             # Canonical /v1 paths still require an explicit provider-qualified ID.
-            gateway_operation = wb_model_gateway.POST_OPERATIONS["/v1" + path]
+            gateway_operation = wb_model_gateway.POST_OPERATIONS.get(path) or wb_model_gateway.POST_OPERATIONS.get("/v1" + path)
+            if gateway_operation is None:
+                return self._error(400, "Unsupported operation for " + legacy_realm, "invalid_request_error")
             if isinstance(model, str):
-                model = MODEL_GATEWAY.qualify(wb_minimax.ROUTE, model)
+                model = MODEL_GATEWAY.qualify(legacy_realm, model)
         if gateway_operation is not None:
             try:
                 route = self._resolve_routed_model(model, gateway_operation)
-                if legacy_minimax and route.usage_realm != wb_minimax.ROUTE:
+                if legacy_api and route.usage_realm != legacy_realm:
                     raise wb_model_gateway.RouteError(
-                        403, "model_not_allowed", "model does not belong to the MiniMax exit")
+                        403, "model_not_allowed", "model does not belong to the selected text channel")
             except wb_model_gateway.RouteError as exc:
                 if is_messages_route:
                     return self._anthropic_error(exc.status, str(exc))
@@ -31313,6 +31393,8 @@ def _log_startup_summary(args, api_key_generated):
     log(f"issuer     : {wb_accounts.jwt_issuer(rep.access_token) if rep else chr(45)}")
     realm_host = {"intl": "www.workbuddy.ai",
                   "cn": urllib.parse.urlsplit(wb_identity.CN_CHAT_BASE).netloc}
+    realm_host.update({realm: urllib.parse.urlsplit(url).netloc
+                       for realm, url in wb_api_channels.CHAT_BASE.items()})
     if CURRENT_REALM == wb_minimax.ROUTE:
         config = wb_settings.minimax_config(ACCOUNTS_DIR)
         realm_host[CURRENT_REALM] = urllib.parse.urlsplit(wb_minimax.CHAT_HOSTS[config["region"]]).netloc

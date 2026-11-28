@@ -40,7 +40,7 @@ const creditsCell = model => {
   global.MODELS_DATA = [model];
   window.MODELS_DATA = [model];
   api.renderAvailableModels();
-  const m = /data-label="消费倍率">([\s\S]*?)<\/td>/.exec(tbody.innerHTML);
+  const m = /data-label="计费 \/ 优惠">([\s\S]*?)<\/td>/.exec(tbody.innerHTML);
   return m ? m[1] : '';
 };
 

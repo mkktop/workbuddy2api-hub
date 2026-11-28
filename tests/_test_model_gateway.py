@@ -21,6 +21,7 @@ _DATA = isolated_data_dirs("wb-model-gateway-")
 ACCOUNTS = os.environ["ACCOUNTS_DIR"]
 
 import wb_minimax
+import wb_api_channels
 import wb_model_gateway as routing
 import wb_proxy as gateway
 import wb_settings as settings
@@ -48,7 +49,7 @@ class ModelGatewayTest(unittest.TestCase):
         settings.set_enable_anthropic_messages(ACCOUNTS, True)
         settings.set_api_keys(ACCOUNTS, [
             {"id": "multi-key", "key": KEY,
-             "models": ["wb-cn/*", INTL_MODEL, "fixture/*", "codearts/*", "offline/*", "minimax/*"]},
+             "models": ["wb-cn/*", INTL_MODEL, "fixture/*", "codearts/*", "offline/*", "minimax/*", "zhipu/*", "deepseek/*"]},
             {"id": "cn-key", "key": BOUND_KEY, "realm": "cn", "models": ["*"]},
             {"id": "account-key", "key": ACCOUNT_KEY, "accounts": ["mock-account"]},
             {"id": "minimax-key", "key": MINIMAX_KEY, "realm": "minimax"},
@@ -357,10 +358,13 @@ class ModelGatewayTest(unittest.TestCase):
         chunk = {"id": "chatcmpl-minimax", "object": "chat.completion.chunk",
                  "model": model, "choices": [
                      {"index": 0, "delta": {"role": "assistant", "content": "套餐回复"}, "finish_reason": None}]}
+        thought = dict(chunk, choices=[{"index": 0, "delta": {"reasoning_content": "思考片段"},
+                                        "finish_reason": None}])
         final = dict(chunk, choices=[{"index": 0, "delta": {}, "finish_reason": "stop"}],
-                     usage={"prompt_tokens": 2, "completion_tokens": 1, "total_tokens": 3})
-        transcript = ("data: " + json.dumps(chunk) + "\n\ndata: " +
-                      json.dumps(final) + "\n\ndata: [DONE]\n\n")
+                     usage={"prompt_tokens": 2, "completion_tokens": 2, "total_tokens": 4,
+                            "completion_tokens_details": {"reasoning_tokens": 1}})
+        transcript = "".join("data: " + json.dumps(frame) + "\n\n" for frame in (thought, chunk, final))
+        transcript += "data: [DONE]\n\n"
         requests = []
 
         def simulated_upstream(req, timeout):
@@ -373,14 +377,19 @@ class ModelGatewayTest(unittest.TestCase):
             return response(transcript, "text/event-stream")
 
         with patch.object(wb_minimax._http, "open", side_effect=simulated_upstream):
-            status, result = self.request("/v1/chat/completions", self.chat(public_model), key=MINIMAX_KEY)
+            status, result = self.request("/v1/chat/completions", self.chat(
+                public_model, reasoning_effort="high", reasoningEffort="low"), key=MINIMAX_KEY)
             self.assertEqual((status, result["model"]), (200, public_model))
             self.assertEqual(result["choices"][0]["message"]["content"], "套餐回复")
-            status, result = self.request("/v1/responses", {"model": public_model, "input": "ping", "stream": True})
+            self.assertEqual(result["choices"][0]["message"]["reasoning_content"], "思考片段")
+            status, result = self.request("/v1/responses", {
+                "model": public_model, "input": "ping", "stream": True, "reasoning": {"effort": "xhigh"}})
             self.assertEqual(status, 200, result)
+            self.assertIn("response.reasoning_summary_text.delta", result)
             self.assertIn("response.completed", result)
             status, result = self.request("/v1/messages", self.chat(public_model, max_tokens=32))
             self.assertEqual((status, result.get("model")), (200, public_model), result)
+            self.assertIn("thinking", {block.get("type") for block in result["content"]})
             status, result = self.request("/panel/minimax/quota", extra_headers=panel)
             self.assertEqual((status, result), (200, {"windows": [
                 {"model": "general", "interval_percent": 67, "weekly_percent": 83.0}
@@ -390,10 +399,16 @@ class ModelGatewayTest(unittest.TestCase):
             self.assertEqual(json.loads(Path(gateway.realm_state_file()).read_text())["realm"], "minimax")
             gateway.CURRENT_REALM = "intl"
             self.assertEqual(gateway.load_persisted_realm(), "minimax")
-            status, result = self.request("/chat/completions", self.chat(model))
+            status, result = self.request("/chat/completions", self.chat(model, reasoning={"effort": "medium"}))
             self.assertEqual((status, result["model"]), (200, public_model))
-            status, result = self.request("/chat/completions", self.chat(model), key=MINIMAX_KEY)
-            self.assertEqual((status, result["model"]), (200, public_model))
+            status, result = self.request("/chat/completions", self.chat(
+                model, stream=True, reasoningEffort="max"), key=MINIMAX_KEY)
+            self.assertEqual(status, 200, result)
+            events = sse_events(result)
+            self.assertTrue(all(frame["model"] == public_model for frame in events))
+            self.assertIn("思考片段", [choice["delta"].get("reasoning_content")
+                                      for frame in events for choice in frame["choices"]])
+            self.assertEqual(events[-1]["usage"]["completion_tokens_details"]["reasoning_tokens"], 1)
         for url, authorization, body in requests[:3]:
             self.assertEqual(url, "https://api.minimax.io/v1/chat/completions")
             self.assertEqual(authorization, "Bearer " + subscription_key)
@@ -402,20 +417,29 @@ class ModelGatewayTest(unittest.TestCase):
             self.assertTrue(payload["stream"])
             self.assertTrue(payload["stream_options"]["include_usage"])
         self.assertEqual(requests[3], ("https://www.minimax.io/v1/token_plan/remains", "Bearer " + subscription_key, None))
+        payloads = [json.loads(body) for _, _, body in requests if body]
+        self.assertEqual([body.get("reasoning_effort") for body in payloads],
+                         ["high", "xhigh", None, "medium", "max"])
+        for body in payloads:
+            self.assertEqual(body["thinking"], {"type": "adaptive"})
+            self.assertTrue(body["reasoning_split"])
         self.assertNotIn(subscription_key, Path(gateway.USAGE_LOG).read_text(encoding="utf-8"))
         status, analytics = self.request("/usage/analytics?realm=all&range=all", extra_headers=panel)
         self.assertEqual(status, 200, analytics)
         mini_usage = next(entry for entry in analytics["models"] if entry["model"] == public_model)
         self.assertEqual(mini_usage["window"]["requests"], 5)
-        self.assertEqual(mini_usage["window"]["total_tokens"], 15)
+        self.assertEqual(mini_usage["window"]["total_tokens"], 20)
         status, scoped = self.request("/usage?realm=minimax", extra_headers=panel)
-        self.assertEqual((status, scoped["requests"], scoped["total_tokens"]), (200, 5, 15))
+        self.assertEqual((status, scoped["requests"], scoped["total_tokens"]), (200, 5, 20))
         status, recent = self.request("/usage/recent?realm=all&watch=1&limit=12", extra_headers=panel)
         self.assertEqual(status, 200, recent)
         mini_rows = [row for row in recent["rows"] if row.get("route_id") == "minimax"]
         self.assertEqual(len(mini_rows), 5)
         self.assertTrue(all(row["requested_model"] == public_model for row in mini_rows))
         self.assertTrue(all(row["realm"] == "minimax" for row in mini_rows))
+        self.assertTrue(all(row["reasoning_tokens"] == 1 for row in mini_rows))
+        self.assertEqual({row.get("reasoning_effort") for row in mini_rows},
+                         {"high", "xhigh", None, "medium", "max"})
 
         error = response(json.dumps({"base_resp": {"status_code": 1002, "status_msg": subscription_key}}),
                          "application/json")
@@ -496,12 +520,107 @@ class ModelGatewayTest(unittest.TestCase):
         self.assertEqual([a["uid"] for a in paused["minimax_accounts"]], [a["uid"] for a in accounts])
         self.assertEqual(self.request("/v1/chat/completions", self.chat(model), key=MINIMAX_KEY)[0], 503)
 
+    def test_zhipu_plan_and_deepseek_api_share_gateway_operations(self):
+        original = json.loads(json.dumps(settings.load(ACCOUNTS)))
+        self.addCleanup(settings.save, ACCOUNTS, original)
+        panel = {"X-Panel-Token": gateway.PANEL.create()}
+        self.use(gateway, "open_upstream_with_fallback", OPEN_WITH_FALLBACK)
+        self.use(gateway.Handler, "_agents_client_allowed", lambda self: True)
+        self.use(wb_api_channels, "_deepseek_catalog", {})
+
+        keys = {"zhipu": "test-zhipu.plan-key", "deepseek": "sk-test-deepseek"}
+        ids = {}
+        for channel, key in keys.items():
+            patch_body = {"api_channel_account": {"channel": channel, "account": {"name": channel, "api_key": key}}}
+            self.assertEqual(self.request("/settings/save", patch_body)[0], 401)
+            status, saved = self.request("/settings/save", patch_body, extra_headers=panel)
+            self.assertEqual(status, 200, saved)
+            self.assertNotIn(key, json.dumps(saved))
+            self.assertFalse(saved["channels"][channel])
+            row, = saved["api_channel_accounts"][channel]
+            ids[channel] = row["uid"]
+        self.assertEqual(self.request("/settings/save", {"channels": dict.fromkeys(keys, True)},
+                                      extra_headers=panel)[0], 200)
+        self.assertNotIn(keys["deepseek"], json.dumps(self.request("/settings", extra_headers=panel)[1]))
+        self.assertEqual(self.request("/panel/deepseek/balance?uid=" + ids["deepseek"])[0], 401)
+
+        calls = []
+
+        def official(req, timeout):
+            url = req.full_url
+            channel = "deepseek" if "deepseek.com" in url else "zhipu"
+            self.assertEqual(req.get_header("Authorization"), "Bearer " + keys[channel])
+            payload = json.loads(req.data) if req.data else None
+            calls.append((url, payload))
+            if url.endswith("/models"):
+                packet = {"data": [{"id": "deepseek-flash", "name": "DeepSeek Flash", "context_window": 1048576,
+                                    "max_output_tokens": 393216, "input_modalities": ["text", "image"],
+                                    "effort": {"supported_levels": ["low", "high", "max"], "default_level": "high"}}]}
+            elif url.endswith("/user/balance"):
+                packet = {"is_available": True, "balance_infos": [{"currency": "CNY", "total_balance": "12.00"}]}
+            else:
+                transcript = [
+                    {"id": "chatcmpl-test", "model": payload["model"], "choices": [
+                        {"index": 0, "delta": {"reasoning_content": "thought"}, "finish_reason": None}]},
+                    {"id": "chatcmpl-test", "model": payload["model"], "choices": [
+                        {"index": 0, "delta": {"content": "pong"}, "finish_reason": "stop"}],
+                     "usage": {"prompt_tokens": 3, "completion_tokens": 2, "total_tokens": 5,
+                               "completion_tokens_details": {"reasoning_tokens": 1}}}]
+                packet = None
+            response = io.BytesIO((json.dumps(packet) if packet is not None else
+                                   "".join("data: " + json.dumps(event) + "\n\n" for event in transcript)
+                                   + "data: [DONE]\n\n").encode())
+            response.headers = Message()
+            response.headers["Content-Type"] = "application/json" if packet is not None else "text/event-stream"
+            return response
+
+        with patch.object(wb_api_channels._http, "open", side_effect=official):
+            status, catalogue = self.request("/v1/models")
+            self.assertEqual(status, 200, catalogue)
+            models = {row["id"]: row for row in catalogue["data"]}
+            glm = "zhipu/glm-5.4"
+            deepseek = "deepseek/deepseek-flash"
+            self.assertEqual(models[glm]["route_realm"], "zhipu")
+            self.assertEqual(models[deepseek]["reasoning_efforts"], ["low", "high", "max"])
+            for model, channel, effort in ((glm, "zhipu", "max"), (deepseek, "deepseek", "high")):
+                status, result = self.request("/v1/chat/completions", self.chat(
+                    model, reasoningEffort="xhigh", max_completion_tokens=20))
+                self.assertEqual((status, result["model"]), (200, model))
+                self.assertEqual(result["choices"][0]["message"]["reasoning_content"], "thought")
+                url, payload = calls[-1]
+                self.assertEqual(url, wb_api_channels.CHAT_BASE[channel] + "/chat/completions")
+                self.assertEqual((payload["model"], payload["reasoning_effort"], payload["max_tokens"]),
+                                 (model.split("/", 1)[1], effort, 20))
+                status, result = self.request("/usage/recent?realm=" + channel, extra_headers=panel)
+                row, = result["rows"]
+                self.assertEqual((status, row["requested_model"], row["account"], row["reasoning_tokens"]),
+                                 (200, model, ids[channel], 1))
+                self.assertEqual(row["cost_policy"], channel + ":unpriced")
+            status, result = self.request("/v1/responses", {
+                "model": glm, "input": "ping", "reasoning": {"effort": "low"}, "stream": True})
+            self.assertEqual(status, 200)
+            self.assertIn("response.reasoning_summary_text.delta", result)
+            self.assertEqual(self.request("/panel/deepseek/balance?uid=" + ids["deepseek"], extra_headers=panel),
+                             (200, {"is_available": True, "balances": [{"currency": "CNY", "total_balance": "12.00"}]}))
+            with patch.object(gateway.agents_module(), "integrate", return_value={}) as integrate:
+                status, result = self.request("/agents/apply", {
+                    "base_url": "http://127.0.0.1:8788/v1", "client": "dsh", "key_id": "multi-key",
+                    "realm": "cn", "models": [glm, deepseek]}, extra_headers=panel)
+                self.assertEqual(status, 200, result)
+                self.assertTrue(all(row["reasoning_efforts"] == ["low", "high", "max"]
+                                    for row in integrate.call_args.kwargs["models"]))
+            self.assertEqual(self.request("/v1/chat/completions", self.chat(deepseek), key=BOUND_KEY)[0], 403)
+            status, saved = self.request("/settings/save", {"channels": {"deepseek": False}}, extra_headers=panel)
+            self.assertEqual(status, 200)
+            self.assertFalse(saved["channels"]["deepseek"])
+            self.assertEqual(self.request("/v1/chat/completions", self.chat(deepseek))[0], 503)
+
     def test_channel_switches_are_independent_of_accounts_and_legacy_default(self):
         original = json.loads(json.dumps(settings.load(ACCOUNTS)))
         self.addCleanup(settings.save, ACCOUNTS, original)
         self.use(gateway, "CURRENT_REALM", "intl")
         panel = {"X-Panel-Token": gateway.PANEL.create()}
-        switches = {"intl": False, "cn": False, "minimax": False, "codearts": False}
+        switches = dict.fromkeys(settings.TEXT_CHANNELS, False)
         self.assertEqual(self.request("/settings/save", {"channels": switches})[0], 401)
         self.assertEqual(self.request("/settings/save", {"channels": {"cn": "false"}}, extra_headers=panel)[0], 400)
         status, view = self.request("/settings/save", {"channels": switches}, extra_headers=panel)

@@ -83,14 +83,15 @@ const pickerList = {innerHTML: ''};
 const fakeDocument = {getElementById: id => id === 'editKeyAccountList_0' ? pickerList : null};
 const escapeHtml = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 const picker = new Function('API_KEY_ROWS', 'document', 'window', 'esc', 'updateKeyAccountSummary',
+  'API_TEXT_CHANNELS', 'realmLabel',
   html.slice(pickerStart, pickerEnd) + '\nreturn renderKeyPickers;')(
     [{accounts: ['uid-123']}], fakeDocument,
     {ACCOUNTS: [{uid: 'uid-123', nickname: 'Alice', note: '<VIP>', realm: 'cn'}],
      REALM_OPTIONS: ['intl', 'cn', 'codearts'],
      CODEARTS_OVERVIEW: {accounts: [
        {uid: 'ca-456', nickname: 'CodeArts Bob', note: '<CA>'},
-     ]}},
-    escapeHtml, () => {});
+     ]}, API_CHANNEL_ACCOUNTS: {deepseek: [{uid: 'ds-789', name: 'DeepSeek Carol'}]}},
+    escapeHtml, () => {}, ['zhipu', 'deepseek'], realm => ({deepseek:'DeepSeek API'})[realm]);
 picker(0).then(() => {
   check(pickerList.innerHTML.includes('&lt;VIP>'), '备注应安全显示');
   check(pickerList.innerHTML.includes('data-search="alice · &lt;vip>'), '备注应进入搜索文本');
@@ -98,6 +99,8 @@ picker(0).then(() => {
   check(pickerList.innerHTML.includes('value="ca-456"'), 'CodeArts 账号应出现在允许账号列表');
   check(pickerList.innerHTML.includes('CodeArts Bob'), 'CodeArts 账号应显示昵称');
   check(pickerList.innerHTML.includes('data-group="CodeArts"'), 'CodeArts 账号应可按组筛选');
+  check(pickerList.innerHTML.includes('value="ds-789"') && pickerList.innerHTML.includes('data-group="DeepSeek API"'),
+        'DeepSeek 账号应出现在允许账号列表并可按组筛选');
 }).catch(err => { console.error(err); process.exitCode = 1; });
 
 console.log('OK ' + checks + ' checks');

@@ -259,6 +259,16 @@ def open_chat(config, payload, *, allowed_accounts=None):
               "max_tokens", "max_completion_tokens", "temperature", "top_p", "stop",
               "reasoning_effort", "thinking", "response_format")
     body = {name: payload[name] for name in fields if name in payload}
+    if not body.get("reasoning_effort"):
+        reasoning = payload.get("reasoning")
+        effort = payload.get("reasoningEffort")
+        if not effort and isinstance(reasoning, dict):
+            effort = reasoning.get("effort")
+        if effort:
+            body["reasoning_effort"] = effort
+    # Flash supports an adaptive mode with a separate depth setting.
+    if body.get("model") == "MiniMax-M3.1-Flash" and body.get("thinking") is None:
+        body["thinking"] = {"type": "adaptive"}
     body.update(stream=True, stream_options={"include_usage": True}, reasoning_split=True)
     while accounts:
         with _dispatch_lock:

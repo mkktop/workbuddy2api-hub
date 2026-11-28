@@ -186,9 +186,12 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 #modelsTable .model-pick{width:14px;height:14px;margin:0;flex-shrink:0;cursor:pointer}
 #modelsTable .model-id-wrap{display:flex;align-items:center;justify-content:space-between;gap:6px}
 #modelsTable td.model-id-cell label{display:flex;align-items:center;gap:7px;min-width:0;cursor:pointer}
+#modelsTable td.model-id-cell .model-pick-unavailable,#modelsTable .model-pick:disabled{cursor:default;color:var(--dim)}
 #modelsTable td.model-id-cell b{white-space:normal;overflow-wrap:anywhere;user-select:text}
 #modelsTable .model-id-copy{display:grid;place-items:center;flex:0 0 26px;min-height:26px;padding:0}
 #modelsTable .model-id-copy svg{width:13px;height:13px}
+#modelsTable .model-name-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px}
+#modelsTable .model-route-action{white-space:nowrap}
 th,td{text-align:right;padding:9px 12px;border-bottom:1px solid var(--line);
   font-variant-numeric:tabular-nums;vertical-align:middle}
 th{color:var(--dim);font-weight:600;font-size:12px;white-space:nowrap;background:var(--panel2)}
@@ -2454,7 +2457,20 @@ button.page-nav-top:hover{background:var(--panel2);border-color:var(--accent);co
     '按客户端支持的协议选择 Base URL，并填写模型调用 API Key。': 'Choose the Base URL for your client’s protocol and enter a model API key.',
     '在「设置 → API 与出口 → 模型调用 API Key」中复制 Key，填入客户端的 API Key / Token 字段。': 'Copy a key from Settings → API & routes → Model API key and paste it into your client’s API Key or Token field.',
     '勾选结果适用于所有上游出口，只影响一键配置时写入客户端的模型清单。': 'The selection applies to all upstream routes and controls which models are written to client configurations.',
-    '保存勾选后，重新执行一键配置并重启客户端。WorkBuddy 国际版未保存过勾选时，按账号档位确定默认模型。': 'Save the selection, run one-click setup again, and restart the client. WorkBuddy Global uses the account tier to choose default models until you save a selection.',
+    '保存勾选后，重新执行一键配置并重启客户端。': 'Save the selection, run one-click setup again, and restart the client.',
+    'WorkBuddy 国际版未保存过勾选时，按账号档位确定默认模型。': 'WorkBuddy Global uses the account tier to choose default models until you save a selection.',
+    '先在名称栏启用模型，再勾选写入客户端。': 'Enable a model in the Name column, then select it for client setup.',
+    '启用模型后可勾选': 'Enable the model to select it',
+    '启用网关调用': 'Enable gateway calls',
+    '停用网关调用': 'Disable gateway calls',
+    '官方套餐': 'Official subscription',
+    '智谱编程套餐': 'Zhipu Coding Plan',
+    '智谱官方套餐模型清单': 'Zhipu Coding Plan model list',
+    '查看智谱套餐额度': 'View Zhipu plan quota',
+    '使用智谱中国站个人或团队编程套餐的 API Key。': 'Use a personal or team GLM Coding Plan API key from Zhipu China.',
+    '使用 DeepSeek 开放平台的 API Key，调用按官方 API 用量结算。': 'Use a DeepSeek platform API key. DeepSeek bills for API usage.',
+    '按量计费': 'Usage-based billing',
+    '查询余额': 'Check balance',
     'API 接入': 'API access',
     '接口': 'API',
     '接口文档': 'API docs',
@@ -2870,6 +2886,15 @@ button.page-nav-top:hover{background:var(--panel2);border-color:var(--accent);co
     '按包名与面额推断（官方规则：每日活跃 30 / Pro 50 积分）': 'Inferred from the package name and size (official rule: 30 for daily activity, 50 on Pro)',
     '每日签到 (国内版)': 'Daily check-in (China)',
     'Buddy 加油站签到': 'Buddy gas station check-in',
+    '国内版加油站签到': 'WorkBuddy China check-in',
+    '签到时间（网关本地时间）': 'Check-in times (gateway local time)',
+    '多个时间用逗号分隔，留空沿用整点排程。': 'Separate times with commas. Leave blank to use the hourly schedule.',
+    '每个账号在上一个完成后随机等一段时间再签到，第一个账号也会延时。': 'The first check-in and each subsequent account wait for a randomly selected delay.',
+    '最短延时（秒）': 'Minimum delay (seconds)',
+    '最长延时（秒）': 'Maximum delay (seconds)',
+    '实际生效时间': 'Effective times',
+    '保存签到排程': 'Save check-in schedule',
+    '加油站签到排程已保存': 'Check-in schedule saved',
     '每日签到:': 'Daily check-in:',
     '每账号每日上限（token）': 'Daily cap per account (tokens)',
     '每账号每日上限（积分）': 'Daily cap per account (credits)',
@@ -2895,6 +2920,7 @@ button.page-nav-top:hover{background:var(--panel2);border-color:var(--accent);co
     '消耗积分 (全出口)': 'Credits spent (all exits)',
     '消费倍率': 'Rate',
     '消费倍率 / 优惠': 'Rate / discount',
+    '计费 / 优惠': 'Billing / discounts',
     '深色': 'Dark',
     '添加 WorkBuddy 账号 (OAuth 授权)': 'Add a WorkBuddy account (OAuth)',
     '清空': 'Clear',
@@ -3962,7 +3988,21 @@ button.page-nav-top:hover{background:var(--panel2);border-color:var(--accent);co
     "按客户端支持的协议选择 Base URL，并填写模型调用 API Key。": "依用戶端支援的協定選擇 Base URL，並填入模型呼叫 API Key。",
     "在「设置 → API 与出口 → 模型调用 API Key」中复制 Key，填入客户端的 API Key / Token 字段。": "在「設定 → API 與出口 → 模型呼叫 API Key」中複製 Key，填入用戶端的 API Key / Token 欄位。",
     "勾选结果适用于所有上游出口，只影响一键配置时写入客户端的模型清单。": "勾選結果適用於所有上游出口，只影響一鍵設定時寫入用戶端的模型清單。",
-    "保存勾选后，重新执行一键配置并重启客户端。WorkBuddy 国际版未保存过勾选时，按账号档位确定默认模型。": "儲存勾選後，重新執行一鍵設定並重啟用戶端。WorkBuddy 國際版未儲存過勾選時，依帳號檔位決定預設模型。",
+    "保存勾选后，重新执行一键配置并重启客户端。": "儲存勾選後，重新執行一鍵設定並重啟用戶端。",
+    "WorkBuddy 国际版未保存过勾选时，按账号档位确定默认模型。": "WorkBuddy 國際版未儲存過勾選時，依帳號檔位決定預設模型。",
+    "先在名称栏启用模型，再勾选写入客户端。": "先在名稱欄啟用模型，再勾選寫入用戶端。",
+    "启用模型后可勾选": "啟用模型後可勾選",
+    "启用网关调用": "啟用閘道呼叫",
+    "停用网关调用": "停用閘道呼叫",
+    "官方套餐": "官方方案",
+    "智谱编程套餐": "智譜程式設計方案",
+    "智谱官方套餐模型清单": "智譜官方方案模型清單",
+    "查看智谱套餐额度": "檢視智譜方案用量",
+    "使用智谱中国站个人或团队编程套餐的 API Key。": "使用智譜中國站個人或團隊程式設計方案的 API Key。",
+    "使用 DeepSeek 开放平台的 API Key，调用按官方 API 用量结算。": "使用 DeepSeek 開放平台的 API Key，呼叫依官方 API 用量計費。",
+    "按量计费": "按用量計費",
+    "查询余额": "查詢餘額",
+    "计费 / 优惠": "計費 / 優惠",
     "版本视图": "版本檢視",
     "当前账号正常": "目前帳號正常",
     "待解码的凭证（加密存储）": "待解碼的憑證（加密儲存）",
@@ -4027,6 +4067,15 @@ button.page-nav-top:hover{background:var(--panel2);border-color:var(--accent);co
     "每个账号固定绑定一个出口代理槽。槽位地址变化时绑定账号自动跟随；禁用或删除后回退直连。": "每個帳號固定繫結一個出口代理槽。槽位地址變化時繫結帳號自動跟隨；禁用或刪除後回退直連。",
     "每日签到 (国内版)": "每日簽到 (國內版)",
     "Buddy 加油站签到": "Buddy 加油站簽到",
+    "国内版加油站签到": "國內版加油站簽到",
+    "签到时间（网关本地时间）": "簽到時間（閘道本地時間）",
+    "多个时间用逗号分隔，留空沿用整点排程。": "多個時間用逗號分隔，留空沿用整點排程。",
+    "每个账号在上一个完成后随机等一段时间再签到，第一个账号也会延时。": "每個帳號在上一個完成後隨機等一段時間再簽到，第一個帳號也會延時。",
+    "最短延时（秒）": "最短延時（秒）",
+    "最长延时（秒）": "最長延時（秒）",
+    "实际生效时间": "實際生效時間",
+    "保存签到排程": "儲存簽到排程",
+    "加油站签到排程已保存": "加油站簽到排程已儲存",
     "当前连续登录天数": "目前連續登入天數",
     "WorkBuddy 成长计划": "WorkBuddy 成長計劃",
     "每日签到:": "每日簽到:",
@@ -6556,12 +6605,11 @@ html[data-ui="next"] :is(#pageGateway,#pageAccounts,#pageAgents) .page-head > .r
 #pageGateway #modelSelectionStatus:empty{display:none}
 .realm-badge-minimax{color:var(--think);font-weight:700}
 #tabMiniMax[hidden],#minimaxAccountsSection[hidden],
-#tabMiniMax .badge[hidden],.realm-switch button[hidden]{display:none}
+#tabMiniMax .badge[hidden],.realm-switch button[hidden],.realm-card[hidden],#apiChannelAccountsSection[hidden]{display:none}
 .minimax-account-form{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin:12px 0}
 .minimax-account-form[hidden]{display:none}
 .minimax-account-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
 .minimax-account-row p{width:100%;margin:0;white-space:pre-line}
-.minimax-model-toggle{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
 .channel-settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:8px;margin:12px 0}
 .channel-setting{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-control);cursor:pointer}
 .channel-setting:has(input:checked){background:var(--panel2);border-color:var(--line-hover)}
@@ -6973,6 +7021,14 @@ html[data-ui="next"] :is(#pageGateway,#pageAccounts,#pageAgents) .page-head > .r
         </span>
       </span>
     </button>
+    <button type="button" id="tabZhipu" class="realm-card" onclick="switchRuntimeRealm('zhipu')" aria-pressed="false" hidden>
+      <span class="rc-head"><b>智谱编程套餐</b><code class="rc-host">zhipu/</code></span>
+      <span class="rc-body"><span class="rc-sub"><b id="tabZhipuAccounts">0 / 0</b> 账号启用</span></span>
+    </button>
+    <button type="button" id="tabDeepSeek" class="realm-card" onclick="switchRuntimeRealm('deepseek')" aria-pressed="false" hidden>
+      <span class="rc-head"><b>DeepSeek API</b><code class="rc-host">deepseek/</code></span>
+      <span class="rc-body"><span class="rc-sub"><b id="tabDeepSeekAccounts">0 / 0</b> 账号启用</span></span>
+    </button>
   </div>
   <p id="runtimeScopeNote" class="runtime-summary-note">全部请求 · 累计用量</p>
   <div class="gw-summary"><div class="cards" id="cards"></div></div>
@@ -7060,6 +7116,8 @@ html[data-ui="next"] :is(#pageGateway,#pageAccounts,#pageAgents) .page-head > .r
         <button type="button" data-realm="cn" onclick="switchViewRealm('cn')">WorkBuddy 国内版</button>
         <button type="button" data-realm="minimax" onclick="switchViewRealm('minimax')" aria-pressed="false" hidden>MiniMax</button>
         <button type="button" data-realm="codearts" id="nextGatewayRealmCodearts" onclick="switchViewRealm('codearts')">CodeArts</button>
+        <button type="button" data-realm="zhipu" onclick="switchViewRealm('zhipu')" hidden>智谱编程套餐</button>
+        <button type="button" data-realm="deepseek" onclick="switchViewRealm('deepseek')" hidden>DeepSeek API</button>
       </div>
     </div>
 
@@ -7084,7 +7142,9 @@ html[data-ui="next"] :is(#pageGateway,#pageAccounts,#pageAgents) .page-head > .r
       <button type="button" class="sec mini" onclick="clearModelCatalogFilter()">清除筛选</button>
     </div>
     <p id="modelPickHint" class="hint"
-         title="勾选结果适用于所有上游出口，只影响一键配置时写入客户端的模型清单。">保存勾选后，重新执行一键配置并重启客户端。WorkBuddy 国际版未保存过勾选时，按账号档位确定默认模型。</p>
+         title="勾选结果适用于所有上游出口，只影响一键配置时写入客户端的模型清单。"><span>保存勾选后，重新执行一键配置并重启客户端。</span>
+      <span id="modelPickGlobalHint" hidden>WorkBuddy 国际版未保存过勾选时，按账号档位确定默认模型。</span>
+      <span id="modelPickMiniMaxHint" hidden>先在名称栏启用模型，再勾选写入客户端。</span></p>
     <!-- 清单来源横幅：API 获取 → 绿色状态条（附刷新时间）；非 API（项目默认
          信息/缓存文件）→ 黄色警示「模型、倍率数据可能不一致」。内容由
          /panel/model-catalog 的 catalog 字段驱动，见 renderModelsSourceLine。 -->
@@ -7095,7 +7155,7 @@ html[data-ui="next"] :is(#pageGateway,#pageAccounts,#pageAgents) .page-head > .r
           <tr>
             <th class="t">客户端模型 ID</th>
             <th class="t">名称</th>
-            <th id="modelBillingTh" class="c">消费倍率 / 优惠</th>
+            <th class="c">计费 / 优惠</th>
             <th class="c">模型能力</th>
             <th class="c">上下文窗口</th>
             <th class="c">最大输出</th>
@@ -7118,6 +7178,8 @@ html[data-ui="next"] :is(#pageGateway,#pageAccounts,#pageAgents) .page-head > .r
       <button type="button" id="accountsRealmCn" onclick="switchViewRealm('cn')" aria-pressed="false">WorkBuddy 国内版</button>
       <button type="button" id="accountsRealmMiniMax" onclick="switchViewRealm('minimax')" aria-pressed="false" hidden>MiniMax</button>
       <button type="button" id="accountsRealmCodearts" onclick="switchViewRealm('codearts')" aria-pressed="false">CodeArts</button>
+      <button type="button" id="accountsRealmZhipu" onclick="switchViewRealm('zhipu')" aria-pressed="false" hidden>智谱编程套餐</button>
+      <button type="button" id="accountsRealmDeepSeek" onclick="switchViewRealm('deepseek')" aria-pressed="false" hidden>DeepSeek API</button>
     </div>
     <div class="sec-tools">
       <button type="button" class="primary" onclick="addChannelAccount()">添加账号</button>
@@ -7142,6 +7204,18 @@ html[data-ui="next"] :is(#pageGateway,#pageAccounts,#pageAgents) .page-head > .r
       <button type="button" class="sec" onclick="this.form.reset(); this.form.hidden=true">取消</button>
     </form>
     <div id="miniMaxAccountRows"></div>
+  </section>
+  <section id="apiChannelAccountsSection" hidden>
+    <div class="sec-head"><h2 id="apiChannelAccountTitle">API 账号</h2></div>
+    <p id="apiChannelAccountHelp" class="set-desc"></p>
+    <form id="apiChannelAccountForm" class="minimax-account-form" onsubmit="saveApiChannelAccount(event)" hidden>
+      <label class="field"><span class="field-label">账号名称</span><input id="apiChannelAccountName" maxlength="80"></label>
+      <label class="field"><span class="field-label">上游 API Key</span><input id="apiChannelAccountKey" type="password" autocomplete="new-password" maxlength="512"></label>
+      <button type="submit" class="primary">保存账号</button>
+      <button type="button" class="sec" onclick="this.form.reset(); this.form.hidden=true">取消</button>
+    </form>
+    <div id="apiChannelAccountRows"></div>
+    <a id="zhipuPlanUsageLink" href="https://www.bigmodel.cn/coding-plan/personal/usage" target="_blank" rel="noopener noreferrer" hidden>查看智谱套餐额度</a>
   </section>
   <!-- CodeArts 视图：账号池由本进程直接管理。 -->
   <section id="codeartsAccountsSection" style="display:none">
@@ -7887,6 +7961,8 @@ html[data-ui="next"] :is(#pageGateway,#pageAccounts,#pageAgents) .page-head > .r
         <label class="channel-setting"><input type="checkbox" id="channelCn"><span>WorkBuddy 国内版<code>wb-cn/</code></span></label>
         <label class="channel-setting"><input type="checkbox" id="channelMiniMax"><span>MiniMax<code>minimax/</code></span></label>
         <label class="channel-setting"><input type="checkbox" id="channelCodearts"><span>CodeArts<code>codearts/</code></span></label>
+        <label class="channel-setting"><input type="checkbox" id="channelZhipu"><span>智谱编程套餐<code>zhipu/</code></span></label>
+        <label class="channel-setting"><input type="checkbox" id="channelDeepSeek"><span>DeepSeek API<code>deepseek/</code></span></label>
       </div>
       <button type="button" class="primary" id="saveChannelsBtn" onclick="saveChannels(this)" disabled>保存渠道</button>
     </section>
@@ -7941,7 +8017,7 @@ html[data-ui="next"] :is(#pageGateway,#pageAccounts,#pageAgents) .page-head > .r
       <h2>CodeArts 高级参数 <em id="setCodeartsState"></em></h2>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;min-height:40px"
-               title="跟随国内版签到时段；只对已启用账号执行">
+               title="按后台整点排程签到，只对已启用账号执行">
           <input id="setCodeartsAutoCheckin" type="checkbox" style="width:16px;height:16px">
           每天自动签到
         </label>
@@ -8432,6 +8508,25 @@ html[data-ui="next"] :is(#pageGateway,#pageAccounts,#pageAgents) .page-head > .r
             <button onclick="saveDesktopChatCompat(this)">保存</button>
           </div>
         </div>
+      </section>
+
+      <section data-cat="tasks">
+        <h2>国内版加油站签到</h2>
+        <p class="set-desc">每个账号在上一个完成后随机等一段时间再签到，第一个账号也会延时。</p>
+        <form onsubmit="saveBuddyCheckinSchedule(event)">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px">
+            <label class="field"><span class="field-label">签到时间（网关本地时间）</span>
+              <input type="text" id="buddyCheckinTimes" class="mono" placeholder="09:00, 21:00" maxlength="200" aria-describedby="buddyCheckinTimeHint">
+            </label>
+            <label class="field"><span class="field-label">最短延时（秒）</span><input type="number" id="buddyCheckinMin" min="1" max="300" step="1" required></label>
+            <label class="field"><span class="field-label">最长延时（秒）</span><input type="number" id="buddyCheckinMax" min="1" max="300" step="1" required></label>
+          </div>
+          <p id="buddyCheckinTimeHint" class="set-desc">多个时间用逗号分隔，留空沿用整点排程。</p>
+          <div class="sec-tools">
+            <button type="submit" id="btnSaveBuddyCheckinSchedule" class="primary" disabled>保存签到排程</button>
+            <span class="set-desc"><span>实际生效时间</span> <b id="buddyCheckinEffective" class="mono">—</b></span>
+          </div>
+        </form>
       </section>
 
       <section data-cat="tasks">
@@ -9171,6 +9266,8 @@ html[data-ui="next"] :is(#pageGateway,#pageAccounts,#pageAgents) .page-head > .r
         <button type="button" data-realm="cn" onclick="switchViewRealm('cn')">WorkBuddy 国内版</button>
         <button type="button" data-realm="minimax" onclick="switchViewRealm('minimax')" hidden>MiniMax</button>
         <button type="button" data-realm="codearts" onclick="switchViewRealm('codearts')" hidden>CodeArts</button>
+        <button type="button" data-realm="zhipu" onclick="switchViewRealm('zhipu')" hidden>智谱编程套餐</button>
+        <button type="button" data-realm="deepseek" onclick="switchViewRealm('deepseek')" hidden>DeepSeek API</button>
       </div>
     </div>
 
@@ -9892,7 +9989,8 @@ function updateUI(){
   }
   const isWorkBuddyView = view === 'intl' || view === 'cn';
   const accountTabs = {intl: 'accountsRealmIntl', cn: 'accountsRealmCn',
-    minimax: 'accountsRealmMiniMax', codearts: 'accountsRealmCodearts'};
+    minimax: 'accountsRealmMiniMax', codearts: 'accountsRealmCodearts',
+    zhipu: 'accountsRealmZhipu', deepseek: 'accountsRealmDeepSeek'};
   Object.entries(accountTabs).forEach(([realm, id]) => {
     const tab = document.getElementById(id);
     if(!tab) return;
@@ -9986,6 +10084,7 @@ function updateUI(){
   if(wbSection) wbSection.style.display = isWorkBuddyView ? '' : 'none';
   const miniMaxAccounts = document.getElementById('minimaxAccountsSection');
   if(miniMaxAccounts) miniMaxAccounts.hidden = view !== 'minimax';
+  renderApiChannelAccounts(view);
   const caSection = document.getElementById("codeartsAccountsSection");
   if(caSection) caSection.style.display = view === 'codearts' ? '' : 'none';
 };
@@ -10014,7 +10113,7 @@ async function switchViewRealm(r){
                        loadAnalytics(), refresh()]);
     return;
   }
-  if(r === 'minimax'){
+  if(r === 'minimax' || API_TEXT_CHANNELS.includes(r)){
     await Promise.all([loadModels(), loadAnalytics(), refresh()]);
     return;
   }
@@ -10025,10 +10124,13 @@ async function switchViewRealm(r){
 };
 
 function realmLabel(r){
-  return {all: '全部请求', intl: '国际版', cn: '国内版', minimax: 'MiniMax', codearts: 'CodeArts'}[r] || '国际版';
+  return {all: '全部请求', intl: '国际版', cn: '国内版', minimax: 'MiniMax', codearts: 'CodeArts',
+    zhipu: '智谱编程套餐', deepseek: 'DeepSeek API'}[r] || '国际版';
 }
 
-const CHANNEL_INPUTS = {intl: 'channelIntl', cn: 'channelCn', minimax: 'channelMiniMax', codearts: 'channelCodearts'};
+const API_TEXT_CHANNELS = ['zhipu', 'deepseek'];
+const CHANNEL_INPUTS = {intl: 'channelIntl', cn: 'channelCn', minimax: 'channelMiniMax', codearts: 'channelCodearts',
+  zhipu: 'channelZhipu', deepseek: 'channelDeepSeek'};
 
 function channelEnabled(realm){
   return window.CHANNEL_STATES
@@ -10072,6 +10174,7 @@ function addChannelAccount(){
   const realm = window.VIEW_REALM;
   if(!channelEnabled(realm)) return;
   if(realm === 'minimax') return editMiniMaxAccount();
+  if(API_TEXT_CHANNELS.includes(realm)) return editApiChannelAccount();
   if(realm === 'codearts') return openCodeartsOauthModal();
   return openLoginModal(realm);
 }
@@ -10090,7 +10193,8 @@ function runtimeRealmAvailable(realm){
 
 function syncRuntimeScope(){
   if(!runtimeRealmAvailable(RUNTIME_REALM)) RUNTIME_REALM = 'all';
-  const controls = {all: 'runtimeAll', intl: 'tabIntl', cn: 'tabCn', minimax: 'tabMiniMax', codearts: 'tabCodearts'};
+  const controls = {all: 'runtimeAll', intl: 'tabIntl', cn: 'tabCn', minimax: 'tabMiniMax', codearts: 'tabCodearts',
+    zhipu: 'tabZhipu', deepseek: 'tabDeepSeek'};
   Object.entries(controls).forEach(([realm, id]) => {
     const button = document.getElementById(id);
     if(!button) return;
@@ -10558,18 +10662,127 @@ async function loadMiniMaxQuota(button){
   }
 }
 
-async function toggleMiniMaxModel(input){
-  const enabled = input.checked;
-  const controls = Array.from(document.querySelectorAll('#modelsTable .minimax-model-toggle input'));
-  controls.forEach(box => { box.disabled = true; });
+async function toggleMiniMaxModel(button){
+  const enabled = button.dataset.enableModel === 'true';
+  const controls = document.querySelectorAll('#modelsTable .model-route-action');
+  controls.forEach(control => { control.disabled = true; });
   try{
-    await applyMiniMaxSettings({model_toggle: {id: input.dataset.minimaxModel, enabled}});
+    await applyMiniMaxSettings({model_toggle: {id: button.dataset.minimaxModel, enabled}});
     toast(enabled ? 'MiniMax 模型已启用' : 'MiniMax 模型已停用', 'ok');
   }catch(error){
-    input.checked = !enabled;
     toast('保存失败: ' + error.message, 'bad');
   }finally{
-    controls.forEach(box => { box.disabled = false; });
+    controls.forEach(control => { control.disabled = false; });
+  }
+}
+
+function renderApiChannelAccounts(realm, force = false){
+  for(const [channel, id] of [['zhipu', 'tabZhipuAccounts'], ['deepseek', 'tabDeepSeekAccounts']]){
+    const accounts = window.API_CHANNEL_ACCOUNTS?.[channel] || [];
+    const count = document.getElementById(id);
+    if(count) count.textContent = accounts.filter(account => account.enabled).length + ' / ' + accounts.length;
+  }
+  const section = document.getElementById('apiChannelAccountsSection');
+  if(!section) return;
+  section.hidden = !API_TEXT_CHANNELS.includes(realm);
+  if(!force && section.dataset.channel === realm) return;
+  section.dataset.channel = realm;
+  const form = document.getElementById('apiChannelAccountForm');
+  if(form?.dataset.channel && form.dataset.channel !== realm){
+    form.reset();
+    form.hidden = true;
+  }
+  if(section.hidden) return;
+  document.getElementById('apiChannelAccountTitle').textContent = realmLabel(realm) + ' 账号';
+  document.getElementById('apiChannelAccountHelp').textContent = realm === 'zhipu'
+    ? '使用智谱中国站个人或团队编程套餐的 API Key。'
+    : '使用 DeepSeek 开放平台的 API Key，调用按官方 API 用量结算。';
+  document.getElementById('zhipuPlanUsageLink').hidden = realm !== 'zhipu';
+  const accounts = window.API_CHANNEL_ACCOUNTS?.[realm] || [];
+  document.getElementById('apiChannelAccountRows').innerHTML = accounts.map(account => {
+    const state = account.enabled ? '<span class="badge ok">已启用</span>' : '<span class="badge off">已停用</span>';
+    return '<div class="minimax-account-row" data-api-channel-uid="' + esc(account.uid) + '">'
+      + '<div><b>' + esc(account.name) + '</b> ' + state + '</div><div class="sec-tools">'
+      + (realm === 'deepseek' ? '<button type="button" class="sec mini" onclick="loadDeepSeekBalance(this)">查询余额</button>' : '')
+      + '<button type="button" class="sec mini" onclick="editApiChannelAccount(this.closest(\'[data-api-channel-uid]\').dataset.apiChannelUid)">编辑</button>'
+      + '<button type="button" class="sec mini" onclick="changeApiChannelAccount(this, false)">' + (account.enabled ? '停用' : '启用') + '</button>'
+      + '<button type="button" class="sec mini" onclick="changeApiChannelAccount(this, true)">删除</button></div>'
+      + '<p class="set-desc" role="status" hidden></p></div>';
+  }).join('') || '<p class="set-desc">尚未添加账号</p>';
+}
+
+function editApiChannelAccount(uid = ''){
+  const channel = window.VIEW_REALM;
+  const account = (window.API_CHANNEL_ACCOUNTS?.[channel] || []).find(row => row.uid === uid);
+  const form = document.getElementById('apiChannelAccountForm');
+  form.dataset.channel = channel;
+  form.dataset.uid = uid;
+  document.getElementById('apiChannelAccountName').value = account?.name || '';
+  const key = document.getElementById('apiChannelAccountKey');
+  key.value = '';
+  key.placeholder = account ? '留空保留原 Key' : '';
+  key.required = !account;
+  form.hidden = false;
+  document.getElementById('apiChannelAccountName').focus();
+}
+
+async function updateApiChannelAccount(channel, account){
+  const data = await postJSON('/settings/save', {api_channel_account: {channel, account}});
+  window.API_CHANNEL_ACCOUNTS = {...window.API_CHANNEL_ACCOUNTS, ...data.api_channel_accounts};
+  renderApiChannelAccounts(window.VIEW_REALM, true);
+  await refreshActiveRealm();
+  if(window.VIEW_REALM === channel) await loadModels();
+  if(typeof loadAgents === 'function') loadAgents();
+}
+
+async function saveApiChannelAccount(event){
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector('button[type="submit"]');
+  button.disabled = true;
+  try{
+    await updateApiChannelAccount(form.dataset.channel, {uid: form.dataset.uid,
+      name: document.getElementById('apiChannelAccountName').value.trim(),
+      api_key: document.getElementById('apiChannelAccountKey').value.trim()});
+    form.reset();
+    form.hidden = true;
+    toast('账号已保存', 'ok');
+  }catch(error){
+    toast('保存失败: ' + error.message, 'bad');
+  }finally{
+    button.disabled = false;
+  }
+}
+
+async function changeApiChannelAccount(button, remove){
+  const channel = window.VIEW_REALM;
+  const uid = button.closest('[data-api-channel-uid]').dataset.apiChannelUid;
+  const account = (window.API_CHANNEL_ACCOUNTS?.[channel] || []).find(row => row.uid === uid);
+  if(!account || (remove && !confirm('删除此账号？'))) return;
+  button.disabled = true;
+  try{
+    await updateApiChannelAccount(channel, remove ? {uid, action: 'delete'} : {uid, enabled: !account.enabled});
+  }catch(error){
+    toast('保存失败: ' + error.message, 'bad');
+  }finally{
+    button.disabled = false;
+  }
+}
+
+async function loadDeepSeekBalance(button){
+  const row = button.closest('[data-api-channel-uid]');
+  const status = row.querySelector('[role="status"]');
+  button.disabled = true;
+  status.hidden = false;
+  status.textContent = '查询中…';
+  try{
+    const data = await getJSON('/panel/deepseek/balance?uid=' + encodeURIComponent(row.dataset.apiChannelUid));
+    const amounts = (data.balances || []).map(balance => balance.currency + ' ' + balance.total_balance);
+    status.textContent = amounts.join(' · ') || '暂无余额数据';
+  }catch(error){
+    status.textContent = '查询余额失败：' + error.message;
+  }finally{
+    button.disabled = false;
   }
 }
 
@@ -10667,15 +10880,16 @@ async function refreshModelCatalog(btn){
   // 手动刷新模型清单：强制走一次上游 /v3/config（服务端执行，绕过 300s 缓存），
   // 只刷当前视图版本——这张表显示的是哪个版本，刷新按钮就只拉哪个版本，绝
   // 不跨区（服务端会挑该版本自己的账号发请求）。完成后立即重载表格。
-  if(window.VIEW_REALM === 'minimax'){
+  const view = window.VIEW_REALM;
+  if(view === 'minimax' || API_TEXT_CHANNELS.includes(view)){
     const prevText = btn ? btn.textContent : '';
     if(btn){ btn.disabled = true; btn.textContent = '刷新中…'; }
     try{
       const data = await loadModels(true);
-      if(data?.catalog?.fetched_at && !data.catalog.stale){
-        toast('MiniMax 官方模型目录已同步', 'ok');
+      if(data?.catalog && !data.catalog.stale && (data.catalog.fetched_at || view === 'zhipu')){
+        toast(realmLabel(view) + ' 模型清单已更新', 'ok');
       }else{
-        toast('MiniMax 官方目录暂不可用，已显示本地目录', 'warn');
+        toast(realmLabel(view) + ' 官方目录暂不可用', 'warn');
       }
     }finally{
       if(btn){ btn.disabled = false; btn.textContent = prevText; }
@@ -10737,11 +10951,12 @@ async function loadModels(forceRefresh = false){
     }
     return;
   }
-  const unified = realm === 'minimax' ? null
+  const isApiCatalog = realm === 'minimax' || API_TEXT_CHANNELS.includes(realm);
+  const unified = isApiCatalog ? null
     : getJSON('/v1/models').then(catalogue => catalogue.data || []).catch(() => []);
   try{
     const r = await getJSON('/panel/model-catalog?realm=' + encodeURIComponent(realm)
-      + (forceRefresh && realm === 'minimax' ? '&refresh=1' : ''));
+      + (forceRefresh && isApiCatalog ? '&refresh=1' : ''));
     if(window.VIEW_REALM !== realm) return;
     const list = r.data || [];
     window.MODELS_DATA = list;
@@ -10831,14 +11046,14 @@ function materializeModelSelection(){
   AGENT_MODEL_SELECTION = new Set(ids.filter(isModelPicked));
   MODEL_SELECTION_CONFIGURED = true;
   ids.forEach(id => MODEL_SELECTION_SEEN_IDS.add(id));
-  if(window.VIEW_REALM === 'minimax' || window.VIEW_REALM === 'intl' || window.VIEW_REALM === 'cn'){
+  if(Object.hasOwn(CHANNEL_INPUTS, window.VIEW_REALM)){
     MODEL_SELECTION_MERGED_REALMS.add(window.VIEW_REALM);
   }
 }
 function mergeUnseenModelsForCurrentRealm(){
   if(!MODEL_SELECTION_CONFIGURED || MODEL_SELECTION_SAVED) return;
   const r = window.VIEW_REALM;
-  if(!['intl', 'cn', 'minimax'].includes(r)) return;
+  if(!Object.hasOwn(CHANNEL_INPUTS, r)) return;
   if(MODEL_SELECTION_MERGED_REALMS.has(r)) return;
   allModelPickIds().forEach(id => {
     if(!MODEL_SELECTION_SEEN_IDS.has(id)){
@@ -10880,7 +11095,7 @@ function updateAvailModelCount(){
 // 选择在别处变化（GET 回来、POST 失败回滚、批量动作）时用这个同步。
 function syncModelPickBoxes(){
   Array.from(document.querySelectorAll('#modelsTable input.model-pick')).forEach(box => {
-    box.checked = isModelPicked(box.dataset.modelId);
+    box.checked = !box.disabled && isModelPicked(box.dataset.modelId);
   });
   updateAvailModelCount();
 }
@@ -10927,12 +11142,12 @@ async function saveModelSelection(){
     const seen = new Set(MODEL_SELECTION_SEEN_IDS);
     const merged = new Set(MODEL_SELECTION_MERGED_REALMS);
     ids.forEach(id => seen.add(id));
-    if(['intl', 'cn', 'minimax'].includes(window.VIEW_REALM)){
+    if(Object.hasOwn(CHANNEL_INPUTS, window.VIEW_REALM)){
       merged.add(window.VIEW_REALM);
     }
     if(!MODEL_SELECTION_SAVED){
       const realms = ['intl', 'cn'];
-      if((window.REALM_OPTIONS || []).includes('minimax')) realms.push('minimax');
+      realms.push(...(window.REALM_OPTIONS || []).filter(realm => !realms.includes(realm)));
       for(const realm of realms){
         if(merged.has(realm)) continue;
         let catalog;
@@ -10990,7 +11205,7 @@ async function saveModelSelection(){
 // 排序的点击委托只认表头（sortHeaderAt），勾选不会触发表格排序。
 document.addEventListener('change', function(ev){
   const box = ev.target;
-  if(!box || !box.classList || !box.classList.contains('model-pick')) return;
+  if(!box || box.disabled || !box.classList || !box.classList.contains('model-pick')) return;
   const id = box.dataset ? box.dataset.modelId : '';
   if(!id) return;
   materializeModelSelection();
@@ -11080,6 +11295,15 @@ function renderModelsSourceLine(meta){
       + (meta.docs_url ? ' <a href="' + esc(meta.docs_url) + '" target="_blank" rel="noopener noreferrer">官方模型规格</a>' : '');
     return;
   }
+  if(API_TEXT_CHANNELS.includes(meta.source)){
+    el.classList.add(meta.stale ? 'is-warn' : 'is-ok');
+    el.title = '';
+    const origin = meta.source === 'zhipu' ? '智谱官方套餐模型清单' : 'DeepSeek 官方 API 模型目录';
+    const status = meta.stale ? (at ? ' · 使用上次同步目录 ' + at : ' · 暂不可用') : (at ? ' · 已同步 ' + at : '');
+    el.innerHTML = '<b>' + esc(origin + status) + '</b>' + (meta.docs_url
+      ? ' <a href="' + esc(meta.docs_url) + '" target="_blank" rel="noopener noreferrer">官方模型规格</a>' : '');
+    return;
+  }
   if(meta.source === 'codearts'){
     el.classList.add('is-ok');
     el.title = 'CodeArts 模型目录来自本进程的 agent-center / builtin / 福利三路发现；缓存过期后自动重取，失败时回退到上次成功的目录。';
@@ -11133,7 +11357,7 @@ function externalNamesFor(id){
 function modelMapCell(m){
   const id = String((m && m.id) || '');
   // 别名开关关着时整列不出现（表头也一起隐藏），单元格本身不再单独兜底。
-  if(window.MODEL_ALIASES_ENABLED !== true || window.VIEW_REALM === 'minimax'){
+  if(window.MODEL_ALIASES_ENABLED !== true || ['minimax', ...API_TEXT_CHANNELS].includes(window.VIEW_REALM)){
     return '<td style="text-align:left" class="model-map-cell" data-label="对外名称" hidden></td>';
   }
   const names = externalNamesFor(id);
@@ -11192,14 +11416,17 @@ async function copyCatalogModelId(button){
 function renderAvailableModels(){
   const tb = document.querySelector('#modelsTable tbody');
   if(!tb) return;
+  const realm = window.VIEW_REALM;
+  const globalHint = document.getElementById('modelPickGlobalHint');
+  const miniMaxHint = document.getElementById('modelPickMiniMaxHint');
+  if(globalHint) globalHint.hidden = realm !== 'intl';
+  if(miniMaxHint) miniMaxHint.hidden = realm !== 'minimax';
   // 「对外名称」列只在模型别名开关打开时出现：开关关着时别名既不进 /models
   // 也不改写请求，留着这一列只会让人以为填了没生效。表头与每行单元格一起显隐。
-  const aliasOn = window.MODEL_ALIASES_ENABLED === true && window.VIEW_REALM !== 'minimax';
+  const aliasOn = window.MODEL_ALIASES_ENABLED === true && !['minimax', ...API_TEXT_CHANNELS].includes(realm);
   const columns = aliasOn ? 9 : 8;
   const aliasTh = document.getElementById('modelAliasTh');
   if(aliasTh) aliasTh.style.display = aliasOn ? '' : 'none';
-  const billingTh = document.getElementById('modelBillingTh');
-  if(billingTh) billingTh.textContent = window.VIEW_REALM === 'minimax' ? '网关状态' : '消费倍率 / 优惠';
   updateAvailModelCount();
   const query = MODEL_CATALOG_FILTER.trim().toLowerCase();
   const modelsList = catalogModelsData();
@@ -11225,15 +11452,10 @@ function renderAvailableModels(){
     //    国际版 deepseek-v4.1-flash 三个"限时免费"，与 credits 值是 OR 关系，
     //    上游一旦调价面板会继续宣传免费；cn 的夜间注记在 credits 缺失时还会
     //    兜底显示写死的 0.79x。现在取不到就不显示数字。
-    let credBadge = '-';
-    if(m.route_id === 'minimax'){
-      credBadge = '<label class="minimax-model-toggle" title="启用或停用此模型的网关路由">'
-        + '<input type="checkbox" data-minimax-model="' + esc(m.upstream_model || m.id.slice('minimax/'.length)) + '"'
-        + (m.catalog_only ? '' : ' checked') + ' onchange="toggleMiniMaxModel(this)" aria-label="启用 ' + esc(m.name || m.id) + '">'
-        + (m.catalog_only ? '<span class="badge off">未启用</span>' : '<span class="badge ok">已启用</span>')
-        + '</label>';
-    }
-    let credText = (m.credits == null ? '' : String(m.credits)).trim();
+    const isMiniMax = m.route_id === 'minimax';
+    const billing = (isMiniMax || m.route_id === 'zhipu') ? '官方套餐' : (m.route_id === 'deepseek' ? '按量计费' : '');
+    let credBadge = billing ? '<span class="badge">' + billing + '</span>' : '-';
+    const credText = (m.credits == null ? '' : String(m.credits)).trim();
 
     const c = credText.toLowerCase().replace('x', '');
     if(c === '0.00' || c === '0'){
@@ -11265,23 +11487,23 @@ function renderAvailableModels(){
     // 2. 模型能力 (Vision, Tool calls)
     const caps = [];
     const hasVis = m.supports_vision || m.vision || m.multimodal || (m.input_modalities && m.input_modalities.includes('image'));
+    const hasTool = m.supports_tool_calls || (m.capabilities && m.capabilities.tool_calls);
+    const hasReasoning = m.supports_reasoning || m.reasoning_fixed_effort || (m.reasoning_efforts && m.reasoning_efforts.length);
     if(hasVis){
       caps.push('<span class="badge">视觉</span>');
     } else if(m.id === 'glm-5.3-flash' || m.vision_note){
       const tip = m.vision_note || '上游配置宣告支持多模态，但实际后端未接入视觉通道，已强制修正为纯文本';
       caps.push('<span class="badge warn" title="' + esc(tip) + '">文本 (实测无视觉)</span>');
-    } else {
+    } else if(!isMiniMax || m.input_modalities?.includes('text')){
       caps.push('<span class="badge off">文本</span>');
     }
-    const hasTool = m.supports_tool_calls || (m.capabilities && m.capabilities.tool_calls);
     if(hasTool){
       caps.push('<span class="badge">工具</span>');
     }
-    const hasReasoning = m.supports_reasoning || m.reasoning_fixed_effort || (m.reasoning_efforts && m.reasoning_efforts.length);
     if(hasReasoning){
       caps.push('<span class="badge think">推理</span>');
     }
-    const capHtml = caps.join(' ');
+    const capHtml = caps.join(' ') || '<span class="muted">—</span>';
 
     const fmtK = v => {
       if(!v) return '-';
@@ -11299,7 +11521,7 @@ function renderAvailableModels(){
 
     // 4. 最大输出（有实测钳制时标注「钳制 N×」，数据来自 output_probes.json）
     let maxOut = m.max_output_tokens
-      ? ('<b>' + (m.route_id === 'minimax' ? fmt(m.max_output_tokens) : fmtK(m.max_output_tokens)) + '</b>') : '-';
+      ? ('<b title="' + esc(fmt(m.max_output_tokens)) + '">' + fmtK(m.max_output_tokens) + '</b>') : '-';
     const clamp = Number(m.output_clamp || 0);
     if(clamp > 0){
       const claimed = Number(m.max_output_tokens || 0);
@@ -11348,11 +11570,19 @@ function renderAvailableModels(){
     // 6. 名称（默认模型带星标；描述挂在名称的悬浮提示上）
     const nm = String(m.name || '').trim();
     const nmDesc = String(m.description || '').trim();
-    const nameCell = '<td class="t" data-label="名称">'
+    const name = '<span>'
       + (m.is_default ? '<span class="star" title="默认模型">★</span> ' : '')
       + (nm
           ? '<span' + (nmDesc ? ' title="' + esc(nmDesc) + '"' : '') + '>' + esc(nm) + '</span>'
           : '<span class="muted">—</span>')
+      + '</span>';
+    const routeAction = isMiniMax ? '<button type="button" class="sec mini model-route-action"'
+      + ' data-minimax-model="' + esc(m.upstream_model || m.id.slice('minimax/'.length)) + '"'
+      + ' data-enable-model="' + Boolean(m.catalog_only) + '" onclick="toggleMiniMaxModel(this)"'
+      + ' title="' + (m.catalog_only ? '启用网关调用' : '停用网关调用') + '">'
+      + (m.catalog_only ? '启用' : '停用') + '</button>' : '';
+    const nameCell = '<td class="t" data-label="名称">'
+      + (routeAction ? '<div class="model-name-actions">' + name + routeAction + '</div>' : name)
       + '</td>';
 
     // 7. 默认采样参数（上游对缺省请求生效的采样值；有的模型只给部分字段）
@@ -11369,13 +11599,14 @@ function renderAvailableModels(){
     //    清单（选择全局一份，见 AGENT_MODEL_SELECTION）。服务端还没存过勾选时
     //    isModelPicked() 一律返回 true——默认全部勾选，首屏不必等 GET 回来。
     const displayId = m.client_model_id || m.id;
-    const modelLabel = m.catalog_only ? '启用后可作为网关模型 ID 使用'
+    const modelLabel = m.catalog_only ? '启用模型后可勾选'
       : (m.client_model_id ? displayId : '上游模型 ID');
     const idText = '<b title="' + esc(modelLabel) + '">' + esc(displayId) + '</b>';
-    const pick = m.catalog_only ? idText
-      : '<label><input type="checkbox" class="model-pick" data-model-id="' + esc(m.id) + '"'
-        + (isModelPicked(m.id) ? ' checked' : '')
-        + ' title="勾选后该模型才会写入 DSH 等客户端的一键配置">' + idText + '</label>';
+    const pick = '<label' + (m.catalog_only ? ' class="model-pick-unavailable" title="启用模型后可勾选"' : '')
+      + '><input type="checkbox" class="model-pick" data-model-id="' + esc(m.id) + '"'
+      + (m.catalog_only ? ' disabled' : (isModelPicked(m.id) ? ' checked' : ''))
+      + ' title="' + (m.catalog_only ? '启用模型后可勾选' : '勾选后该模型才会写入 DSH 等客户端的一键配置')
+      + '">' + idText + '</label>';
     const copy = m.client_model_id ? '<button type="button" class="sec mini model-id-copy" aria-label="复制模型 ID" title="复制模型 ID"'
       + ' data-copy-model-id="' + esc(displayId) + '" onclick="copyCatalogModelId(this)">'
       + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button>' : '';
@@ -11383,7 +11614,7 @@ function renderAvailableModels(){
       + '<td class="t mono model-id-cell" data-label="模型 ID"><div class="model-id-wrap">'
       + pick + copy + '</div></td>'
       + nameCell
-      + '<td class="c rate-cell" data-label="' + (m.route_id === 'minimax' ? '网关状态' : '消费倍率') + '">' + credBadge + '</td>'
+      + '<td class="c rate-cell" data-label="计费 / 优惠">' + credBadge + '</td>'
       + '<td class="c" data-label="能力">' + capHtml + '</td>'
       + '<td class="c num" data-label="上下文">' + ctx + '</td>'
       + '<td class="c num" data-label="最大输出">' + maxOut + '</td>'
@@ -16483,13 +16714,16 @@ function renderConsoleAccountHealth(accts){
   const box = document.getElementById('consoleAccountHealth');
   if(!box) return;
   const groups = [];
-  for(const realm of ['intl', 'cn', 'minimax', 'codearts']){
+  for(const realm of Object.keys(CHANNEL_INPUTS)){
     if((RUNTIME_REALM !== 'all' && RUNTIME_REALM !== realm) || !runtimeRealmAvailable(realm)) continue;
     const label = realmLabel(realm);
     if(realm === 'minimax'){
       const subscriptions = window.MINIMAX_ACCOUNTS || [];
       const enabled = window.MINIMAX_PLAN?.enabled ? subscriptions.filter(account => account.enabled).length : 0;
       groups.push({label, total: subscriptions.length, ok: enabled, qualifier: '启用'});
+    }else if(API_TEXT_CHANNELS.includes(realm)){
+      const accounts = window.API_CHANNEL_ACCOUNTS?.[realm] || [];
+      groups.push({label, total: accounts.length, ok: accounts.filter(account => account.enabled).length, qualifier: '启用'});
     }else if(realm === 'codearts'){
       const stats = window.CODEARTS_OVERVIEW?.stats;
       groups.push({label, total: stats?.total || 0, ok: stats?.healthy || 0, qualifier: '可用',
@@ -16773,7 +17007,7 @@ async function refreshInner(gen, polled){
         return '<tr>'
         + '<td class="mono c-time t" data-label="时间">' + esc((r.iso||'').replace('T',' ').slice(5)) + '</td>'
         + '<td class="mono c-model t" data-label="模型" title="' + esc(r.model) + '">' + esc(r.model)
-        + (scope === 'all' && ['intl', 'cn', 'minimax', 'codearts'].includes(r.realm)
+        + (scope === 'all' && Object.hasOwn(CHANNEL_INPUTS, r.realm)
           ? '<span class="badge mini runtime-request-route">' + realmLabel(r.realm) + '</span>' : '') + '</td>'
         + '<td class="t c-effort" data-label="推理强度">' + (r.reasoning_effort ? ('<span class="badge-effort">' + esc(r.reasoning_effort) + '</span>') : '<span class="dim">—</span>') + '</td>'
         + '<td class="mono c-acct t" data-label="账号" title="' + esc(r.account||'') + '">' + esc(acctName(r.account)) + '</td>'
@@ -18202,6 +18436,8 @@ async function loadSettings(showToast, opts){
     applyMediaSettings(data.media, data);
     renderChannelSettings(data.channels);
     renderMiniMaxPlan(data.minimax, data.minimax_accounts);
+    window.API_CHANNEL_ACCOUNTS = data.api_channel_accounts || {};
+    renderApiChannelAccounts(window.VIEW_REALM, true);
 
     // 面板窗口限高：字段缺失（后端旧一点）或存坏了都按默认 640px 算，0 = 不限。
     // 坏值回落默认状态这条口径与「顶部页签显示」「账号区折叠」一致，见
@@ -18348,6 +18584,7 @@ async function loadSettings(showToast, opts){
       }
       // ① 时段：显式时段优先；留空时后端每天随机抽两个（间隔 12 小时）。
       const scheduleCfg = (data.schedule && typeof data.schedule === 'object') ? data.schedule : {};
+      renderBuddyCheckinSchedule(scheduleCfg.buddy_checkin);
       const dailyChatTimes = Array.isArray(scheduleCfg.daily_chat) ? scheduleCfg.daily_chat : [];
       renderDailyChatTimes(dailyChatTimes);
       const dailyChatEffective = Array.isArray(scheduleCfg.daily_chat_effective)
@@ -19706,6 +19943,34 @@ async function saveGlobalPrompt(btn){
   }
 }
 
+function renderBuddyCheckinSchedule(config){
+  const formButton = document.getElementById('btnSaveBuddyCheckinSchedule');
+  if(!config || !formButton) return;
+  document.getElementById('buddyCheckinTimes').value = config.times.join(', ');
+  document.getElementById('buddyCheckinMin').value = config.min_seconds;
+  document.getElementById('buddyCheckinMax').value = config.max_seconds;
+  document.getElementById('buddyCheckinEffective').textContent = config.effective_times.join(' / ');
+  formButton.disabled = false;
+}
+
+async function saveBuddyCheckinSchedule(event){
+  event.preventDefault();
+  const button = document.getElementById('btnSaveBuddyCheckinSchedule');
+  const config = {times: document.getElementById('buddyCheckinTimes').value,
+    min_seconds: document.getElementById('buddyCheckinMin').valueAsNumber,
+    max_seconds: document.getElementById('buddyCheckinMax').valueAsNumber};
+  button.disabled = true;
+  try{
+    const data = await postJSON('/settings/save', {schedule: {buddy_checkin: config}});
+    renderBuddyCheckinSchedule(data.schedule.buddy_checkin);
+    toast('加油站签到排程已保存', 'ok');
+  }catch(error){
+    toast('保存失败: ' + error.message, 'bad');
+  }finally{
+    button.disabled = false;
+  }
+}
+
 let DAILY_CHAT_TIMES_SELECTED = [];
 function renderDailyChatTimes(times){
   DAILY_CHAT_TIMES_SELECTED = Array.isArray(times) ? times.slice().sort() : [];
@@ -20792,6 +21057,7 @@ function keyRealmBadge(realm, px){
   if(realm === 'cn') return '<span class="realm-badge-cn" style="' + size + '">固定国内版出口</span>';
   if(realm === 'codearts') return '<span class="realm-badge-codearts" style="' + size + '">固定 CodeArts 出口</span>';
   if(realm === 'minimax') return '<span class="realm-badge-minimax" style="' + size + '">固定 MiniMax 出口</span>';
+  if(API_TEXT_CHANNELS.includes(realm)) return '<span class="badge s" style="' + size + '">' + esc(realmLabel(realm)) + '</span>';
   return '<span class="badge s" style="' + size + '">按模型前缀路由</span>';
 }
 
@@ -20806,7 +21072,7 @@ function renderKeyRows(){
   }
   box.innerHTML = API_KEY_ROWS.map((row, i) => {
     if(row._editing){
-      const realmChoices = REALM_CHOICES.concat(['minimax', 'codearts']
+      const realmChoices = REALM_CHOICES.concat(['minimax', 'codearts', ...API_TEXT_CHANNELS]
         .filter(realm => row.realm === realm || channelEnabled(realm))
         .map(realm => [realm, '固定 ' + realmLabel(realm) + ' 出口']));
       const options = realmChoices.map(([val, lbl]) =>
@@ -21099,9 +21365,14 @@ async function renderKeyPickers(i){
     for(const a of window.MINIMAX_ACCOUNTS || []){
       if(!seenUids.has(a.uid)) accts.push({uid: a.uid, nickname: a.name, realm: 'minimax', group: 'MiniMax'});
     }
-    if(realm === 'minimax'){
+    for(const channel of API_TEXT_CHANNELS){
+      for(const account of window.API_CHANNEL_ACCOUNTS?.[channel] || []){
+        accts.push({uid: account.uid, nickname: account.name, realm: channel, group: realmLabel(channel)});
+      }
+    }
+    if(realm === 'minimax' || API_TEXT_CHANNELS.includes(realm)){
       for(let index = accts.length - 1; index >= 0; index--){
-        if(accts[index].realm !== 'minimax') accts.splice(index, 1);
+        if(accts[index].realm !== realm) accts.splice(index, 1);
       }
     }
     const groupSelect = document.getElementById('editKeyAccountGroup_' + i);
@@ -22330,8 +22601,8 @@ function renderAgentConnForm(){
   const realmHint = document.getElementById('agentModelRealmHint');
   if(realmHint){
     const r = (AGENTS_DATA && AGENTS_DATA.realm) || agentRequestRealm();
-    const miniMax = r !== 'minimax' && AGENT_MODELS.some(m => m?.route_id === 'minimax');
-    realmHint.textContent = '（' + realmLabel(r) + '目录' + (miniMax ? ' · MiniMax' : '') + '）';
+    const extra = [...new Set(AGENT_MODELS.map(m => m?.route_realm).filter(channel => channel && channel !== r))];
+    realmHint.textContent = '（' + [realmLabel(r) + '目录', ...extra.map(realmLabel)].join(' · ') + '）';
   }
   const modelSel = document.getElementById('agentModelSelect');
   if(modelSel){
@@ -23957,7 +24228,7 @@ function keyRealmCell(k){
   if(k.source === 'bucket') return '<span style="color:var(--dim)">—</span>';
   if(k.realm === 'cn') return '<span class="badge warn" style="font-size:10px">国内版</span>';
   if(k.realm === 'intl') return '<span class="badge s" style="font-size:10px">国际版</span>';
-  if(k.realm === 'minimax' || k.realm === 'codearts') return keyRealmBadge(k.realm, 10);
+  if(k.realm === 'minimax' || k.realm === 'codearts' || API_TEXT_CHANNELS.includes(k.realm)) return keyRealmBadge(k.realm, 10);
   // realm 为空的 Key 不绑出口，而是跟着模型走：它可能两个出口都用过，
   // 那时代理返回的积分是两个价格体系相加的结果，必须说出来。
   if(k.cross_realm) return '<span class="badge warn" style="font-size:10px">跟随 · 混合</span>';
@@ -24217,7 +24488,7 @@ async function loadRecent(){
       const ok = x.outcome === 'completed';
       const isMiniMax = x.route_id === 'minimax';
       const nm = isMiniMax ? 'MiniMax' : nicknameOf(x.account);
-      const shownModel = (isMiniMax && x.requested_model) || x.model || '';
+      const shownModel = ((isMiniMax || API_TEXT_CHANNELS.includes(x.route_id)) && x.requested_model) || x.model || '';
       // 失败行原来只有一个 [failed] 标签；把 HTTP 码带上、上游原话挂进悬停气泡，
       // 概览页看到「失败了」的时候当场就能知道为什么，不用切回最近请求表。
       const why = String(x.message == null ? '' : x.message).replace(/\s+/g, ' ').trim();
@@ -24738,7 +25009,8 @@ const dimDefs = {
         tokSub: `思考 ${fmtCompact(m.window.reasoning_tokens ?? m.window.reasoning ?? 0)} · 缓存 ${fmtCompact(m.window.cached_tokens ?? 0)}`,
         speed: m.window.speed_avg,
         cache: m.window.cache_hit_pct,
-        credit: m.model?.startsWith('minimax/') || m.window.credit == null ? '—' : Number(m.window.credit).toFixed(2),
+        credit: ['minimax', ...API_TEXT_CHANNELS].includes(m.model?.split('/')[0]) || m.window.credit == null
+          ? '—' : Number(m.window.credit).toFixed(2),
         cost: m.window.cost_cny,
       }));
     }
@@ -24759,7 +25031,8 @@ const dimDefs = {
         const name = isMiniMax
           ? ((window.MINIMAX_ACCOUNTS || []).find(account => account.uid === acc.uid)?.name
             || (acc.uid === 'minimax-plan' ? 'MiniMax 官方套餐' : acc.nickname || acc.uid))
-          : (acc.nickname || acc.uid.slice(0, 8));
+          : ((window.API_CHANNEL_ACCOUNTS?.[realm] || []).find(account => account.uid === acc.uid)?.name
+             || acc.nickname || acc.uid.slice(0, 8));
         const badgeClass = realm === 'intl' || realm === 'cn' ? ' realm-' + realm : '';
         const badge = isMiniMax ? '' : ` <span class="realm-tag${badgeClass}">${realmLabel(realm)}</span>`;
         return {
@@ -24771,7 +25044,8 @@ const dimDefs = {
           tokSub: `思考 ${fmtCompact(acc.window.reasoning_tokens)} · 缓存 ${fmtCompact(acc.window.cached_tokens)}`,
           speed: acc.window.speed_avg,
           cache: acc.window.cache_hit_pct,
-          credit: isMiniMax || acc.window.credit == null ? '—' : Number(acc.window.credit).toFixed(2),
+          credit: isMiniMax || API_TEXT_CHANNELS.includes(realm) || acc.window.credit == null
+            ? '—' : Number(acc.window.credit).toFixed(2),
           cost: acc.window.cost_cny,
         };
       });
@@ -25792,7 +26066,7 @@ if (typeof SORT_DENY_TABLES !== 'undefined' && SORT_DENY_TABLES && SORT_DENY_TAB
     automation: {
       title: '自动化',
       desc: '每日活跃、全局提示词、本地网络工具和剩余用量调度。',
-      items: ['国际版每日活跃打卡', '选择网页活跃提示词', '全局提示词', '本地网络工具', '剩余用量优先调度']
+      items: ['国内版加油站签到', '国际版每日活跃打卡', '选择网页活跃提示词', '全局提示词', '本地网络工具', '剩余用量优先调度']
     },
     stability: {
       title: '稳定性',

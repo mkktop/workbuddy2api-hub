@@ -71,6 +71,29 @@ class ScheduleSettingsTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 wb_settings.set_schedule_hours(directory, "9,21")
 
+    def test_buddy_schedule_uses_legacy_hours_until_customized(self):
+        with tempfile.TemporaryDirectory(prefix="buddy-sched-") as directory:
+            wb_settings.set_schedule_hours(directory, {"checkin": [8, 20]})
+            self.assertEqual(wb_settings.buddy_checkin_schedule(directory), {
+                "times": [], "effective_times": ["08:00", "20:00"],
+                "min_seconds": 15, "max_seconds": 60,
+            })
+            custom = wb_settings.set_buddy_checkin_schedule(directory, {
+                "times": "19:05，08：13, 19:05", "min_seconds": 7, "max_seconds": 22})
+            self.assertEqual(custom["effective_times"], ["08:13", "19:05"])
+            wb_settings.set_daily_chat_times(directory, ["15:00"])
+            wb_settings.set_schedule_hours(directory, {"checkin": [6]})
+            self.assertEqual(wb_settings.buddy_checkin_schedule(directory), custom)
+            with self.assertRaises(ValueError):
+                wb_settings.set_buddy_checkin_schedule(directory, {"times": "17:05,26:00"})
+            with self.assertRaises(ValueError):
+                wb_settings.set_buddy_checkin_schedule(directory, {"min_seconds": 30})
+            self.assertEqual(wb_settings.buddy_checkin_schedule(directory), custom)
+            reset = wb_settings.set_buddy_checkin_schedule(directory, {"times": ""})
+            self.assertEqual(reset["effective_times"], ["06:00"])
+            self.assertEqual((reset["min_seconds"], reset["max_seconds"]), (7, 22))
+            self.assertEqual(wb_settings.daily_chat_times(directory), ["15:00"])
+
 
 class SchedulerScheduleTests(unittest.TestCase):
     def test_scheduler_picks_up_changes_without_restart(self):
@@ -90,6 +113,46 @@ class SchedulerScheduleTests(unittest.TestCase):
             self.assertTrue(scheduler._reload_schedule())
             self.assertEqual(scheduler.checkin_hours, [8])
             self.assertIn("08:00", scheduler.status()["mode_cn"])
+
+    def test_buddy_minute_slot_deduplicates_and_catches_recent_due_times(self):
+        with tempfile.TemporaryDirectory(prefix="buddy-clock-") as directory:
+            scheduler = wb_scheduler.Scheduler(StubPool(directory))
+            slots = ["09:17", "21:13"]
+            def due(hour, minute, day=20):
+                stamp = time.struct_time((2026, 10, day, hour, minute, 0, 0, 0, -1))
+                return scheduler._due_buddy_checkin_slot(slots, stamp)
+            self.assertEqual(due(9, 16), "")
+            self.assertEqual(due(9, 17), "09:17")
+            self.assertEqual(due(9, 22), "09:17")
+            scheduler._buddy_checkin_done.add("09:17")
+            self.assertEqual(due(9, 22), "")
+            self.assertEqual(due(21, 31), "")
+            self.assertEqual(due(21, 13), "21:13")
+            self.assertEqual(due(9, 17, day=21), "09:17")
+
+    def test_buddy_batch_waits_between_eligible_accounts_and_is_serial(self):
+        with tempfile.TemporaryDirectory(prefix="buddy-batch-") as directory:
+            pool = StubPool(directory)
+            scheduler = wb_scheduler.Scheduler(pool)
+            first, second, skipped = FakeAccount(), FakeAccount(), FakeAccount("intl")
+            pool.accounts = [first, skipped, second]
+            order = []
+
+            def first_checkin(trigger):
+                order.append("first")
+                self.assertIsNone(scheduler._run_buddy_checkins(gap=(10, 20)))
+                return {"ok": True}
+
+            first.checkin = first_checkin
+            second.checkin = lambda trigger: order.append("second") or {"ok": True}
+            with mock.patch.object(wb_scheduler.random, "randint", side_effect=[11, 19]) as draw, \
+                    mock.patch.object(scheduler._stop_event, "wait", side_effect=lambda wait: order.append(wait) or False):
+                self.assertEqual(scheduler._run_buddy_checkins(gap=(10, 20)), 2)
+                self.assertEqual(draw.call_args_list, [mock.call(10, 20), mock.call(10, 20)])
+            self.assertEqual(order, [11, "first", 19, "second"])
+            with mock.patch.object(scheduler._stop_event, "wait", return_value=True):
+                self.assertIsNone(scheduler._run_buddy_checkins(gap=(10, 20)))
+            self.assertEqual(order, [11, "first", 19, "second"])
 
 
 class FakeAccount(object):
@@ -159,9 +222,13 @@ class TaskGatingTests(unittest.TestCase):
 
         with mock.patch.object(wb_scheduler.time, "localtime", lambda *a: stamp), \
                 mock.patch.object(wb_scheduler.time, "sleep", lambda *_: None), \
+                mock.patch.object(scheduler._stop_event, "wait", return_value=False), \
                 mock.patch.object(wb_scheduler, "do_cat_travel", travel), \
                 mock.patch.object(wb_scheduler.wb_tasks, "run_streak_bonus", bonus), \
                 mock.patch.object(wb_scheduler.wb_tasks, "run_night_growth", night):
+            config = wb_settings.buddy_checkin_schedule(scheduler.pool.dir)
+            if not force and scheduler._due_buddy_checkin_slot(config["effective_times"], stamp):
+                scheduler._run_buddy_checkins(gap=(1, 1))
             scheduler._run_cycle("test", force=force)
         return seen
 

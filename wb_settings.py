@@ -473,8 +473,9 @@ def ensure_launcher_key(accounts_dir):
 # Each key can be bound to one upstream realm, so several clients can hit
 # different exits at the same time instead of sharing the global switch.
 
-REALMS = ("", "intl", "cn", "codearts", "minimax")
-TEXT_CHANNELS = ("intl", "cn", "minimax", "codearts")
+API_TEXT_CHANNELS = ("zhipu", "deepseek")
+TEXT_CHANNELS = ("intl", "cn", "minimax", "codearts") + API_TEXT_CHANNELS
+REALMS = ("",) + TEXT_CHANNELS
 
 
 def channel_states(accounts_dir):
@@ -482,7 +483,7 @@ def channel_states(accounts_dir):
     workbuddy = data.get("workbuddy_channels")
     workbuddy = workbuddy if isinstance(workbuddy, dict) else {}
     states = {realm: workbuddy.get(realm) is not False for realm in ("intl", "cn")}
-    for realm in ("minimax", "codearts"):
+    for realm in TEXT_CHANNELS[2:]:
         config = data.get(realm)
         states[realm] = isinstance(config, dict) and config.get("enabled") is True
     return states
@@ -503,6 +504,62 @@ def set_channel_states(accounts_dir, patch):
             data[field][key] = enabled
         save(accounts_dir, data)
     return channel_states(accounts_dir)
+
+
+_PROVIDER_API_KEY = re.compile(r"[\x21-\x7e]{4,512}")
+
+
+def api_text_config(accounts_dir, realm):
+    if realm not in API_TEXT_CHANNELS:
+        raise ValueError("Unknown API channel")
+    raw = load(accounts_dir).get(realm)
+    raw = raw if isinstance(raw, dict) else {}
+    accounts = raw.get("accounts")
+    accounts = accounts if isinstance(accounts, list) else []
+    return {"enabled": raw.get("enabled") is True,
+            "accounts": [dict(account) for account in accounts if isinstance(account, dict)
+                         and isinstance(account.get("uid"), str)
+                         and isinstance(account.get("api_key"), str)
+                         and _PROVIDER_API_KEY.fullmatch(account["api_key"])]}
+
+
+def set_api_text_account(accounts_dir, realm, patch):
+    if not isinstance(patch, dict):
+        raise ValueError("Account details must be an object")
+    with _lock:
+        config = api_text_config(accounts_dir, realm)
+        accounts = config["accounts"]
+        uid = patch.get("uid") or ""
+        existing = next((account for account in accounts if account["uid"] == uid), None)
+        if uid and existing is None:
+            raise ValueError("Channel account was not found")
+        if patch.get("action") == "delete":
+            if existing is None:
+                raise ValueError("Select an account to remove")
+            accounts.remove(existing)
+        else:
+            current = existing or {}
+            key = patch.get("api_key", "")
+            if isinstance(key, str):
+                key = key.strip() or current.get("api_key", "")
+            name = patch.get("name", current.get("name", ""))
+            enabled = patch.get("enabled", current.get("enabled", True))
+            if not isinstance(key, str) or not _PROVIDER_API_KEY.fullmatch(key):
+                raise ValueError("Enter a valid upstream API Key")
+            if not isinstance(name, str) or len(name.strip()) > 80 or not isinstance(enabled, bool):
+                raise ValueError("Invalid account name or status")
+            if any(account is not existing and account["api_key"] == key for account in accounts):
+                raise ValueError("This upstream API Key is already saved")
+            updated = {"uid": uid or realm + "-" + secrets.token_hex(8),
+                       "name": name.strip() or realm, "enabled": enabled, "api_key": key}
+            if existing is None:
+                accounts.append(updated)
+            else:
+                existing.update(updated)
+        data = load(accounts_dir)
+        data[realm] = config
+        save(accounts_dir, data)
+        return config
 
 
 MINIMAX_REGIONS = ("cn", "global")
@@ -1508,6 +1565,53 @@ def set_daily_chat_times(accounts_dir, value):
         data["schedule"] = current
         save(accounts_dir, data)
     return times
+
+
+BUDDY_CHECKIN_GAP_DEFAULT = (15, 60)
+BUDDY_CHECKIN_GAP_LIMIT = 300
+
+
+def _valid_buddy_checkin_gap(minimum, maximum):
+    return (type(minimum) is int and type(maximum) is int
+            and 1 <= minimum <= maximum <= BUDDY_CHECKIN_GAP_LIMIT)
+
+
+def buddy_checkin_schedule(accounts_dir):
+    schedule = load(accounts_dir).get("schedule")
+    raw = schedule.get("buddy_checkin") if isinstance(schedule, dict) else None
+    raw = raw if isinstance(raw, dict) else {}
+    times = _normalize_times(raw.get("times"))
+    minimum, maximum = BUDDY_CHECKIN_GAP_DEFAULT
+    if _valid_buddy_checkin_gap(raw.get("min_seconds"), raw.get("max_seconds")):
+        minimum, maximum = raw["min_seconds"], raw["max_seconds"]
+    return {"times": times or [],
+            "effective_times": times or ["%02d:00" % hour for hour in schedule_hours(accounts_dir)["checkin"]],
+            "min_seconds": minimum, "max_seconds": maximum}
+
+
+def set_buddy_checkin_schedule(accounts_dir, patch):
+    if not isinstance(patch, dict):
+        raise ValueError("签到排程必须是对象")
+    with _lock:
+        existing = buddy_checkin_schedule(accounts_dir)
+        raw_times = patch.get("times", existing["times"])
+        if isinstance(raw_times, str):
+            raw_times = re.split(r"[,，、\s]+", raw_times.strip()) if raw_times.strip() else []
+        if (not isinstance(raw_times, list) or len(raw_times) > DAILY_CHAT_TIMES_MAX
+                or any(not _normalize_times([item]) for item in raw_times)):
+            raise ValueError("签到时间须采用 HH:MM 格式，最多 24 个时段")
+        minimum = patch.get("min_seconds", existing["min_seconds"])
+        maximum = patch.get("max_seconds", existing["max_seconds"])
+        if not _valid_buddy_checkin_gap(minimum, maximum):
+            raise ValueError("签到延时应为 1 到 300 秒，最短延时不能大于最长延时")
+        data = load(accounts_dir)
+        schedule = data.get("schedule")
+        schedule = dict(schedule) if isinstance(schedule, dict) else {}
+        schedule["buddy_checkin"] = {"times": _normalize_times(raw_times) or [],
+                                     "min_seconds": minimum, "max_seconds": maximum}
+        data["schedule"] = schedule
+        save(accounts_dir, data)
+    return buddy_checkin_schedule(accounts_dir)
 
 
 def section_max_height(accounts_dir):

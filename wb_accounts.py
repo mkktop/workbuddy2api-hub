@@ -122,6 +122,8 @@ WEB_LIVE_REGISTRY_MAX = 128
 #: 收尾不能依赖那个卡住的线程本身。
 _WEB_LIVE = {}
 _WEB_LIVE_LOCK = threading.Lock()
+# Serialize Buddy check-in requests from both the scheduler and the account page.
+_BUDDY_CHECKIN_LOCK = threading.Lock()
 
 
 def web_live_register(uid, conversation, model=""):
@@ -3188,9 +3190,10 @@ class Account(object):
             return {"ok": False, "error": "API key accounts have no checkin programme"}
         if self.is_enterprise():
             return {"ok": False, "error": "enterprise accounts do not support checkin"}
-        res = self._checkin_upstream()
-        wb_activity.record_attempt(self, wb_activity.TASK_CHECKIN, trigger, res)
-        return res
+        with _BUDDY_CHECKIN_LOCK:
+            res = self._checkin_upstream()
+            wb_activity.record_attempt(self, wb_activity.TASK_CHECKIN, trigger, res)
+            return res
 
     def _mark_checkin_done(self, state):
         """记下「今天签过了」，供 can_checkin() 的当日闸门用。

@@ -288,8 +288,7 @@ class SchedulerPoolScopeTests(unittest.TestCase):
                            "tasksEnabled": True, "poolScope": "media"}, fh)
             pool = wb_accounts.AccountPool(directory)
             pool.load()
-            scheduler = wb_scheduler.Scheduler.__new__(wb_scheduler.Scheduler)
-            scheduler.pool = pool
+            scheduler = wb_scheduler.Scheduler(pool)
             scheduler.log = lambda *_args, **_kwargs: None
             scheduler.checkin_hours = set()
             scheduler.travel_hours = set()

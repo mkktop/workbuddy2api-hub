@@ -26,6 +26,8 @@ DAILY_CHAT_BATCH_SLACK = 60
 #: 都有 20~30 秒超时），留上限是为了「上游一直滴数据 / DNS 卡住」这种病态情况：
 #: 到了上限就不再开新的工作线程，宁可这一轮跳过账号，也不让线程无限堆。
 DAILY_CHAT_ABANDONED_MAX = 8
+# Offer a short same-day catch-up after a restart or a busy batch.
+BUDDY_CHECKIN_GRACE_MINUTES = 15
 
 
 def _proxy_module():
@@ -124,6 +126,10 @@ class Scheduler:
         self.enabled = True
         self._stop_event = threading.Event()
         self._thread = None
+        self._buddy_checkin_thread = None
+        self._buddy_checkin_lock = threading.Lock()
+        self._buddy_checkin_day = ""
+        self._buddy_checkin_done = set()
         self._probe_thread = None
         self._scan_thread = None
         self.last_run_time = None
@@ -167,6 +173,9 @@ class Scheduler:
         self._stop_event.clear()
         self._thread = threading.Thread(target=self._run_loop, daemon=True)
         self._thread.start()
+        if not self._buddy_checkin_thread or not self._buddy_checkin_thread.is_alive():
+            self._buddy_checkin_thread = threading.Thread(target=self._buddy_checkin_loop, daemon=True)
+            self._buddy_checkin_thread.start()
         self.log("后台定时调度器已启动")
 
     def stop(self):
@@ -235,6 +244,74 @@ class Scheduler:
             return
         self._probe_thread = threading.Thread(target=self._probe_worker, daemon=True)
         self._probe_thread.start()
+
+    def _due_buddy_checkin_slot(self, slots, now):
+        day = time.strftime("%Y-%m-%d", now)
+        if self._buddy_checkin_day != day:
+            self._buddy_checkin_day = day
+            self._buddy_checkin_done.clear()
+        current_minute = now.tm_hour * 60 + now.tm_min
+        for slot in reversed(slots):
+            hour, minute = map(int, slot.split(":"))
+            age = current_minute - (hour * 60 + minute)
+            if 0 <= age <= BUDDY_CHECKIN_GRACE_MINUTES:
+                return slot if slot not in self._buddy_checkin_done else ""
+        return ""
+
+    def _buddy_checkin_loop(self):
+        if self._stop_event.wait(10):
+            return
+        directory = getattr(self.pool, "dir", "") or ""
+        while not self._stop_event.is_set():
+            if self.enabled:
+                try:
+                    config = wb_settings.buddy_checkin_schedule(directory)
+                    slot = self._due_buddy_checkin_slot(config["effective_times"], time.localtime())
+                    if slot:
+                        gap = (config["min_seconds"], config["max_seconds"])
+                        count = self._run_buddy_checkins(gap=gap)
+                        if count is not None:
+                            self._buddy_checkin_done.add(slot)
+                            self.log(f"加油站 {slot} 时段完成，签到 {count} 个账号")
+                except Exception as exc:
+                    self.log(f"加油站签到排程异常: {exc}")
+            self._stop_event.wait(10)
+
+    def _run_buddy_checkins(self, accounts=None, *, gap=None):
+        """One batch at a time. A scheduled batch waits before each request."""
+        if not self.pool or not self._buddy_checkin_lock.acquire(blocking=False):
+            return None
+        try:
+            count = 0
+            for account in (list(self.pool.accounts) if accounts is None else accounts):
+                if account.realm != "cn" or not account.task_active() or not account.can_checkin():
+                    continue
+                if gap is not None and (not self.enabled or self._stop_event.wait(random.randint(*gap))
+                                        or not self.enabled):
+                    return None
+                if not account.task_active() or not account.can_checkin():
+                    continue
+                try:
+                    hold = _proxy_module().restriction_hold_remaining("cn")
+                except Exception:
+                    hold = 0.0
+                if hold > 0:
+                    self.log(f"跳过加油站签到：国内版暂停剩余 {int(hold)}s")
+                    break
+                uid8 = account.uid[:8] if account.uid else "?"
+                try:
+                    result = account.checkin(trigger="scheduler")
+                except Exception as exc:
+                    self.log(f"! 账号 [{uid8}] 加油站签到失败: {exc}")
+                    continue
+                if result.get("ok"):
+                    count += 1
+                    self.log(f"✓ 账号 [{uid8}] 加油站签到成功: {result.get('msg')}")
+                else:
+                    self.log(f"! 账号 [{uid8}] 加油站签到未成功: {result.get('error') or result.get('msg')}")
+            return count
+        finally:
+            self._buddy_checkin_lock.release()
 
     def _probe_worker(self):
         try:
@@ -486,16 +563,8 @@ class Scheduler:
             # 2. 如果是国内版账号，检查每日签到与猫猫旅行
             if acc.realm == "cn" and task_active:
                 if run_checkin:
-                    if acc.can_checkin():
-                        self.log(f"检测到国内版账号 [{uid8}] 今日尚未签到，执行自动签到...")
-                        res = acc.checkin(trigger="scheduler")
-                        if res.get("ok"):
-                            checkin_count += 1
-                            self.log(f"✓ 账号 [{uid8}] 自动签到成功: {res.get('msg')}")
-                        else:
-                            self.log(f"! 账号 [{uid8}] 自动签到未成功: {res.get('error') or res.get('msg')}")
-                        time.sleep(1.0)
-
+                    if force:
+                        checkin_count += self._run_buddy_checkins((acc,)) or 0
                     if acc.can_report_activity():
                         self.log(f"检测到国内版账号 [{uid8}] 今日尚未活跃上报，执行对话活跃上报...")
                         res = acc.report_activity()
@@ -618,8 +687,8 @@ class Scheduler:
     def _run_codearts_checkin(self, run_checkin):
         """Daily CodeArts check-in for enabled accounts.
 
-        Follows the same check-in hours as the WorkBuddy China realm. A
-        successful check-in is recorded in the account's state, so the second
+        Uses the hourly check-in schedule. A successful check-in is recorded
+        in the account's state, so the second
         slot and a manual force-run skip it; a failed attempt stays retryable.
         Cooling accounts are skipped because a chat cooldown usually means the
         upstream is unhappy with this account.
@@ -891,13 +960,14 @@ class Scheduler:
         def _hhmm(hours):
             return "/".join("%02d:00" % h for h in hours)
 
-        checkin = _hhmm(self.checkin_hours)
+        buddy_checkin = wb_settings.buddy_checkin_schedule(getattr(self.pool, "dir", "") or "")
+        checkin = "/".join(buddy_checkin["effective_times"])
         travel = _hhmm(self.travel_hours)
         keepalive = _hhmm(self.keepalive_hours)
         cat = _hhmm(self.cat_hours)
-        mode_cn = ("整点排程 (签到 %s · 猫猫旅行 %s · 每日活跃上报 · "
+        mode_cn = ("加油站签到 %s（随机延时 %d–%d 秒） · 整点排程 (猫猫旅行 %s · 每日活跃上报 · "
                    "Token保活 %s · 夜猫 %s) + 模型额度窗口探针"
-                   % (checkin, travel, keepalive, cat))
+                   % (checkin, buddy_checkin["min_seconds"], buddy_checkin["max_seconds"], travel, keepalive, cat))
         mode_intl = ("账号 Token 自动保活与凭证常驻 (每日 %s 集中巡检) "
                      "+ 模型额度窗口探针" % keepalive)
         return {
@@ -911,6 +981,7 @@ class Scheduler:
             "quota_scans": scans,
             # 国际版每日活跃的排程与现场：面板「任务与福利」页的状态块读这几项。
             "daily_chat": self._daily_chat_status(),
+            "buddy_checkin": buddy_checkin,
             "logs": self.logs[-20:],
         }
 
